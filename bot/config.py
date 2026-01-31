@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Configuration
     log_level: str = "INFO"
-    default_openrouter_model: str = "qwen/qwen3-coder"
+    default_openrouter_model: str = "moonshotai/kimi-k2.5"
 
     # Authorization
     admin_usernames: str = ""  # comma-separated

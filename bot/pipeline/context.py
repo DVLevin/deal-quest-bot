@@ -24,6 +24,7 @@ class PipelineContext:
         user_message: str = "",
         telegram_id: int = 0,
         user_id: int = 0,
+        image_b64: str | None = None,
     ) -> None:
         self.llm = llm
         self.knowledge_base = knowledge_base
@@ -33,6 +34,7 @@ class PipelineContext:
         self.user_message = user_message
         self.telegram_id = telegram_id
         self.user_id = user_id
+        self.image_b64 = image_b64
 
         # Inter-agent results storage
         self.results: dict[str, Any] = {}

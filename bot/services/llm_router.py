@@ -49,7 +49,9 @@ class LLMProvider(ABC):
     """Abstract LLM provider."""
 
     @abstractmethod
-    async def complete(self, system_prompt: str, user_message: str) -> dict[str, Any]:
+    async def complete(
+        self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
+    ) -> dict[str, Any]:
         """Send a completion request and return parsed JSON."""
         ...
 
@@ -79,7 +81,9 @@ class ClaudeProvider(LLMProvider):
             timeout=120.0,
         )
 
-    async def complete(self, system_prompt: str, user_message: str) -> dict[str, Any]:
+    async def complete(
+        self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
+    ) -> dict[str, Any]:
         import asyncio
 
         for attempt in range(MAX_RETRIES):
@@ -134,7 +138,7 @@ class ClaudeProvider(LLMProvider):
 class OpenRouterProvider(LLMProvider):
     """OpenRouter API provider (OpenAI-compatible)."""
 
-    def __init__(self, api_key: str, model: str = "qwen/qwen3-coder") -> None:
+    def __init__(self, api_key: str, model: str = "moonshotai/kimi-k2.5") -> None:
         self.api_key = api_key
         self.model = model
         self._client = httpx.AsyncClient(
@@ -148,8 +152,22 @@ class OpenRouterProvider(LLMProvider):
             timeout=120.0,
         )
 
-    async def complete(self, system_prompt: str, user_message: str) -> dict[str, Any]:
+    async def complete(
+        self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
+    ) -> dict[str, Any]:
         import asyncio
+
+        # Build user content — multipart if image provided
+        if image_b64:
+            user_content: list[dict[str, Any]] | str = [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
+                },
+                {"type": "text", "text": user_message},
+            ]
+        else:
+            user_content = user_message
 
         for attempt in range(MAX_RETRIES):
             try:
@@ -159,7 +177,7 @@ class OpenRouterProvider(LLMProvider):
                         "model": self.model,
                         "messages": [
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_message},
+                            {"role": "user", "content": user_content},
                         ],
                         "max_tokens": 4096,
                         "temperature": 0.7,
@@ -212,6 +230,6 @@ def create_provider(
     if provider_name == "claude":
         return ClaudeProvider(api_key, model=model or "claude-sonnet-4-20250514")
     elif provider_name == "openrouter":
-        return OpenRouterProvider(api_key, model=model or "qwen/qwen3-coder")
+        return OpenRouterProvider(api_key, model=model or "moonshotai/kimi-k2.5")
     else:
         raise ValueError(f"Unknown provider: {provider_name}")
