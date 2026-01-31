@@ -329,7 +329,10 @@ async def on_support_voice(
         audio_bytes = file_bytes_io.getvalue()
 
         text = await transcription.transcribe(audio_bytes)
-        await status_msg.edit_text(f"📝 I heard: _{text}_\n\n🔄 Analyzing your prospect...", parse_mode="Markdown")
+        await status_msg.edit_text(
+            f"📝 I heard:\n\"{text}\"\n\n🔄 Analyzing your prospect...",
+            parse_mode=None,
+        )
     except Exception as e:
         logger.error("Voice transcription failed: %s", e)
         await status_msg.edit_text(f"❌ Couldn't transcribe voice: {str(e)[:200]}\n\nPlease try again or type your message.")

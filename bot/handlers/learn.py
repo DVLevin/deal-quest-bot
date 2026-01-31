@@ -242,8 +242,8 @@ async def on_learn_voice(
 
         user_response = await transcription.transcribe(audio_bytes)
         await status_msg.edit_text(
-            f"📝 I heard: _{user_response}_\n\n🔄 Evaluating your response...",
-            parse_mode="Markdown",
+            f"📝 I heard:\n\"{user_response}\"\n\n🔄 Evaluating your response...",
+            parse_mode=None,
         )
     except Exception as e:
         logger.error("Voice transcription failed: %s", e)
