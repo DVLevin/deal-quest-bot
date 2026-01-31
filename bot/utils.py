@@ -14,6 +14,15 @@ def escape_md(text: str) -> str:
     return re.sub(f"([{re.escape(special)}])", r"\\\1", text)
 
 
+def _sanitize(text: str) -> str:
+    """Strip Markdown v1 special chars from dynamic/LLM content.
+
+    Telegram Markdown v1 treats _ * ` [ as formatting.
+    We just remove them from LLM output so the message never breaks.
+    """
+    return text.replace("_", " ").replace("*", "").replace("`", "'").replace("[", "(").replace("]", ")")
+
+
 def truncate_message(text: str, max_len: int = MAX_MESSAGE_LENGTH) -> str:
     """Truncate message to fit Telegram limits."""
     if len(text) <= max_len:
@@ -47,11 +56,11 @@ def format_support_response(output: dict) -> str:
     analysis = output.get("analysis", {})
     if analysis:
         parts.append("📊 *PROSPECT ANALYSIS*")
-        parts.append(f"Type: {analysis.get('prospect_type', 'N/A')}")
-        parts.append(f"Seniority: {analysis.get('seniority', 'N/A')}")
-        parts.append(f"Key Concern: {analysis.get('key_concern', 'N/A')}")
-        signal = analysis.get("buying_signal", "N/A")
-        reason = analysis.get("buying_signal_reason", "")
+        parts.append(f"Type: {_sanitize(str(analysis.get('prospect_type', 'N/A')))}")
+        parts.append(f"Seniority: {_sanitize(str(analysis.get('seniority', 'N/A')))}")
+        parts.append(f"Key Concern: {_sanitize(str(analysis.get('key_concern', 'N/A')))}")
+        signal = _sanitize(str(analysis.get("buying_signal", "N/A")))
+        reason = _sanitize(str(analysis.get("buying_signal_reason", "")))
         parts.append(f"Signal: {signal} — {reason}")
         parts.append("")
 
@@ -59,14 +68,14 @@ def format_support_response(output: dict) -> str:
     if strategy:
         parts.append("🎯 *CLOSING STRATEGY*")
         for i, step in enumerate(strategy.get("steps", []), 1):
-            principle = step.get("principle", "")
-            detail = step.get("detail", "")
+            principle = _sanitize(str(step.get("principle", "")))
+            detail = _sanitize(str(step.get("detail", "")))
             parts.append(f"{i}. *{principle}*")
             parts.append(f"   {detail}")
-        obj = strategy.get("anticipated_objection", "")
-        obj_resp = strategy.get("objection_response", "")
+        obj = _sanitize(str(strategy.get("anticipated_objection", "")))
+        obj_resp = _sanitize(str(strategy.get("objection_response", "")))
         if obj:
-            parts.append(f"\nAnticipated objection: _{obj}_")
+            parts.append(f"\nAnticipated objection: {obj}")
             parts.append(f"Handle: {obj_resp}")
         parts.append("")
 
@@ -74,21 +83,21 @@ def format_support_response(output: dict) -> str:
     if tactics:
         parts.append("💡 *ENGAGEMENT TACTICS*")
         for action in tactics.get("linkedin_actions", []):
-            parts.append(f"  🔘 {action}")
-        comment = tactics.get("comment_suggestion", "")
+            parts.append(f"  🔘 {_sanitize(str(action))}")
+        comment = _sanitize(str(tactics.get("comment_suggestion", "")))
         if comment:
             parts.append(f'  💬 Comment: "{comment}"')
-        timing = tactics.get("timing", "")
+        timing = _sanitize(str(tactics.get("timing", "")))
         if timing:
             parts.append(f"  ⏰ {timing}")
         parts.append("")
 
     draft = output.get("draft", {})
     if draft:
-        platform = draft.get("platform", "")
+        platform = _sanitize(str(draft.get("platform", "")))
         parts.append(f"📝 *DRAFT ({platform.upper()})*")
-        parts.append(draft.get("message", ""))
-        ref = draft.get("playbook_reference", "")
+        parts.append(_sanitize(str(draft.get("message", ""))))
+        ref = _sanitize(str(draft.get("playbook_reference", "")))
         if ref:
             parts.append(f"\n📚 Playbook ref: {ref}")
 
@@ -119,11 +128,11 @@ def format_training_feedback(output: dict) -> str:
     if breakdown:
         parts.append("*Breakdown:*")
         for item in breakdown:
-            criterion = item.get("criterion", "")
+            criterion = _sanitize(str(item.get("criterion", "")))
             sc = item.get("score", 0)
             mx = item.get("max", 0)
             parts.append(f"  • {criterion}: {sc}/{mx}")
-            feedback = item.get("feedback", "")
+            feedback = _sanitize(str(item.get("feedback", "")))
             if feedback:
                 parts.append(f"    {feedback}")
         parts.append("")
@@ -132,20 +141,20 @@ def format_training_feedback(output: dict) -> str:
     if strengths:
         parts.append("✅ *Strengths:*")
         for s in strengths:
-            parts.append(f"  • {s}")
+            parts.append(f"  • {_sanitize(str(s))}")
         parts.append("")
 
     improvements = output.get("improvements", [])
     if improvements:
         parts.append("🔧 *To improve:*")
         for imp in improvements:
-            parts.append(f"  • {imp}")
+            parts.append(f"  • {_sanitize(str(imp))}")
         parts.append("")
 
     pattern = output.get("pattern_observation", {})
     if pattern:
-        recurring = pattern.get("recurring_issue", "")
-        improving = pattern.get("improving_area", "")
+        recurring = _sanitize(str(pattern.get("recurring_issue", "")))
+        improving = _sanitize(str(pattern.get("improving_area", "")))
         if recurring:
             parts.append(f"⚠️ Pattern: {recurring}")
         if improving:
