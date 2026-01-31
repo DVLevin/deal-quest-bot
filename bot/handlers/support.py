@@ -316,7 +316,10 @@ async def on_support_voice(
     """Transcribe voice message and run through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
 
-    status_msg = await message.answer("🎙️ Transcribing your voice message...")
+    status_msg = await message.answer(
+        "🎙️ Nice, a voice message! Love the energy.\n"
+        "Give me a moment to listen and transcribe it..."
+    )
 
     try:
         voice = message.voice

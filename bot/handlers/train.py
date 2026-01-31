@@ -247,7 +247,10 @@ async def on_train_voice(
     """Transcribe voice and score via trainer pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
 
-    status_msg = await message.answer("🎙️ Transcribing your voice message...")
+    status_msg = await message.answer(
+        "🎙️ Great call using voice — that's how real deals sound!\n"
+        "Listening to your pitch now..."
+    )
 
     try:
         voice = message.voice
