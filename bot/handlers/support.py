@@ -24,6 +24,7 @@ from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider
+from bot.services.transcription import TranscriptionService
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadRegistryModel, SupportSessionModel
@@ -67,8 +68,10 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
         "📊 *Support Mode*\n\n"
         "Describe your prospect or deal situation:\n"
         "📝 *Text* — role, company, context, what they said\n"
-        "📸 *Photo* — LinkedIn screenshot, email, profile\n\n"
+        "📸 *Photo* — LinkedIn screenshot, email, profile\n"
+        "🎙️ *Voice* — just talk, I'll transcribe it\n\n"
         "I'll provide analysis, strategy, engagement tactics, and a draft response.\n\n"
+        "🎙️ *Voice messages work great here!*\n\n"
         "_Photos are saved to your lead registry for tracking._",
         parse_mode="Markdown",
     )
@@ -292,6 +295,63 @@ async def on_support_photo(
         photo_url=photo_url,
         photo_key=photo_key,
         input_type="photo",
+    )
+
+
+@router.message(SupportState.waiting_input, F.voice)
+async def on_support_voice(
+    message: Message,
+    state: FSMContext,
+    bot: Bot,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    casebook_service: CasebookService,
+    agent_registry: AgentRegistry,
+    transcription: TranscriptionService,
+) -> None:
+    """Transcribe voice message and run through strategist pipeline."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+
+    status_msg = await message.answer(
+        "🎙️ Nice, a voice message! Love the energy.\n"
+        "Give me a moment to listen and transcribe it..."
+    )
+
+    try:
+        voice = message.voice
+        file = await bot.get_file(voice.file_id)  # type: ignore[union-attr]
+        file_bytes_io = io.BytesIO()
+        await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
+        audio_bytes = file_bytes_io.getvalue()
+
+        text = await transcription.transcribe(audio_bytes)
+        await status_msg.edit_text(
+            f"📝 I heard:\n\"{text}\"\n\n🔄 Analyzing your prospect...",
+            parse_mode=None,
+        )
+    except Exception as e:
+        logger.error("Voice transcription failed: %s", e)
+        await status_msg.edit_text(f"❌ Couldn't transcribe voice: {str(e)[:200]}\n\nPlease try again or type your message.")
+        return
+
+    await _run_support_pipeline(
+        user_input=text,
+        tg_id=tg_id,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        session_repo=session_repo,
+        lead_repo=lead_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        casebook_service=casebook_service,
+        agent_registry=agent_registry,
+        status_msg=status_msg,
+        state=state,
+        input_type="voice",
     )
 
 

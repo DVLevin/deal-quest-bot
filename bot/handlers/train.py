@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import random
 from pathlib import Path
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -25,6 +26,7 @@ from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
+from bot.services.transcription import TranscriptionService
 from bot.states import TrainState
 from bot.storage.models import AttemptModel
 from bot.storage.repositories import (
@@ -99,7 +101,8 @@ async def cmd_train(
         f"{'⭐' * difficulty} Difficulty | "
         f"Category: {scenario.get('category', 'general')}\n\n"
         f"Remaining: {len(unseen_ids) - 1}/{len(all_ids)} unseen\n\n"
-        f"📝 Type your response below:"
+        f"📝 Type your response or send a voice message:\n"
+        f"💡 _Tip: respond by voice — it's more like real sales!_"
     )
 
     await message.answer(scenario_text, parse_mode="Markdown")
@@ -110,10 +113,13 @@ async def cmd_train(
     )
 
 
-@router.message(TrainState.answering_scenario)
-async def on_train_answer(
+async def _run_train_answer(
+    *,
+    user_response: str,
+    tg_id: int,
     message: Message,
     state: FSMContext,
+    status_msg: Message,
     user_repo: UserRepo,
     memory_repo: UserMemoryRepo,
     attempt_repo: AttemptRepo,
@@ -122,14 +128,7 @@ async def on_train_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
 ) -> None:
-    """Score the training response."""
-    tg_id = message.from_user.id  # type: ignore[union-attr]
-    user_response = message.text or ""
-
-    if not user_response.strip():
-        await message.answer("Please type your response to the scenario.")
-        return
-
+    """Core train scoring logic shared by text and voice handlers."""
     user = await user_repo.get_by_telegram_id(tg_id)
     if not user or not user.encrypted_api_key:
         await message.answer("Please run /start first.")
@@ -139,8 +138,6 @@ async def on_train_answer(
     data = await state.get_data()
     scenario_id = data.get("scenario_id", "")
     scenario_data = data.get("scenario_data", {})
-
-    status_msg = await message.answer("🔄 Evaluating your response...")
 
     try:
         api_key = crypto.decrypt(user.encrypted_api_key)
@@ -233,6 +230,101 @@ async def on_train_answer(
         await state.clear()
 
 
+@router.message(TrainState.answering_scenario, F.voice)
+async def on_train_voice(
+    message: Message,
+    state: FSMContext,
+    bot: Bot,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    attempt_repo: AttemptRepo,
+    seen_repo: ScenariosSeenRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    agent_registry: AgentRegistry,
+    transcription: TranscriptionService,
+) -> None:
+    """Transcribe voice and score via trainer pipeline."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+
+    status_msg = await message.answer(
+        "🎙️ Great call using voice — that's how real deals sound!\n"
+        "Listening to your pitch now..."
+    )
+
+    try:
+        voice = message.voice
+        file = await bot.get_file(voice.file_id)  # type: ignore[union-attr]
+        file_bytes_io = io.BytesIO()
+        await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
+        audio_bytes = file_bytes_io.getvalue()
+
+        user_response = await transcription.transcribe(audio_bytes)
+        await status_msg.edit_text(
+            f"📝 I heard:\n\"{user_response}\"\n\n🔄 Evaluating your response...",
+            parse_mode=None,
+        )
+    except Exception as e:
+        logger.error("Voice transcription failed: %s", e)
+        await status_msg.edit_text(
+            f"❌ Couldn't transcribe voice: {str(e)[:200]}\n\nPlease try again or type your message."
+        )
+        return
+
+    await _run_train_answer(
+        user_response=user_response,
+        tg_id=tg_id,
+        message=message,
+        state=state,
+        status_msg=status_msg,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        attempt_repo=attempt_repo,
+        seen_repo=seen_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        agent_registry=agent_registry,
+    )
+
+
+@router.message(TrainState.answering_scenario)
+async def on_train_answer(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    attempt_repo: AttemptRepo,
+    seen_repo: ScenariosSeenRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    agent_registry: AgentRegistry,
+) -> None:
+    """Score the training response."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+    user_response = message.text or ""
+
+    if not user_response.strip():
+        await message.answer("Please type your response to the scenario.")
+        return
+
+    status_msg = await message.answer("🔄 Evaluating your response...")
+
+    await _run_train_answer(
+        user_response=user_response,
+        tg_id=tg_id,
+        message=message,
+        state=state,
+        status_msg=status_msg,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        attempt_repo=attempt_repo,
+        seen_repo=seen_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        agent_registry=agent_registry,
+    )
+
+
 @router.callback_query(F.data == "train:next")
 async def on_next_scenario(
     callback: CallbackQuery,
@@ -271,7 +363,8 @@ async def on_next_scenario(
         f"{'⭐' * difficulty} Difficulty | "
         f"Category: {scenario.get('category', 'general')}\n\n"
         f"Remaining: {len(unseen_ids) - 1}/{len(all_ids)} unseen\n\n"
-        f"📝 Type your response below:"
+        f"📝 Type your response or send a voice message:\n"
+        f"💡 _Tip: respond by voice — it's more like real sales!_"
     )
 
     await callback.message.edit_text(scenario_text, parse_mode="Markdown")  # type: ignore[union-attr]

@@ -6,7 +6,9 @@ import json
 import logging
 from pathlib import Path
 
-from aiogram import F, Router
+import io
+
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -24,6 +26,7 @@ from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
+from bot.services.transcription import TranscriptionService
 from bot.states import LearnState
 from bot.storage.models import AttemptModel
 from bot.storage.repositories import (
@@ -194,7 +197,8 @@ async def on_scenario_start(callback: CallbackQuery, state: FSMContext) -> None:
         f"Context: {persona.get('context', '')}\n\n"
         f"💬 *Situation:*\n{scenario.get('situation', '')}\n\n"
         f"{'⭐' * scenario.get('difficulty', 1)} Difficulty\n\n"
-        f"📝 Type your response below:"
+        f"📝 Type your response or send a voice message:\n"
+        f"💡 _Tip: respond by voice — it's more like real sales!_"
     )
 
     await callback.message.edit_text(scenario_text, parse_mode="Markdown")  # type: ignore[union-attr]
@@ -207,10 +211,71 @@ async def on_scenario_start(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.message(LearnState.answering_scenario)
-async def on_learn_answer(
+@router.message(LearnState.answering_scenario, F.voice)
+async def on_learn_voice(
     message: Message,
     state: FSMContext,
+    bot: Bot,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    track_repo: TrackProgressRepo,
+    attempt_repo: AttemptRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    agent_registry: AgentRegistry,
+    transcription: TranscriptionService,
+) -> None:
+    """Transcribe voice and score via trainer pipeline."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+
+    status_msg = await message.answer(
+        "🎙️ Great call using voice — that's how real deals sound!\n"
+        "Listening to your pitch now..."
+    )
+
+    try:
+        voice = message.voice
+        file = await bot.get_file(voice.file_id)  # type: ignore[union-attr]
+        file_bytes_io = io.BytesIO()
+        await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
+        audio_bytes = file_bytes_io.getvalue()
+
+        user_response = await transcription.transcribe(audio_bytes)
+        await status_msg.edit_text(
+            f"📝 I heard:\n\"{user_response}\"\n\n🔄 Evaluating your response...",
+            parse_mode=None,
+        )
+    except Exception as e:
+        logger.error("Voice transcription failed: %s", e)
+        await status_msg.edit_text(
+            f"❌ Couldn't transcribe voice: {str(e)[:200]}\n\nPlease try again or type your message."
+        )
+        return
+
+    # Reuse the same scoring logic as text answers
+    await _run_learn_answer(
+        user_response=user_response,
+        tg_id=tg_id,
+        message=message,
+        state=state,
+        status_msg=status_msg,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        track_repo=track_repo,
+        attempt_repo=attempt_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        agent_registry=agent_registry,
+    )
+
+
+async def _run_learn_answer(
+    *,
+    user_response: str,
+    tg_id: int,
+    message: Message,
+    state: FSMContext,
+    status_msg: Message,
     user_repo: UserRepo,
     memory_repo: UserMemoryRepo,
     track_repo: TrackProgressRepo,
@@ -219,14 +284,7 @@ async def on_learn_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
 ) -> None:
-    """Score the user's response via trainer pipeline."""
-    tg_id = message.from_user.id  # type: ignore[union-attr]
-    user_response = message.text or ""
-
-    if not user_response.strip():
-        await message.answer("Please type your response to the scenario.")
-        return
-
+    """Core learn scoring logic shared by text and voice handlers."""
     user = await user_repo.get_by_telegram_id(tg_id)
     if not user or not user.encrypted_api_key:
         await message.answer("Please run /start first.")
@@ -237,8 +295,6 @@ async def on_learn_answer(
     level_id = data.get("level_id", "")
     scenario_id = data.get("scenario_id", "")
     scenario_data = data.get("scenario_data", {})
-
-    status_msg = await message.answer("🔄 Evaluating your response...")
 
     try:
         api_key = crypto.decrypt(user.encrypted_api_key)
@@ -355,6 +411,44 @@ async def on_learn_answer(
         logger.error("Learn pipeline error: %s", e)
         await status_msg.edit_text(f"❌ Something went wrong: {str(e)[:200]}")
         await state.clear()
+
+
+@router.message(LearnState.answering_scenario)
+async def on_learn_answer(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    track_repo: TrackProgressRepo,
+    attempt_repo: AttemptRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    agent_registry: AgentRegistry,
+) -> None:
+    """Score the user's response via trainer pipeline."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+    user_response = message.text or ""
+
+    if not user_response.strip():
+        await message.answer("Please type your response to the scenario.")
+        return
+
+    status_msg = await message.answer("🔄 Evaluating your response...")
+
+    await _run_learn_answer(
+        user_response=user_response,
+        tg_id=tg_id,
+        message=message,
+        state=state,
+        status_msg=status_msg,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        track_repo=track_repo,
+        attempt_repo=attempt_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        agent_registry=agent_registry,
+    )
 
 
 @router.callback_query(F.data == "learn:back")
