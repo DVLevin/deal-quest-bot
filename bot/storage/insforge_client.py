@@ -172,6 +172,28 @@ class InsForgeClient:
             logger.error("InsForge delete error on %s: %s", table, e)
             raise
 
+    async def upload_file(
+        self, bucket: str, key: str, file_bytes: bytes, content_type: str = "image/jpeg"
+    ) -> dict[str, Any] | None:
+        """Upload a file to InsForge storage bucket."""
+        url = f"{self.base_url}/api/storage/buckets/{bucket}/objects/{key}"
+        headers = {
+            "Authorization": f"Bearer {self.anon_key}",
+        }
+        files = {"file": (key, file_bytes, content_type)}
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(url, headers=headers, files=files)
+                resp.raise_for_status()
+                return resp.json()
+        except Exception as e:
+            logger.error("InsForge upload error on %s/%s: %s", bucket, key, e)
+            raise
+
+    def get_file_url(self, bucket: str, key: str) -> str:
+        """Get the public URL for a stored file."""
+        return f"{self.base_url}/api/storage/buckets/{bucket}/objects/{key}"
+
     async def rpc(self, function_name: str, params: dict[str, Any] | None = None) -> Any:
         """Call a PostgREST RPC function."""
         client = await self._get_client()

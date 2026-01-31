@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import io
 import logging
+import time
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -23,8 +25,14 @@ from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider
 from bot.states import SupportState
-from bot.storage.models import SupportSessionModel
-from bot.storage.repositories import SupportSessionRepo, UserMemoryRepo, UserRepo
+from bot.storage.insforge_client import InsForgeClient
+from bot.storage.models import LeadRegistryModel, SupportSessionModel
+from bot.storage.repositories import (
+    LeadRegistryRepo,
+    SupportSessionRepo,
+    UserMemoryRepo,
+    UserRepo,
+)
 from bot.utils import format_support_response
 
 logger = logging.getLogger(__name__)
@@ -57,42 +65,40 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
 
     await message.answer(
         "📊 *Support Mode*\n\n"
-        "Describe your prospect or deal situation.\n"
-        "Include details like: role, company, context, what they said.\n\n"
-        "I'll provide analysis, strategy, engagement tactics, and a draft response.",
+        "Describe your prospect or deal situation:\n"
+        "📝 *Text* — role, company, context, what they said\n"
+        "📸 *Photo* — LinkedIn screenshot, email, profile\n\n"
+        "I'll provide analysis, strategy, engagement tactics, and a draft response.\n\n"
+        "_Photos are saved to your lead registry for tracking._",
         parse_mode="Markdown",
     )
     await state.set_state(SupportState.waiting_input)
 
 
-@router.message(SupportState.waiting_input)
-async def on_support_input(
-    message: Message,
-    state: FSMContext,
+async def _run_support_pipeline(
+    *,
+    user_input: str,
+    tg_id: int,
     user_repo: UserRepo,
     memory_repo: UserMemoryRepo,
     session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
     crypto: CryptoService,
     knowledge: KnowledgeService,
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
+    status_msg: Message,
+    state: FSMContext,
+    photo_url: str | None = None,
+    photo_key: str | None = None,
+    input_type: str = "text",
 ) -> None:
-    """Process support request through strategist pipeline."""
-    tg_id = message.from_user.id  # type: ignore[union-attr]
-    user_input = message.text or ""
-
-    if not user_input.strip():
-        await message.answer("Please describe your prospect or deal situation.")
-        return
-
+    """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
     if not user or not user.encrypted_api_key:
-        await message.answer("Please run /start first.")
+        await status_msg.edit_text("❌ Please run /start first.")
         await state.clear()
         return
-
-    # Show typing indicator
-    status_msg = await message.answer("🔄 Analyzing your prospect...")
 
     try:
         # Decrypt API key and create provider
@@ -125,7 +131,7 @@ async def on_support_input(
         # Run support pipeline
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        results = await runner.run(pipeline_config, ctx)
+        await runner.run(pipeline_config, ctx)
 
         # Get strategist output
         strategist_result = ctx.get_result("strategist")
@@ -137,7 +143,7 @@ async def on_support_input(
 
         output_data = strategist_result.data
 
-        # Save memory update from background agent
+        # Handle memory update from background agent
         memory_result = ctx.get_result("memory")
         if memory_result and memory_result.success:
             updated_memory = memory_result.data.get("updated_memory")
@@ -153,6 +159,9 @@ async def on_support_input(
             last_input=user_input,
             last_output=output_data,
             provider=user.provider,
+            photo_url=photo_url,
+            photo_key=photo_key,
+            input_type=input_type,
         )
 
         # Save support session
@@ -169,11 +178,160 @@ async def on_support_input(
         except Exception as e:
             logger.error("Failed to save support session: %s", e)
 
+        # Save to lead registry
+        try:
+            analysis = output_data.get("prospect_analysis", "")
+            strategy = output_data.get("closing_strategy", "")
+            engagement = output_data.get("engagement_tactics", "")
+            draft = output_data.get("draft_response", "")
+
+            # Try to extract prospect name/title/company from analysis
+            prospect_name = _extract_field(analysis, "name")
+            prospect_title = _extract_field(analysis, "title") or _extract_field(analysis, "role")
+            prospect_company = _extract_field(analysis, "company")
+
+            await lead_repo.create(
+                LeadRegistryModel(
+                    user_id=user.id,
+                    telegram_id=tg_id,
+                    prospect_name=prospect_name,
+                    prospect_title=prospect_title,
+                    prospect_company=prospect_company,
+                    photo_url=photo_url,
+                    photo_key=photo_key,
+                    prospect_analysis=analysis if isinstance(analysis, str) else str(analysis),
+                    closing_strategy=strategy if isinstance(strategy, str) else str(strategy),
+                    engagement_tactics=engagement if isinstance(engagement, str) else str(engagement),
+                    draft_response=draft if isinstance(draft, str) else str(draft),
+                    input_type=input_type,
+                    original_context=user_input[:2000],
+                )
+            )
+            logger.info("Lead registered for user %s", tg_id)
+        except Exception as e:
+            logger.error("Failed to save lead registry: %s", e)
+
         await llm.close()
 
     except Exception as e:
         logger.error("Support pipeline error: %s", e)
         await status_msg.edit_text(f"❌ Something went wrong: {str(e)[:200]}")
+
+
+def _extract_field(analysis: str | dict, field: str) -> str | None:
+    """Try to extract a field from analysis output (dict or text)."""
+    if isinstance(analysis, dict):
+        for key in (field, field.capitalize(), field.upper()):
+            if key in analysis:
+                return str(analysis[key])[:200]
+    return None
+
+
+@router.message(SupportState.waiting_input, F.photo)
+async def on_support_photo(
+    message: Message,
+    state: FSMContext,
+    bot: Bot,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    casebook_service: CasebookService,
+    agent_registry: AgentRegistry,
+    insforge: InsForgeClient,
+) -> None:
+    """Process photo upload in support mode — download, store, analyze."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+
+    status_msg = await message.answer("📸 Saving photo & analyzing prospect...")
+
+    # Download the largest photo from Telegram
+    photo = message.photo[-1]  # type: ignore[index]
+    file = await bot.get_file(photo.file_id)
+
+    file_bytes_io = io.BytesIO()
+    await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
+    file_bytes = file_bytes_io.getvalue()
+
+    # Upload to InsForge storage
+    photo_url: str | None = None
+    photo_key: str | None = None
+    try:
+        key = f"leads/{tg_id}/{int(time.time())}_{photo.file_id[:12]}.jpg"
+        result = await insforge.upload_file("prospect-photos", key, file_bytes, "image/jpeg")
+        if result:
+            photo_key = result.get("key", key)
+            photo_url = result.get("url") or insforge.get_file_url("prospect-photos", photo_key)
+            logger.info("Photo uploaded: %s", photo_url)
+    except Exception as e:
+        logger.error("Failed to upload photo to storage: %s", e)
+        # Continue anyway — the analysis still works, just no photo stored
+
+    # Use caption as context, or note that it's a photo
+    user_input = message.caption or ""
+    if not user_input:
+        user_input = "[Photo uploaded — LinkedIn profile / prospect screenshot. Please analyze the visible information and provide a closing strategy.]"
+    else:
+        user_input = f"[Photo attached — prospect screenshot]\n\n{user_input}"
+
+    await _run_support_pipeline(
+        user_input=user_input,
+        tg_id=tg_id,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        session_repo=session_repo,
+        lead_repo=lead_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        casebook_service=casebook_service,
+        agent_registry=agent_registry,
+        status_msg=status_msg,
+        state=state,
+        photo_url=photo_url,
+        photo_key=photo_key,
+        input_type="photo",
+    )
+
+
+@router.message(SupportState.waiting_input)
+async def on_support_input(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    casebook_service: CasebookService,
+    agent_registry: AgentRegistry,
+) -> None:
+    """Process text input through strategist pipeline."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+    user_input = message.text or ""
+
+    if not user_input.strip():
+        await message.answer("Please describe your prospect or send a screenshot.")
+        return
+
+    status_msg = await message.answer("🔄 Analyzing your prospect...")
+
+    await _run_support_pipeline(
+        user_input=user_input,
+        tg_id=tg_id,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        session_repo=session_repo,
+        lead_repo=lead_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        casebook_service=casebook_service,
+        agent_registry=agent_registry,
+        status_msg=status_msg,
+        state=state,
+    )
 
 
 @router.callback_query(F.data.startswith("support:"))

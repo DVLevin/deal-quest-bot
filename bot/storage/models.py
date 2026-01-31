@@ -77,6 +77,27 @@ class TrackProgressModel(BaseModel):
     updated_at: str | None = None
 
 
+class LeadRegistryModel(BaseModel):
+    id: int | None = None
+    user_id: int | None = None
+    telegram_id: int
+    prospect_name: str | None = None
+    prospect_title: str | None = None
+    prospect_company: str | None = None
+    photo_url: str | None = None
+    photo_key: str | None = None
+    prospect_analysis: str | None = None
+    closing_strategy: str | None = None
+    engagement_tactics: str | None = None
+    draft_response: str | None = None
+    status: str = "analyzed"
+    notes: str | None = None
+    input_type: str = "text"
+    original_context: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
 class CasebookModel(BaseModel):
     id: int | None = None
     persona_type: str

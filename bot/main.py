@@ -16,7 +16,7 @@ from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
 from bot.agents.trainer import TrainerAgent
 from bot.config import load_settings
-from bot.handlers import admin, learn, settings, start, stats, support, train
+from bot.handlers import admin, leads, learn, settings, start, stats, support, train
 from bot.middleware import AuthorizationMiddleware
 from bot.pipeline.config_loader import load_all_pipelines
 from bot.services.casebook import CasebookService
@@ -26,6 +26,7 @@ from bot.storage.insforge_client import InsForgeClient
 from bot.storage.repositories import (
     AttemptRepo,
     CasebookRepo,
+    LeadRegistryRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
     TrackProgressRepo,
@@ -61,6 +62,7 @@ async def main() -> None:
     session_repo = SupportSessionRepo(insforge)
     track_repo = TrackProgressRepo(insforge)
     casebook_repo = CasebookRepo(insforge)
+    lead_repo = LeadRegistryRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -104,6 +106,8 @@ async def main() -> None:
             "session_repo": session_repo,
             "track_repo": track_repo,
             "casebook_repo": casebook_repo,
+            "lead_repo": lead_repo,
+            "insforge": insforge,
             "crypto": crypto,
             "knowledge": knowledge,
             "casebook_service": casebook_service,
@@ -121,6 +125,7 @@ async def main() -> None:
     dp.include_router(train.router)
     dp.include_router(stats.router)
     dp.include_router(settings.router)
+    dp.include_router(leads.router)
     dp.include_router(admin.router)
 
     logger.info("Bot initialized. Starting polling...")

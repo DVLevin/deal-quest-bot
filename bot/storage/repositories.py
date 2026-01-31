@@ -10,6 +10,7 @@ from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import (
     AttemptModel,
     CasebookModel,
+    LeadRegistryModel,
     ScenarioSeenModel,
     SupportSessionModel,
     TrackProgressModel,
@@ -276,6 +277,65 @@ class TrackProgressRepo:
                         "status": "unlocked" if i == 0 else "locked",
                     },
                 )
+
+
+class LeadRegistryRepo:
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "lead_registry"
+
+    async def create(self, lead: LeadRegistryModel) -> LeadRegistryModel:
+        data = lead.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        result = await self.client.create(self.table, data)
+        return LeadRegistryModel(**result) if result else lead
+
+    async def get_for_user(self, telegram_id: int, limit: int = 20) -> list[LeadRegistryModel]:
+        rows = await self.client.query(
+            self.table,
+            filters={"telegram_id": telegram_id},
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadRegistryModel(**r) for r in rows]
+        return []
+
+    async def get_all(self, limit: int = 50) -> list[LeadRegistryModel]:
+        rows = await self.client.query(
+            self.table,
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadRegistryModel(**r) for r in rows]
+        return []
+
+    async def get_by_id(self, lead_id: int) -> LeadRegistryModel | None:
+        rows = await self.client.query(
+            self.table, filters={"id": lead_id}, limit=1
+        )
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            return LeadRegistryModel(**rows[0])
+        return None
+
+    async def update_status(self, lead_id: int, status: str, notes: str | None = None) -> None:
+        updates: dict[str, Any] = {
+            "status": status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if notes is not None:
+            updates["notes"] = notes
+        await self.client.update(self.table, {"id": lead_id}, updates)
+
+    async def count_by_status(self) -> dict[str, int]:
+        """Get lead counts grouped by status."""
+        rows = await self.client.query(self.table, select="status")
+        counts: dict[str, int] = {}
+        if rows and isinstance(rows, list):
+            for row in rows:
+                s = row.get("status", "unknown")
+                counts[s] = counts.get(s, 0) + 1
+        return counts
 
 
 class CasebookRepo:
