@@ -1,0 +1,15 @@
+name: support
+description: "Deal support pipeline: strategist analysis → memory update (background)"
+steps:
+  - agent: strategist
+    mode: sequential
+    input_mapping:
+      knowledge_base: "ctx.knowledge_base"
+      user_memory: "ctx.user_memory"
+      casebook_text: "ctx.casebook_text"
+
+  - agent: memory
+    mode: background
+    input_mapping:
+      strategist_output: "result.strategist"
+      user_memory: "ctx.user_memory"
