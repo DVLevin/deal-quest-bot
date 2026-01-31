@@ -22,6 +22,7 @@ from bot.pipeline.config_loader import load_all_pipelines
 from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
+from bot.services.transcription import TranscriptionService
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.repositories import (
     AttemptRepo,
@@ -69,6 +70,7 @@ async def main() -> None:
     knowledge = KnowledgeService()
     knowledge.load()
     casebook_service = CasebookService(casebook_repo)
+    transcription = TranscriptionService(cfg.assemblyai_api_key)
 
     # Initialize agent registry
     agent_registry = AgentRegistry()
@@ -114,6 +116,7 @@ async def main() -> None:
             "agent_registry": agent_registry,
             "default_openrouter_model": cfg.default_openrouter_model,
             "shared_openrouter_key": cfg.openrouter_api_key,
+            "transcription": transcription,
             "admin_usernames": cfg.admin_list,
         }
     )

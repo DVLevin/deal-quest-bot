@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openrouter_api_key: str = ""
 
+    # Voice transcription (AssemblyAI)
+    assemblyai_api_key: str = ""
+
     # Configuration
     log_level: str = "INFO"
     default_openrouter_model: str = "qwen/qwen3-coder"
