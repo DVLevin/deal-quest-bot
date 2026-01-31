@@ -49,8 +49,10 @@ class StrategistAgent(BaseAgent):
                 casebook_text,
             )
 
-            # Call LLM
-            result = await pipeline_ctx.llm.complete(system_prompt, input_data.user_message)
+            # Call LLM (pass image if available for vision models)
+            result = await pipeline_ctx.llm.complete(
+                system_prompt, input_data.user_message, image_b64=pipeline_ctx.image_b64,
+            )
 
             return AgentOutput(success=True, data=result)
 

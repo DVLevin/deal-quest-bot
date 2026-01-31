@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import io
 import logging
 import time
@@ -95,6 +96,7 @@ async def _run_support_pipeline(
     photo_url: str | None = None,
     photo_key: str | None = None,
     input_type: str = "text",
+    image_b64: str | None = None,
 ) -> None:
     """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -129,6 +131,7 @@ async def _run_support_pipeline(
             user_message=user_input,
             telegram_id=tg_id,
             user_id=user.id or 0,
+            image_b64=image_b64,
         )
 
         # Run support pipeline
@@ -272,10 +275,13 @@ async def on_support_photo(
         logger.error("Failed to upload photo to storage: %s", e)
         # Continue anyway — the analysis still works, just no photo stored
 
+    # Encode photo for vision model
+    photo_b64 = base64.b64encode(file_bytes).decode("ascii")
+
     # Use caption as context, or note that it's a photo
     user_input = message.caption or ""
     if not user_input:
-        user_input = "[Photo uploaded — LinkedIn profile / prospect screenshot. Please analyze the visible information and provide a closing strategy.]"
+        user_input = "[Photo attached — LinkedIn profile / prospect screenshot. Analyze the visible information in the image and provide a closing strategy.]"
     else:
         user_input = f"[Photo attached — prospect screenshot]\n\n{user_input}"
 
@@ -295,6 +301,7 @@ async def on_support_photo(
         photo_url=photo_url,
         photo_key=photo_key,
         input_type="photo",
+        image_b64=photo_b64,
     )
 
 
