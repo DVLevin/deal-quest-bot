@@ -30,10 +30,7 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Proprietary data (add your own content)
-data/playbook.md
-data/company_knowledge.md
-data/scenarios.json
+# User-specific runtime data
 data/user_memory/*.yaml
 
 # Databases
