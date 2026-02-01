@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @deal-quest/webapp dev",
+    "build": "pnpm --filter @deal-quest/webapp build",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

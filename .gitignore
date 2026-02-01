@@ -39,3 +39,8 @@ data/user_memory/*.yaml
 
 # Logs
 *.log
+
+# Node.js / pnpm
+node_modules/
+*.tgz
+.pnpm-store/
