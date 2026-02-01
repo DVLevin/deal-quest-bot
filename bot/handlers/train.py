@@ -26,6 +26,7 @@ from bot.services.crypto import CryptoService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
+from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
 from bot.states import TrainState
 from bot.storage.models import AttemptModel
@@ -293,7 +294,8 @@ async def _run_train_answer(
 
         pipeline_config = load_pipeline("train")
         runner = PipelineRunner(agent_registry)
-        await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.EVALUATION):
+            await runner.run(pipeline_config, ctx)
 
         trainer_result = ctx.get_result("trainer")
         if not trainer_result or not trainer_result.success:
@@ -410,7 +412,9 @@ async def on_train_voice(
         await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
         audio_bytes = file_bytes_io.getvalue()
 
-        user_response = await transcription.transcribe(audio_bytes)
+        async with ProgressUpdater(status_msg, Phase.TRANSCRIPTION):
+            user_response = await transcription.transcribe(audio_bytes)
+
         await status_msg.edit_text(
             f"📝 I heard:\n\"{user_response}\"\n\n🔄 Evaluating your response...",
             parse_mode=None,

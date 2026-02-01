@@ -16,7 +16,7 @@ from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
 from bot.agents.trainer import TrainerAgent
 from bot.config import load_settings
-from bot.handlers import admin, leads, learn, settings, start, stats, support, train
+from bot.handlers import admin, leads, learn, progress, settings, start, stats, support, train
 from bot.middleware import AuthorizationMiddleware
 from bot.pipeline.config_loader import load_all_pipelines
 from bot.services.analytics import TeamAnalyticsService
@@ -148,6 +148,7 @@ async def main() -> None:
     )
 
     # Register routers
+    dp.include_router(progress.router)
     dp.include_router(start.router)
     dp.include_router(support.router)
     dp.include_router(learn.router)

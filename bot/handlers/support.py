@@ -29,6 +29,7 @@ from bot.services.crypto import CryptoService
 from bot.services.engagement import EngagementService
 from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider, web_research_call
+from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
@@ -150,7 +151,8 @@ async def _run_support_pipeline(
         # Run support pipeline
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.ANALYSIS):
+            await runner.run(pipeline_config, ctx)
 
         # Get strategist output
         strategist_result = ctx.get_result("strategist")
@@ -616,7 +618,9 @@ async def on_support_voice(
         await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
         audio_bytes = file_bytes_io.getvalue()
 
-        text = await transcription.transcribe(audio_bytes)
+        async with ProgressUpdater(status_msg, Phase.TRANSCRIPTION):
+            text = await transcription.transcribe(audio_bytes)
+
         await status_msg.edit_text(
             f"📝 I heard:\n\"{text}\"\n\n🔄 Analyzing your prospect...",
             parse_mode=None,
@@ -838,7 +842,8 @@ async def on_support_action(
 
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
+            await runner.run(pipeline_config, ctx)
 
         strategist_result = ctx.get_result("strategist")
         if strategist_result and strategist_result.success:
