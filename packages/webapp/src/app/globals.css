@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors - Deal Quest identity */
+  --color-brand-50: oklch(0.97 0.01 250);
+  --color-brand-100: oklch(0.93 0.03 250);
+  --color-brand-200: oklch(0.88 0.06 250);
+  --color-brand-300: oklch(0.80 0.09 250);
+  --color-brand-400: oklch(0.72 0.12 250);
+  --color-brand-500: oklch(0.65 0.15 250);
+  --color-brand-600: oklch(0.55 0.18 250);
+  --color-brand-700: oklch(0.45 0.18 250);
+  --color-brand-800: oklch(0.35 0.15 250);
+  --color-brand-900: oklch(0.25 0.10 250);
+
+  /* Semantic colors mapped from Telegram theme vars */
+  --color-surface: var(--tg-theme-bg-color, #ffffff);
+  --color-surface-secondary: var(--tg-theme-secondary-bg-color, #f0f0f0);
+  --color-text-primary: var(--tg-theme-text-color, #000000);
+  --color-text-secondary: var(--tg-theme-subtitle-text-color, #666666);
+  --color-text-hint: var(--tg-theme-hint-color, #999999);
+  --color-accent: var(--tg-theme-button-color, var(--color-brand-500));
+  --color-accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --color-link: var(--tg-theme-link-color, var(--color-brand-600));
+  --color-destructive: var(--tg-theme-destructive-text-color, #ff3b30);
+  --color-header-bg: var(--tg-theme-header-bg-color, var(--color-brand-700));
+
+  /* Status colors */
+  --color-success: oklch(0.72 0.19 150);
+  --color-warning: oklch(0.80 0.18 85);
+  --color-error: oklch(0.65 0.22 25);
+  --color-info: oklch(0.70 0.15 250);
+
+  /* Rarity tier colors (for badges) */
+  --color-rarity-common: oklch(0.70 0.05 250);
+  --color-rarity-rare: oklch(0.65 0.20 260);
+  --color-rarity-epic: oklch(0.55 0.25 300);
+  --color-rarity-legendary: oklch(0.70 0.22 65);
+
+  /* Safe area spacing from Telegram SDK viewport.bindCssVars() */
+  --spacing-safe-top: var(--tg-viewport-safe-area-inset-top, 0px);
+  --spacing-safe-bottom: var(--tg-viewport-safe-area-inset-bottom, 0px);
+  --spacing-content-top: var(--tg-viewport-content-safe-area-inset-top, 0px);
+  --spacing-content-bottom: var(--tg-viewport-content-safe-area-inset-bottom, 0px);
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Border radius tokens */
+  --radius-card: 12px;
+  --radius-button: 10px;
+  --radius-badge: 8px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Base styles */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Prevent pull-to-refresh in WebView */
+body {
+  overscroll-behavior-y: contain;
+}

@@ -1,3 +1,4 @@
+import '@/app/globals.css';
 import { createRoot } from 'react-dom/client';
 import { initTelegramSDK } from '@/lib/telegram';
 import App from '@/app/App';
