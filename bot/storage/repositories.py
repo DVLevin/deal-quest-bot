@@ -161,7 +161,20 @@ class AttemptRepo:
         self.table = "attempts"
 
     async def create(self, attempt: AttemptModel) -> AttemptModel:
-        data = attempt.model_dump(exclude_none=True, exclude={"id", "created_at"})
+        data = attempt.model_dump(exclude_none=True, exclude={"id", "created_at", "user_response", "username"})
+        # Ensure integer fields are ints (LLM may return floats)
+        for field in ("score", "xp_earned"):
+            if field in data:
+                try:
+                    data[field] = int(data[field])
+                except (TypeError, ValueError):
+                    data[field] = 0
+        # Sanitize feedback_json: strip null bytes that PostgreSQL JSONB rejects
+        if "feedback_json" in data and data["feedback_json"]:
+            import json as _json
+            raw = _json.dumps(data["feedback_json"], default=str)
+            raw = raw.replace("\\u0000", "").replace("\x00", "")
+            data["feedback_json"] = _json.loads(raw)
         result = await self.client.create(self.table, data)
         return AttemptModel(**result) if result else attempt
 

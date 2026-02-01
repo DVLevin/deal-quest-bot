@@ -342,27 +342,33 @@ async def _run_learn_answer(
         xp_earned = calculate_xp(score, first_attempt=first_attempt, previous_score=prev_score)
         output_data["xp_earned"] = xp_earned
 
-        # Save attempt (with user response + username for analytics)
-        await attempt_repo.create(
-            AttemptModel(
-                user_id=user.id,
-                telegram_id=tg_id,
-                scenario_id=scenario_id,
-                mode="learn",
-                score=score,
-                feedback_json=output_data,
-                xp_earned=xp_earned,
-                username=user.username,
-                user_response=user_response[:2000],
+        # Save attempt — don't let DB errors block feedback delivery
+        save_error = None
+        try:
+            await attempt_repo.create(
+                AttemptModel(
+                    user_id=user.id,
+                    telegram_id=tg_id,
+                    scenario_id=scenario_id,
+                    mode="learn",
+                    score=score,
+                    feedback_json=output_data,
+                    xp_earned=xp_earned,
+                    username=user.username,
+                    user_response=user_response[:2000],
+                )
             )
-        )
+        except Exception as save_exc:
+            save_error = save_exc
+            logger.error("Failed to save attempt (feedback still delivered): %s", save_exc)
 
-        # Update XP
-        await user_repo.update_xp(tg_id, xp_earned)
+        # Update XP (skip if save failed to keep data consistent)
+        if save_error is None:
+            await user_repo.update_xp(tg_id, xp_earned)
 
         # Update track progress
         status = "completed" if score >= 60 else "in_progress"
-        if user.id:
+        if user.id and save_error is None:
             await track_repo.upsert_progress(
                 user.id, tg_id, "foundations", level_id, status=status, score=score
             )
@@ -391,8 +397,10 @@ async def _run_learn_answer(
             if updated_memory:
                 await memory_repo.update_memory(tg_id, updated_memory)
 
-        # Format and send feedback
+        # Format and send feedback (always delivered even if save failed)
         feedback_text = format_training_feedback(output_data)
+        if save_error is not None:
+            feedback_text += "\n\n⚠️ Score saved locally but sync failed. Try again."
 
         buttons = []
         if score < 60:

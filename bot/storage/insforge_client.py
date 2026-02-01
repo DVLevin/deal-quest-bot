@@ -112,6 +112,13 @@ class InsForgeClient:
             resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
+        except httpx.HTTPStatusError as e:
+            body = e.response.text[:500] if e.response else "no body"
+            logger.error(
+                "InsForge create error on %s: %s | Response body: %s | Sent keys: %s",
+                table, e, body, list(data.keys()),
+            )
+            raise
         except Exception as e:
             logger.error("InsForge create error on %s: %s", table, e)
             raise
@@ -141,6 +148,10 @@ class InsForgeClient:
             resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
+        except httpx.HTTPStatusError as e:
+            body = e.response.text[:500] if e.response else "no body"
+            logger.error("InsForge update error on %s: %s | Response body: %s", table, e, body)
+            raise
         except Exception as e:
             logger.error("InsForge update error on %s: %s", table, e)
             raise
@@ -163,6 +174,10 @@ class InsForgeClient:
             resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
+        except httpx.HTTPStatusError as e:
+            body = e.response.text[:500] if e.response else "no body"
+            logger.error("InsForge upsert error on %s: %s | Response body: %s", table, e, body)
+            raise
         except Exception as e:
             logger.error("InsForge upsert error on %s: %s", table, e)
             raise

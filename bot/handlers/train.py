@@ -317,20 +317,25 @@ async def _run_train_answer(
         if user.id:
             await seen_repo.mark_seen(user.id, tg_id, scenario_id)
 
-        # Save attempt (with user response + username for analytics)
-        await attempt_repo.create(
-            AttemptModel(
-                user_id=user.id,
-                telegram_id=tg_id,
-                scenario_id=scenario_id,
-                mode="train",
-                score=score,
-                feedback_json=output_data,
-                xp_earned=xp_earned,
-                username=user.username,
-                user_response=user_response[:2000],
+        # Save attempt — don't let DB errors block feedback delivery
+        save_error = None
+        try:
+            await attempt_repo.create(
+                AttemptModel(
+                    user_id=user.id,
+                    telegram_id=tg_id,
+                    scenario_id=scenario_id,
+                    mode="train",
+                    score=score,
+                    feedback_json=output_data,
+                    xp_earned=xp_earned,
+                    username=user.username,
+                    user_response=user_response[:2000],
+                )
             )
-        )
+        except Exception as save_exc:
+            save_error = save_exc
+            logger.error("Failed to save train attempt (feedback still delivered): %s", save_exc)
 
         # Update usage stats for generated scenarios
         if scenario_data.get("_generated") and generated_scenario_repo:
@@ -339,8 +344,9 @@ async def _run_train_answer(
             except Exception as e:
                 logger.warning("Failed to update generated scenario usage: %s", e)
 
-        # Update XP
-        await user_repo.update_xp(tg_id, xp_earned)
+        # Update XP (skip if save failed to keep data consistent)
+        if save_error is None:
+            await user_repo.update_xp(tg_id, xp_earned)
 
         # Update memory
         memory_result = ctx.get_result("memory")
@@ -349,8 +355,10 @@ async def _run_train_answer(
             if updated_memory:
                 await memory_repo.update_memory(tg_id, updated_memory)
 
-        # Format feedback
+        # Format feedback (always delivered even if save failed)
         feedback_text = format_training_feedback(output_data)
+        if save_error is not None:
+            feedback_text += "\n\n⚠️ Score saved locally but sync failed. Try again."
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
