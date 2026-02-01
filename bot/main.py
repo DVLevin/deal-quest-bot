@@ -19,14 +19,20 @@ from bot.config import load_settings
 from bot.handlers import admin, leads, learn, settings, start, stats, support, train
 from bot.middleware import AuthorizationMiddleware
 from bot.pipeline.config_loader import load_all_pipelines
+from bot.services.analytics import TeamAnalyticsService
 from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
+from bot.services.engagement import EngagementService
+from bot.services.followup_scheduler import start_followup_scheduler
 from bot.services.knowledge import KnowledgeService
+from bot.services.scenario_generator import ScenarioGeneratorService
 from bot.services.transcription import TranscriptionService
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.repositories import (
     AttemptRepo,
     CasebookRepo,
+    GeneratedScenarioRepo,
+    LeadActivityRepo,
     LeadRegistryRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
@@ -64,6 +70,8 @@ async def main() -> None:
     track_repo = TrackProgressRepo(insforge)
     casebook_repo = CasebookRepo(insforge)
     lead_repo = LeadRegistryRepo(insforge)
+    activity_repo = LeadActivityRepo(insforge)
+    generated_scenario_repo = GeneratedScenarioRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -71,6 +79,20 @@ async def main() -> None:
     knowledge.load()
     casebook_service = CasebookService(casebook_repo)
     transcription = TranscriptionService(cfg.assemblyai_api_key)
+    analytics_service = TeamAnalyticsService(attempt_repo, user_repo)
+
+    # Engagement service (requires shared OpenRouter key)
+    engagement_service: EngagementService | None = None
+    scenario_generator: ScenarioGeneratorService | None = None
+    if cfg.openrouter_api_key:
+        engagement_service = EngagementService(cfg.openrouter_api_key)
+        logger.info("Engagement service initialized with shared OpenRouter key")
+        scenario_generator = ScenarioGeneratorService(
+            casebook_repo, generated_scenario_repo, knowledge, cfg.openrouter_api_key,
+        )
+        logger.info("Scenario generator service initialized")
+    else:
+        logger.warning("No OPENROUTER_API_KEY set — engagement features disabled")
 
     # Initialize agent registry
     agent_registry = AgentRegistry()
@@ -109,6 +131,8 @@ async def main() -> None:
             "track_repo": track_repo,
             "casebook_repo": casebook_repo,
             "lead_repo": lead_repo,
+            "activity_repo": activity_repo,
+            "generated_scenario_repo": generated_scenario_repo,
             "insforge": insforge,
             "crypto": crypto,
             "knowledge": knowledge,
@@ -117,6 +141,8 @@ async def main() -> None:
             "default_openrouter_model": cfg.default_openrouter_model,
             "shared_openrouter_key": cfg.openrouter_api_key,
             "transcription": transcription,
+            "engagement_service": engagement_service,
+            "analytics_service": analytics_service,
             "admin_usernames": cfg.admin_list,
         }
     )
@@ -132,6 +158,27 @@ async def main() -> None:
     dp.include_router(admin.router)
 
     logger.info("Bot initialized. Starting polling...")
+
+    # Start followup scheduler in background
+    if engagement_service:
+        asyncio.create_task(
+            start_followup_scheduler(bot, lead_repo, activity_repo)
+        )
+        logger.info("Followup scheduler started")
+
+    # Start background scenario generation loop
+    if scenario_generator:
+        async def _scenario_generation_loop() -> None:
+            """Periodically ensure the generated scenario pool has enough entries."""
+            while True:
+                try:
+                    await scenario_generator.ensure_pool_size(20)
+                except Exception as e:
+                    logger.error("Scenario generation loop error: %s", e)
+                await asyncio.sleep(6 * 60 * 60)  # Every 6 hours
+
+        asyncio.create_task(_scenario_generation_loop())
+        logger.info("Scenario generation loop started (every 6 hours)")
 
     try:
         await dp.start_polling(bot)

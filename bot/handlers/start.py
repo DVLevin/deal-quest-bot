@@ -17,9 +17,9 @@ from aiogram.types import (
 
 from bot.services.crypto import CryptoService
 from bot.services.llm_router import create_provider
-from bot.states import OnboardingState
+from bot.states import OnboardingState, TrainState
 from bot.storage.models import UserModel
-from bot.storage.repositories import TrackProgressRepo, UserMemoryRepo, UserRepo
+from bot.storage.repositories import ScenariosSeenRepo, TrackProgressRepo, UserMemoryRepo, UserRepo
 
 logger = logging.getLogger(__name__)
 
@@ -29,22 +29,20 @@ router = Router(name="start")
 
 WELCOME_TEXT = """🎯 *Welcome to Deal Quest!*
 _GetDeal.ai Sales Academy_
-━━━━━━━━━━━━━━━━━━━━━━━━
 
-Your personal AI-powered sales training \\& support assistant.
+Your personal AI-powered sales training & support assistant.
 
 *What Deal Quest does for you:*
 
 💼 *Real Deal Support* — Paste any prospect situation and get a full closing strategy, engagement tactics, and draft outreach
 
-🎓 *Structured Learning* — Work through training levels to master GetDeal\\.ai positioning, objection handling, and closing
+🎓 *Structured Learning* — Work through training levels to master GetDeal.ai positioning, objection handling, and closing
 
 🎲 *Practice Mode* — Random sales scenarios that test your skills and track your progress
 
 📊 *Progress Tracking* — XP, levels, rankings, and performance insights
 
-━━━━━━━━━━━━━━━━━━━━━━━━
-Let's get you set up \\(takes 30 seconds\\)\\!"""
+Let's get you set up (takes 30 seconds)!"""
 
 SETUP_METHOD_KEYBOARD = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -90,21 +88,22 @@ async def cmd_start(message: Message, state: FSMContext, user_repo: UserRepo) ->
     existing = await user_repo.get_by_telegram_id(tg_id)
     if existing and existing.encrypted_api_key:
         await message.answer(
-            "👋 *Welcome back\\!*\n\n"
-            "You're all set up and ready to go\\.\n\n"
+            "👋 *Welcome back!*\n\n"
+            "You're all set up and ready to go.\n\n"
             "💼 /support — Get deal strategy advice\n"
+            "📋 /leads — Manage your prospect pipeline\n"
             "🎓 /learn — Continue your training\n"
             "🎲 /train — Practice with random scenarios\n"
             "📊 /stats — View your progress\n"
             "⚙️ /settings — Manage your setup",
-            parse_mode="MarkdownV2",
+            parse_mode="Markdown",
         )
         await state.clear()
         return
 
     await message.answer(
         WELCOME_TEXT,
-        parse_mode="MarkdownV2",
+        parse_mode="Markdown",
         reply_markup=SETUP_METHOD_KEYBOARD,
     )
     await state.set_state(OnboardingState.choosing_provider)
@@ -178,15 +177,14 @@ async def on_auto_setup(
 
     name = tg_user.first_name or "there"
     await callback.message.edit_text(  # type: ignore[union-attr]
-        f"✅ *You're all set, {name}\\!*\n\n"
-        "Your AI assistant is ready\\. Here's what you can do:\n\n"
-        "💼 */support* — Paste a prospect situation and get a full closing strategy with engagement tactics and draft outreach\n\n"
-        "🎓 */learn* — Work through structured training levels\\. Master positioning, objection handling, buyer types, and more\n\n"
-        "🎲 */train* — Random sales scenarios to sharpen your skills\\. 20 unique scenarios that never repeat\n\n"
-        "📊 */stats* — Track your XP, level, and performance\n\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"✅ *You're all set, {name}!*\n\n"
+        "Your AI assistant is ready. Here's what you can do:\n\n"
+        "💼 /support — Paste a prospect situation and get a full closing strategy with engagement tactics and draft outreach\n\n"
+        "🎓 /learn — Work through structured training levels. Master positioning, objection handling, buyer types, and more\n\n"
+        "🎲 /train — Random sales scenarios to sharpen your skills. 20 unique scenarios that never repeat\n\n"
+        "📊 /stats — Track your XP, level, and performance\n\n"
         "*What would you like to do first?*",
-        parse_mode="MarkdownV2",
+        parse_mode="Markdown",
         reply_markup=ONBOARDING_COMPLETE_KEYBOARD,
     )
     await state.clear()
@@ -352,25 +350,128 @@ async def on_api_key_entered(
 # --- Post-onboarding quick actions ---
 
 @router.callback_query(F.data == "onboard:learn")
-async def on_start_learning(callback: CallbackQuery) -> None:
-    await callback.message.edit_text("🎓 Great choice! Use /learn to start your first lesson.")  # type: ignore[union-attr]
+async def on_start_learning(
+    callback: CallbackQuery,
+    state: FSMContext,
+    user_repo: UserRepo,
+    track_repo: TrackProgressRepo,
+) -> None:
+    """Directly show the learn track instead of a dead-end message."""
+    from bot.handlers.learn import _load_scenarios, _build_progress_text
+
+    tg_id = callback.from_user.id
+    user = await user_repo.get_by_telegram_id(tg_id)
+    if not user:
+        await callback.message.edit_text("Please run /start first.")  # type: ignore[union-attr]
+        await callback.answer()
+        return
+
+    scenarios = _load_scenarios()
+    track_1 = scenarios.get("learn_tracks", {}).get("track_1", {})
+    levels = track_1.get("levels", [])
+
+    if user.id:
+        await track_repo.init_track(user.id, tg_id, "foundations", [l["id"] for l in levels])
+
+    progress = await track_repo.get_progress(tg_id, "foundations")
+    progress_text = _build_progress_text(progress, levels)
+
+    buttons = []
+    progress_map = {p.level_id: p for p in progress}
+    for level_data in levels:
+        lid = level_data["id"]
+        p = progress_map.get(lid)
+        status = p.status if p else "locked"
+        if status in ("unlocked", "in_progress", "completed"):
+            buttons.append(
+                [InlineKeyboardButton(
+                    text=f"{'✅' if status == 'completed' else '▶️'} Level {lid}: {level_data['name']}",
+                    callback_data=f"learn:level:{lid}",
+                )]
+            )
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons) if buttons else None
+    await callback.message.edit_text(progress_text, parse_mode="Markdown", reply_markup=keyboard)  # type: ignore[union-attr]
     await callback.answer()
 
 
 @router.callback_query(F.data == "onboard:support")
-async def on_start_support(callback: CallbackQuery) -> None:
+async def on_start_support(callback: CallbackQuery, state: FSMContext) -> None:
+    """Enter support mode directly instead of showing a dead-end."""
+    from bot.states import SupportState
+
     await callback.message.edit_text(  # type: ignore[union-attr]
-        "💼 Ready to work on a real deal!\n\n"
-        "Use /support and then describe your prospect situation:\n"
+        "💼 *Deal Support Mode*\n\n"
+        "Describe your prospect situation:\n"
         "• Who they are (role, company)\n"
         "• What they said or asked\n"
         "• Any context you have\n\n"
-        "I'll give you a full strategy + draft response."
+        "You can also send a screenshot or voice message.\n\n"
+        "I'll give you a full strategy + draft response.",
+        parse_mode="Markdown",
     )
+    await state.set_state(SupportState.waiting_input)
     await callback.answer()
 
 
 @router.callback_query(F.data == "onboard:train")
-async def on_start_training(callback: CallbackQuery) -> None:
-    await callback.message.edit_text("🎲 Let's practice! Use /train to get your first random scenario.")  # type: ignore[union-attr]
+async def on_start_training(
+    callback: CallbackQuery,
+    state: FSMContext,
+    user_repo: UserRepo,
+    seen_repo: ScenariosSeenRepo,
+) -> None:
+    """Directly start a training scenario instead of a dead-end."""
+    from bot.handlers.train import _load_train_pool
+    from bot.utils import _sanitize
+
+    tg_id = callback.from_user.id
+    user = await user_repo.get_by_telegram_id(tg_id)
+
+    if not user or not user.encrypted_api_key:
+        await callback.message.edit_text("Please run /start first to set up your account.")  # type: ignore[union-attr]
+        await callback.answer()
+        return
+
+    pool = _load_train_pool()
+    if not pool:
+        await callback.message.edit_text("No training scenarios available.")  # type: ignore[union-attr]
+        await callback.answer()
+        return
+
+    seen_ids = await seen_repo.get_seen_ids(tg_id)
+    all_ids = [s["id"] for s in pool]
+    unseen_ids = [sid for sid in all_ids if sid not in seen_ids]
+
+    if not unseen_ids:
+        await seen_repo.reset(tg_id)
+        unseen_ids = all_ids
+
+    import random
+    chosen_id = random.choice(unseen_ids)
+    scenario = next(s for s in pool if s["id"] == chosen_id)
+
+    persona = scenario.get("persona", {})
+    difficulty = scenario.get("difficulty", 1)
+
+    scenario_text = (
+        f"🎲 *Training Scenario*\n\n"
+        f"*{_sanitize(persona.get('name', 'Someone'))}*\n"
+        f"_{_sanitize(persona.get('role', ''))} at {_sanitize(persona.get('company', ''))}_\n"
+        f"Background: {_sanitize(persona.get('background', ''))}\n\n"
+        f"💬 *Situation:*\n{_sanitize(scenario.get('situation', ''))}\n\n"
+        f"{'⭐' * difficulty} Difficulty | "
+        f"Category: {_sanitize(scenario.get('category', 'general'))}\n\n"
+        f"Remaining: {len(unseen_ids) - 1}/{len(all_ids)} unseen\n\n"
+        f"📝 Type your response or send a voice message:\n"
+        f"💡 _Tip: respond by voice — its more like real sales!_\n"
+        f"_Type /cancel to skip._"
+    )
+
+    await callback.message.edit_text(scenario_text, parse_mode="Markdown")  # type: ignore[union-attr]
+    await state.set_state(TrainState.answering_scenario)
+    await state.update_data(
+        scenario_id=chosen_id,
+        scenario_data=scenario,
+    )
     await callback.answer()

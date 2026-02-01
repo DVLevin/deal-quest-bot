@@ -35,7 +35,7 @@ from bot.storage.repositories import (
     UserMemoryRepo,
     UserRepo,
 )
-from bot.utils import format_training_feedback
+from bot.utils import _sanitize, format_training_feedback
 
 logger = logging.getLogger(__name__)
 
@@ -153,10 +153,10 @@ async def on_level_select(callback: CallbackQuery, state: FSMContext) -> None:
     scenario = level.get("scenario", {})
 
     # Show lesson
-    key_points = "\n".join(f"  • {p}" for p in lesson.get("key_points", []))
+    key_points = "\n".join(f"  • {_sanitize(p)}" for p in lesson.get("key_points", []))
     lesson_text = (
-        f"📖 *{lesson.get('title', 'Lesson')}*\n\n"
-        f"{lesson.get('content', '')}\n\n"
+        f"📖 *{_sanitize(lesson.get('title', 'Lesson'))}*\n\n"
+        f"{_sanitize(lesson.get('content', ''))}\n\n"
         f"*Key Points:*\n{key_points}"
     )
 
@@ -191,14 +191,15 @@ async def on_scenario_start(callback: CallbackQuery, state: FSMContext) -> None:
 
     scenario_text = (
         f"🎭 *Scenario: Level {level_id}*\n\n"
-        f"*{persona.get('name', 'Someone')}*\n"
-        f"_{persona.get('role', '')} at {persona.get('company', '')}_\n"
-        f"Background: {persona.get('background', '')}\n"
-        f"Context: {persona.get('context', '')}\n\n"
-        f"💬 *Situation:*\n{scenario.get('situation', '')}\n\n"
+        f"*{_sanitize(persona.get('name', 'Someone'))}*\n"
+        f"_{_sanitize(persona.get('role', ''))} at {_sanitize(persona.get('company', ''))}_\n"
+        f"Background: {_sanitize(persona.get('background', ''))}\n"
+        f"Context: {_sanitize(persona.get('context', ''))}\n\n"
+        f"💬 *Situation:*\n{_sanitize(scenario.get('situation', ''))}\n\n"
         f"{'⭐' * scenario.get('difficulty', 1)} Difficulty\n\n"
         f"📝 Type your response or send a voice message:\n"
-        f"💡 _Tip: respond by voice — it's more like real sales!_"
+        f"💡 _Tip: respond by voice — its more like real sales!_\n"
+        f"_Type /cancel to skip this scenario._"
     )
 
     await callback.message.edit_text(scenario_text, parse_mode="Markdown")  # type: ignore[union-attr]
@@ -341,7 +342,7 @@ async def _run_learn_answer(
         xp_earned = calculate_xp(score, first_attempt=first_attempt, previous_score=prev_score)
         output_data["xp_earned"] = xp_earned
 
-        # Save attempt
+        # Save attempt (with user response + username for analytics)
         await attempt_repo.create(
             AttemptModel(
                 user_id=user.id,
@@ -351,6 +352,8 @@ async def _run_learn_answer(
                 score=score,
                 feedback_json=output_data,
                 xp_earned=xp_earned,
+                username=user.username,
+                user_response=user_response[:2000],
             )
         )
 
@@ -397,6 +400,9 @@ async def _run_learn_answer(
                 text="🔄 Retry",
                 callback_data=f"learn:scenario:{level_id}",
             )])
+        buttons.append([
+            InlineKeyboardButton(text="💡 Show Ideal Response", callback_data=f"learn:ideal:{level_id}"),
+        ])
         buttons.append([InlineKeyboardButton(text="📚 Back to Levels", callback_data="learn:back")])
 
         await status_msg.edit_text(
@@ -428,6 +434,15 @@ async def on_learn_answer(
     """Score the user's response via trainer pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_response = message.text or ""
+
+    # Cancel escape hatch
+    if user_response.strip().lower() == "/cancel":
+        await state.clear()
+        await message.answer(
+            "Scenario cancelled. No penalty applied.\n"
+            "Use /learn to pick another level."
+        )
+        return
 
     if not user_response.strip():
         await message.answer("Please type your response to the scenario.")
@@ -484,4 +499,48 @@ async def on_learn_back(
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons) if buttons else None
     await callback.message.edit_text(progress_text, parse_mode="Markdown", reply_markup=keyboard)  # type: ignore[union-attr]
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("learn:ideal:"))
+async def on_show_ideal(callback: CallbackQuery) -> None:
+    """Show the ideal response for a learn level scenario."""
+    level_id = callback.data.split(":")[2]  # type: ignore[union-attr]
+    scenarios = _load_scenarios()
+    level = _get_level_data(scenarios, level_id)
+
+    if not level:
+        await callback.answer("Level not found.")
+        return
+
+    scenario = level.get("scenario", {})
+    ideal = scenario.get("ideal_response", "")
+
+    if not ideal:
+        await callback.answer("No ideal response available for this scenario.")
+        return
+
+    text = (
+        f"💡 *Ideal Response — Level {level_id}*\n\n"
+        f"{_sanitize(ideal)}"
+    )
+
+    common_mistakes = scenario.get("common_mistakes", [])
+    if common_mistakes:
+        text += "\n\n⚠️ *Common Mistakes:*\n"
+        for mistake in common_mistakes:
+            text += f"  • {_sanitize(str(mistake))}\n"
+
+    from bot.utils import truncate_message
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        truncate_message(text),
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(
+                text="🔄 Retry Scenario",
+                callback_data=f"learn:scenario:{level_id}",
+            )],
+            [InlineKeyboardButton(text="📚 Back to Levels", callback_data="learn:back")],
+        ]),
+    )
     await callback.answer()

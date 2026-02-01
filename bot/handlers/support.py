@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import logging
 import time
+from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
@@ -23,8 +26,9 @@ from bot.pipeline.context import PipelineContext
 from bot.pipeline.runner import PipelineRunner
 from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
+from bot.services.engagement import EngagementService
 from bot.services.knowledge import KnowledgeService
-from bot.services.llm_router import create_provider
+from bot.services.llm_router import create_provider, web_research_call
 from bot.services.transcription import TranscriptionService
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
@@ -41,8 +45,9 @@ logger = logging.getLogger(__name__)
 
 router = Router(name="support")
 
-SUPPORT_ACTIONS = InlineKeyboardMarkup(
-    inline_keyboard=[
+def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarkup:
+    """Build support actions keyboard, optionally including a lead link."""
+    rows = [
         [
             InlineKeyboardButton(text="🔄 Regenerate", callback_data="support:regen"),
             InlineKeyboardButton(text="✂️ Shorter", callback_data="support:shorter"),
@@ -52,7 +57,13 @@ SUPPORT_ACTIONS = InlineKeyboardMarkup(
             InlineKeyboardButton(text="✅ Done", callback_data="support:done"),
         ],
     ]
-)
+    if lead_id:
+        rows.append([
+            InlineKeyboardButton(
+                text="📋 View Lead & Plan", callback_data=f"lead:view:{lead_id}"
+            ),
+        ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 @router.message(Command("support"))
@@ -93,6 +104,8 @@ async def _run_support_pipeline(
     agent_registry: AgentRegistry,
     status_msg: Message,
     state: FSMContext,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
     photo_url: str | None = None,
     photo_key: str | None = None,
     input_type: str = "text",
@@ -156,20 +169,6 @@ async def _run_support_pipeline(
             if updated_memory:
                 await memory_repo.update_memory(tg_id, updated_memory)
 
-        # Format and send response
-        response_text = format_support_response(output_data)
-        await status_msg.edit_text(response_text, reply_markup=SUPPORT_ACTIONS)
-
-        # Store in state for regeneration
-        await state.update_data(
-            last_input=user_input,
-            last_output=output_data,
-            provider=user.provider,
-            photo_url=photo_url,
-            photo_key=photo_key,
-            input_type=input_type,
-        )
-
         # Save support session
         try:
             await session_repo.create(
@@ -184,38 +183,136 @@ async def _run_support_pipeline(
         except Exception as e:
             logger.error("Failed to save support session: %s", e)
 
-        # Save to lead registry
+        # Save to lead registry (before response so we have the lead ID for the button)
+        saved_lead_id: int | None = None
         try:
-            analysis = output_data.get("prospect_analysis", "")
-            strategy = output_data.get("closing_strategy", "")
-            engagement = output_data.get("engagement_tactics", "")
-            draft = output_data.get("draft_response", "")
+            # Strategist output uses: analysis, strategy, engagement_tactics, draft
+            analysis_obj = output_data.get("analysis", {})
+            strategy_obj = output_data.get("strategy", {})
+            tactics_obj = output_data.get("engagement_tactics", {})
+            draft_obj = output_data.get("draft", {})
 
-            # Try to extract prospect name/title/company from analysis
-            prospect_name = _extract_field(analysis, "name")
-            prospect_title = _extract_field(analysis, "title") or _extract_field(analysis, "role")
-            prospect_company = _extract_field(analysis, "company")
+            # Serialize nested dicts to readable text for storage
+            import json as _json
 
-            await lead_repo.create(
-                LeadRegistryModel(
-                    user_id=user.id,
-                    telegram_id=tg_id,
-                    prospect_name=prospect_name,
-                    prospect_title=prospect_title,
-                    prospect_company=prospect_company,
-                    photo_url=photo_url,
-                    photo_key=photo_key,
-                    prospect_analysis=analysis if isinstance(analysis, str) else str(analysis),
-                    closing_strategy=strategy if isinstance(strategy, str) else str(strategy),
-                    engagement_tactics=engagement if isinstance(engagement, str) else str(engagement),
-                    draft_response=draft if isinstance(draft, str) else str(draft),
-                    input_type=input_type,
-                    original_context=user_input[:2000],
-                )
+            def _dict_to_text(obj: dict | str) -> str:
+                if isinstance(obj, str):
+                    return obj
+                return _json.dumps(obj, indent=2, ensure_ascii=False)
+
+            # Extract prospect name/title/company from full output
+            prospect_name = _extract_prospect_name_from_output(output_data, user_input)
+            prospect_title = (
+                _extract_field(analysis_obj, "seniority")
+                or _extract_field(analysis_obj, "title")
+                or _extract_field(analysis_obj, "role")
             )
-            logger.info("Lead registered for user %s", tg_id)
+            prospect_company = (
+                _extract_prospect_company_from_output(output_data)
+                or _extract_field(analysis_obj, "company")
+            )
+
+            # Dedup: check if a similar lead already exists for this user
+            existing_lead = await lead_repo.find_duplicate(tg_id, prospect_name, prospect_company)
+            is_merge = False
+
+            if existing_lead and existing_lead.id:
+                # MERGE: update the existing lead with fresh analysis, keep rich data
+                merge_updates: dict[str, Any] = {
+                    "prospect_analysis": _dict_to_text(analysis_obj),
+                    "closing_strategy": _dict_to_text(strategy_obj),
+                    "engagement_tactics": _dict_to_text(tactics_obj),
+                    "draft_response": _dict_to_text(draft_obj),
+                    "original_context": user_input[:2000],
+                }
+                # Fill in name/title/company if previously missing
+                if prospect_name and not existing_lead.prospect_name:
+                    merge_updates["prospect_name"] = prospect_name
+                if prospect_title and not existing_lead.prospect_title:
+                    merge_updates["prospect_title"] = prospect_title
+                if prospect_company and not existing_lead.prospect_company:
+                    merge_updates["prospect_company"] = prospect_company
+                # Update photo if new one provided
+                if photo_url:
+                    merge_updates["photo_url"] = photo_url
+                if photo_key:
+                    merge_updates["photo_key"] = photo_key
+
+                await lead_repo.update_lead(existing_lead.id, **merge_updates)
+                saved_lead_id = existing_lead.id
+                is_merge = True
+                logger.info("Merged into existing lead %s for user %s", existing_lead.id, tg_id)
+            else:
+                # CREATE new lead
+                saved_lead = await lead_repo.create(
+                    LeadRegistryModel(
+                        user_id=user.id,
+                        telegram_id=tg_id,
+                        prospect_name=prospect_name,
+                        prospect_title=prospect_title,
+                        prospect_company=prospect_company,
+                        photo_url=photo_url,
+                        photo_key=photo_key,
+                        prospect_analysis=_dict_to_text(analysis_obj),
+                        closing_strategy=_dict_to_text(strategy_obj),
+                        engagement_tactics=_dict_to_text(tactics_obj),
+                        draft_response=_dict_to_text(draft_obj),
+                        input_type=input_type,
+                        original_context=user_input[:2000],
+                    )
+                )
+                saved_lead_id = saved_lead.id
+                logger.info("New lead %s created for user %s", saved_lead_id, tg_id)
+
+            # Fire background enrichment (web research + engagement plan)
+            # Skip if merging into a lead that already has research
+            needs_enrichment = not is_merge or not existing_lead or not existing_lead.web_research
+            if engagement_service and saved_lead_id and shared_openrouter_key and needs_enrichment:
+                asyncio.create_task(
+                    _background_enrich_lead(
+                        lead_id=saved_lead_id,
+                        lead_repo=lead_repo,
+                        engagement_service=engagement_service,
+                        openrouter_api_key=shared_openrouter_key,
+                        prospect_name=prospect_name,
+                        prospect_company=prospect_company,
+                        original_context=user_input[:300],
+                    )
+                )
         except Exception as e:
             logger.error("Failed to save lead registry: %s", e)
+
+        # Format and send response
+        response_text = format_support_response(output_data)
+        if saved_lead_id and is_merge:
+            lead_name = prospect_name or "this prospect"
+            response_text += (
+                f"\n\n"
+                f"🔄 _Updated existing lead for {lead_name}. "
+                f"Fresh analysis saved — tap \"View Lead & Plan\" to see full profile._"
+            )
+        elif saved_lead_id:
+            response_text += (
+                "\n\n"
+                "💡 _Saved to your leads. Web research & engagement plan "
+                "are generating in the background — tap \"View Lead & Plan\" "
+                "in ~30s to see them._"
+            )
+        await status_msg.edit_text(
+            response_text,
+            reply_markup=_support_actions_keyboard(saved_lead_id),
+        )
+
+        # Store in state for regeneration
+        await state.update_data(
+            last_input=user_input,
+            last_output=output_data,
+            last_lead_id=saved_lead_id,
+            provider=user.provider,
+            photo_url=photo_url,
+            photo_key=photo_key,
+            input_type=input_type,
+        )
 
         await llm.close()
 
@@ -224,12 +321,190 @@ async def _run_support_pipeline(
         await status_msg.edit_text(f"❌ Something went wrong: {str(e)[:200]}")
 
 
-def _extract_field(analysis: str | dict, field: str) -> str | None:
+async def _background_enrich_lead(
+    lead_id: int,
+    lead_repo: LeadRegistryRepo,
+    engagement_service: EngagementService,
+    openrouter_api_key: str,
+    prospect_name: str | None,
+    prospect_company: str | None,
+    original_context: str | None,
+) -> None:
+    """Background task: web research + engagement plan generation for a new lead."""
+    try:
+        # Step 1: Web research via Grok
+        research_query_parts = []
+        if prospect_name:
+            research_query_parts.append(prospect_name)
+        if prospect_company:
+            research_query_parts.append(prospect_company)
+
+        # If no name/company, try to build query from stored analysis
+        if not research_query_parts:
+            lead_for_query = await lead_repo.get_by_id(lead_id)
+            if lead_for_query and lead_for_query.prospect_analysis:
+                analysis_text = lead_for_query.prospect_analysis[:500]
+                if analysis_text.strip() not in ("", "{}", "null"):
+                    research_query_parts.append(
+                        f"Research this sales prospect based on the following analysis:\n{analysis_text}"
+                    )
+            # Also try original context, but NOT photo placeholders
+            if not research_query_parts and original_context:
+                if not original_context.startswith("[Photo attached"):
+                    research_query_parts.append(original_context[:300])
+
+        research = ""
+        if research_query_parts:
+            query = " ".join(research_query_parts)
+            research = await web_research_call(openrouter_api_key, query)
+
+        # Filter out garbage responses where the LLM asks for more info
+        if research:
+            first_100 = research.lower()[:100]
+            if "please provide" in first_100 or "i need more" in first_100:
+                research = ""
+
+        if research:
+            await lead_repo.update_lead(lead_id, web_research=research[:5000])
+
+        # Step 2: Generate engagement plan
+        lead = await lead_repo.get_by_id(lead_id)
+        if not lead:
+            return
+
+        plan = await engagement_service.generate_plan(lead, research)
+        if plan:
+            # Schedule first followup 3 days from now
+            next_followup = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+            await lead_repo.update_lead(
+                lead_id, engagement_plan=plan, next_followup=next_followup
+            )
+
+        logger.info("Background enrichment complete for lead %s", lead_id)
+    except Exception as e:
+        logger.error("Background enrichment failed for lead %s: %s", lead_id, e)
+
+
+def _extract_field(obj: str | dict, field: str) -> str | None:
     """Try to extract a field from analysis output (dict or text)."""
-    if isinstance(analysis, dict):
-        for key in (field, field.capitalize(), field.upper()):
-            if key in analysis:
-                return str(analysis[key])[:200]
+    if isinstance(obj, dict):
+        # Try exact match and common variations
+        for key in (field, field.capitalize(), field.upper(), field.lower()):
+            if key in obj:
+                val = obj[key]
+                if val and str(val).strip():
+                    return str(val).strip()[:200]
+        # Also try partial key match (e.g. "company" matches "company_context")
+        for key, val in obj.items():
+            if field.lower() in key.lower() and val and str(val).strip():
+                return str(val).strip()[:200]
+    return None
+
+
+def _extract_prospect_name_from_output(output_data: dict, user_input: str) -> str | None:
+    """Extract prospect's actual name from strategist output.
+
+    Checks (in priority order):
+    1. draft.message — "Hi NAME —" pattern (most reliable)
+    2. engagement_tactics text — "NAME's" possessive pattern
+    3. analysis.seniority / background_leverage — "Name — Title" pattern
+    4. Original user input — name-introducing patterns
+    """
+    import re
+
+    _FALSE_NAMES = {"there", "team", "sir", "madam", "all", "everyone", "folks"}
+
+    # 1. From draft message — the LLM almost always addresses the prospect by name
+    draft_obj = output_data.get("draft", {})
+    draft_text = ""
+    if isinstance(draft_obj, dict):
+        draft_text = draft_obj.get("message", "")
+    elif isinstance(draft_obj, str):
+        draft_text = draft_obj
+
+    if draft_text:
+        m = re.search(
+            r"(?:Hi|Hey|Hello|Dear)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)\s*[—,\-!]",
+            draft_text,
+        )
+        if m:
+            name = m.group(1).strip()
+            if name.lower() not in _FALSE_NAMES:
+                return name
+
+    # 2. From engagement_tactics — "Like Arta's posts", "Comment on Arta's article"
+    tactics_obj = output_data.get("engagement_tactics", {})
+    if isinstance(tactics_obj, dict):
+        for v in tactics_obj.values():
+            text_parts = []
+            if isinstance(v, str):
+                text_parts.append(v)
+            elif isinstance(v, list):
+                text_parts.extend(str(x) for x in v)
+            for part in text_parts:
+                m = re.search(r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)'s\b", part)
+                if m:
+                    name = m.group(1).strip()
+                    if name.lower() not in ("linkedin", "their", "the", "company"):
+                        return name
+
+    # 3. From analysis fields — seniority might be "Name — COO at fund"
+    analysis_obj = output_data.get("analysis", {})
+    if isinstance(analysis_obj, dict):
+        for field in ("seniority", "background_leverage"):
+            val = analysis_obj.get(field, "")
+            if val and isinstance(val, str):
+                m = re.match(r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s*[—\-,]", val)
+                if m:
+                    return m.group(1).strip()
+
+    # 4. From original user input (only if it's actual text, not a photo placeholder)
+    if user_input and not user_input.startswith("[Photo attached"):
+        m = re.search(
+            r"(?:^|\n)\s*(?:name|prospect|person|contact|about|met|spoke with|talking to)"
+            r"[\s:]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+            user_input, re.IGNORECASE,
+        )
+        if m:
+            return m.group(1).strip()[:100]
+
+        # First line that's just a name (2-3 capitalized words, <40 chars)
+        first_line = user_input.strip().split("\n")[0].strip()
+        m2 = re.match(r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})$", first_line)
+        if m2 and len(first_line) <= 40:
+            return m2.group(1).strip()
+
+    return None
+
+
+def _extract_prospect_company_from_output(output_data: dict) -> str | None:
+    """Extract company name from strategist output."""
+    import re
+
+    analysis_obj = output_data.get("analysis", {})
+    if not isinstance(analysis_obj, dict):
+        return None
+
+    # From company_context — usually "CompanyName is doing X" or "CompanyName + description"
+    cc = analysis_obj.get("company_context", "")
+    if cc and isinstance(cc, str):
+        cc = cc.strip()
+        _skip = ("n/a", "unknown", "not specified", "not mentioned", "")
+        if cc.lower() not in _skip:
+            m = re.match(r"^([A-Z][a-zA-Z0-9.&']+(?:\s+[A-Z][a-zA-Z0-9.&']+)*)", cc)
+            if m:
+                company = m.group(1).strip()
+                _generic = ("the", "their", "this", "they", "building", "company", "unknown")
+                if company.lower() not in _generic:
+                    return company[:100]
+
+    # From background_leverage — "experience at Goldman"
+    bl = analysis_obj.get("background_leverage", "")
+    if bl and isinstance(bl, str):
+        m = re.search(r"\bat\s+([A-Z][a-zA-Z0-9.&]+(?:\s+[A-Z][a-zA-Z0-9.&]+)*)", bl)
+        if m:
+            return m.group(1).strip()[:100]
+
     return None
 
 
@@ -247,6 +522,8 @@ async def on_support_photo(
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
     insforge: InsForgeClient,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
 ) -> None:
     """Process photo upload in support mode — download, store, analyze."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -298,6 +575,8 @@ async def on_support_photo(
         agent_registry=agent_registry,
         status_msg=status_msg,
         state=state,
+        engagement_service=engagement_service,
+        shared_openrouter_key=shared_openrouter_key,
         photo_url=photo_url,
         photo_key=photo_key,
         input_type="photo",
@@ -319,6 +598,8 @@ async def on_support_voice(
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
     transcription: TranscriptionService,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
 ) -> None:
     """Transcribe voice message and run through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -358,8 +639,56 @@ async def on_support_voice(
         agent_registry=agent_registry,
         status_msg=status_msg,
         state=state,
+        engagement_service=engagement_service,
+        shared_openrouter_key=shared_openrouter_key,
         input_type="voice",
     )
+
+
+KNOWN_COMMANDS = {
+    "/start", "/support", "/learn", "/train", "/stats",
+    "/settings", "/leads", "/admin", "/help", "/cancel",
+}
+
+
+def _check_mistyped_command(text: str) -> str | None:
+    """If text looks like a mistyped command, suggest the correct one."""
+    text = text.strip().lower()
+    if not text.startswith("/"):
+        return None
+
+    # Exact match — it's a real command, clear state and let them re-send
+    if text in KNOWN_COMMANDS:
+        return text
+
+    # Fuzzy match: find closest command
+    word = text.split()[0]  # just the first word
+    best_match = None
+    best_dist = 999
+    for cmd in KNOWN_COMMANDS:
+        dist = _edit_distance(word, cmd)
+        if dist < best_dist:
+            best_dist = dist
+            best_match = cmd
+
+    if best_dist <= 2 and best_match:
+        return best_match
+    return "unknown"
+
+
+def _edit_distance(a: str, b: str) -> int:
+    """Simple Levenshtein distance."""
+    if len(a) < len(b):
+        return _edit_distance(b, a)
+    if len(b) == 0:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a):
+        curr = [i + 1]
+        for j, cb in enumerate(b):
+            curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (ca != cb)))
+        prev = curr
+    return prev[len(b)]
 
 
 @router.message(SupportState.waiting_input)
@@ -374,6 +703,8 @@ async def on_support_input(
     knowledge: KnowledgeService,
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
 ) -> None:
     """Process text input through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -381,6 +712,41 @@ async def on_support_input(
 
     if not user_input.strip():
         await message.answer("Please describe your prospect or send a screenshot.")
+        return
+
+    # Guard: catch commands and typos before sending to LLM
+    if user_input.strip().startswith("/"):
+        suggestion = _check_mistyped_command(user_input)
+        await state.clear()
+        if suggestion and suggestion != "unknown" and suggestion in KNOWN_COMMANDS:
+            await message.answer(
+                f"Looks like you meant *{suggestion}*? "
+                f"I've exited support mode — just send the command again.",
+                parse_mode="Markdown",
+            )
+        else:
+            await message.answer(
+                "That doesn't look like a prospect description.\n\n"
+                "I've exited support mode. Available commands:\n"
+                "💼 /support — Deal strategy advice\n"
+                "📋 /leads — Your prospect pipeline\n"
+                "🎓 /learn — Training\n"
+                "🎲 /train — Practice\n"
+                "📊 /stats — Progress\n"
+                "⚙️ /settings — Setup",
+            )
+        return
+
+    # Guard: very short input that's probably not a real prospect description
+    if len(user_input.strip()) < 10:
+        await message.answer(
+            "That's quite short. Please provide more context about your prospect:\n"
+            "- Their role, company, and situation\n"
+            "- Or send a LinkedIn screenshot 📸\n"
+            "- Or a voice message 🎙️\n\n"
+            "_Type /cancel to exit support mode._",
+            parse_mode="Markdown",
+        )
         return
 
     status_msg = await message.answer("🔄 Analyzing your prospect...")
@@ -398,6 +764,8 @@ async def on_support_input(
         agent_registry=agent_registry,
         status_msg=status_msg,
         state=state,
+        engagement_service=engagement_service,
+        shared_openrouter_key=shared_openrouter_key,
     )
 
 
@@ -475,8 +843,16 @@ async def on_support_action(
         strategist_result = ctx.get_result("strategist")
         if strategist_result and strategist_result.success:
             response_text = format_support_response(strategist_result.data)
+            lead_id = data.get("last_lead_id")
+            if lead_id:
+                response_text += (
+                    "\n\n"
+                    "💡 _Tap \"View Lead & Plan\" to see web research, "
+                    "engagement steps, and get AI advice._"
+                )
             await callback.message.edit_text(  # type: ignore[union-attr]
-                response_text, reply_markup=SUPPORT_ACTIONS
+                response_text,
+                reply_markup=_support_actions_keyboard(lead_id),
             )
             await state.update_data(last_output=strategist_result.data)
 

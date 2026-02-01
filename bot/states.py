@@ -21,6 +21,13 @@ class TrainState(StatesGroup):
     answering_scenario = State()
 
 
+class LeadEngagementState(StatesGroup):
+    viewing_lead = State()
+    adding_context = State()
+    sending_screenshot = State()
+    editing_lead = State()
+
+
 class SettingsState(StatesGroup):
     main_menu = State()
     changing_provider = State()

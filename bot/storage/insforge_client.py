@@ -1,4 +1,4 @@
-"""Async HTTP client for InsForge PostgREST API."""
+"""Async HTTP client for InsForge database API (PostgREST via /api/database/records)."""
 
 from __future__ import annotations
 
@@ -10,8 +10,16 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+# PostgREST filter operators — values starting with these are passed as-is (no eq. prefix)
+_POSTGREST_OPS = (
+    "eq.", "neq.", "gt.", "gte.", "lt.", "lte.",
+    "like.", "ilike.", "is.", "in.", "cs.", "cd.",
+    "not.", "or.", "and.",
+)
+
+
 class InsForgeClient:
-    """Async wrapper around InsForge PostgREST REST API."""
+    """Async wrapper around InsForge database API."""
 
     def __init__(self, base_url: str, anon_key: str) -> None:
         self.base_url = base_url.rstrip("/")
@@ -30,7 +38,7 @@ class InsForgeClient:
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
-                base_url=f"{self.base_url}/rest/v1",
+                base_url=f"{self.base_url}/api/database/records",
                 headers=self._headers,
                 timeout=30.0,
             )
@@ -59,7 +67,11 @@ class InsForgeClient:
                 if "." in key:
                     params[key] = str(value)
                 else:
-                    params[key] = f"eq.{value}"
+                    str_val = str(value)
+                    if any(str_val.startswith(op) for op in _POSTGREST_OPS):
+                        params[key] = str_val
+                    else:
+                        params[key] = f"eq.{value}"
 
         if order:
             params["order"] = order
@@ -91,7 +103,7 @@ class InsForgeClient:
         try:
             resp = await client.post(
                 f"/{table}",
-                json=data,
+                json=[data],
                 headers={
                     **self._headers,
                     "Prefer": "return=representation",
@@ -145,7 +157,7 @@ class InsForgeClient:
         try:
             resp = await client.post(
                 f"/{table}",
-                json=data,
+                json=[data],
                 headers=headers,
             )
             resp.raise_for_status()
@@ -195,12 +207,16 @@ class InsForgeClient:
         return f"{self.base_url}/api/storage/buckets/{bucket}/objects/{key}"
 
     async def rpc(self, function_name: str, params: dict[str, Any] | None = None) -> Any:
-        """Call a PostgREST RPC function."""
-        client = await self._get_client()
+        """Call a PostgREST RPC function via /api/database/rpc/."""
         try:
-            resp = await client.post(f"/rpc/{function_name}", json=params or {})
-            resp.raise_for_status()
-            return resp.json()
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"{self.base_url}/api/database/rpc/{function_name}",
+                    json=params or {},
+                    headers=self._headers,
+                )
+                resp.raise_for_status()
+                return resp.json()
         except Exception as e:
             logger.error("InsForge RPC error on %s: %s", function_name, e)
             raise

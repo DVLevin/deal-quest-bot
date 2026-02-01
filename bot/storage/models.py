@@ -50,6 +50,8 @@ class AttemptModel(BaseModel):
     score: int = 0
     feedback_json: dict[str, Any] = Field(default_factory=dict)
     xp_earned: int = 0
+    username: str | None = None
+    user_response: str | None = None
     created_at: str | None = None
 
 
@@ -94,8 +96,23 @@ class LeadRegistryModel(BaseModel):
     notes: str | None = None
     input_type: str = "text"
     original_context: str | None = None
+    web_research: str | None = None
+    engagement_plan: list[dict[str, Any]] | None = None
+    last_contacted: str | None = None
+    next_followup: str | None = None
+    followup_count: int = 0
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class LeadActivityModel(BaseModel):
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    activity_type: str  # context_update | screenshot_comment | ai_advice | followup_sent
+    content: str
+    ai_response: str | None = None
+    created_at: str | None = None
 
 
 class CasebookModel(BaseModel):
@@ -113,4 +130,21 @@ class CasebookModel(BaseModel):
     user_accepted_first_draft: bool = False
     user_feedback: str | None = None
     created_from_user: int | None = None
+    created_at: str | None = None
+
+
+class GeneratedScenarioModel(BaseModel):
+    id: int | None = None
+    scenario_id: str
+    category: str = "general"
+    difficulty: int = 2
+    persona: dict[str, Any] = Field(default_factory=dict)
+    situation: str = ""
+    scoring_focus: list[str] = Field(default_factory=list)
+    ideal_response: str = ""
+    scoring_rubric: dict[str, Any] = Field(default_factory=dict)
+    source_type: str = "hybrid"
+    source_casebook_ids: list[int] = Field(default_factory=list)
+    times_used: int = 0
+    avg_score: float = 0.0
     created_at: str | None = None

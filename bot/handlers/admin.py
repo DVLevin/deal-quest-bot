@@ -16,10 +16,12 @@ from aiogram.types import (
     Message,
 )
 
+from bot.services.analytics import TeamAnalyticsService
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.repositories import (
     AttemptRepo,
     CasebookRepo,
+    GeneratedScenarioRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
     TrackProgressRepo,
@@ -36,11 +38,14 @@ _DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 ADMIN_MENU = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="📊 Team Statistics", callback_data="admin:stats")],
+        [InlineKeyboardButton(text="🏆 Leaderboard", callback_data="admin:leaderboard")],
+        [InlineKeyboardButton(text="📈 Trends", callback_data="admin:trends")],
         [InlineKeyboardButton(text="👥 User Overview", callback_data="admin:users")],
         [InlineKeyboardButton(text="📋 Recent Activity", callback_data="admin:activity")],
         [InlineKeyboardButton(text="🏗 Architecture Overview", callback_data="admin:arch")],
         [InlineKeyboardButton(text="📚 Knowledge Base Status", callback_data="admin:knowledge")],
         [InlineKeyboardButton(text="🎯 Scenario Stats", callback_data="admin:scenarios")],
+        [InlineKeyboardButton(text="🤖 Generated Scenarios", callback_data="admin:gen_scenarios")],
         [InlineKeyboardButton(text="📖 Casebook Entries", callback_data="admin:casebook")],
         [InlineKeyboardButton(text="❌ Close", callback_data="admin:close")],
     ]
@@ -367,12 +372,29 @@ async def on_admin_scenarios(
         text = "🎯 *Scenario Stats*\n\nNo attempts recorded yet."
     else:
         lines = ["🎯 *Scenario Performance*\n━━━━━━━━━━━━━━━━━━━━━━━━\n"]
+
+        # Difficulty breakdown from scenarios.json
+        scenarios_path = _DATA_DIR / "scenarios.json"
+        difficulty_map: dict[str, int] = {}
+        if scenarios_path.exists():
+            with open(scenarios_path, encoding="utf-8") as f:
+                data = json.load(f)
+            for s in data.get("train_pool", {}).get("scenarios", []):
+                difficulty_map[s["id"]] = s.get("difficulty", 0)
+            for track in data.get("learn_tracks", {}).values():
+                for level in track.get("levels", []):
+                    sc = level.get("scenario", {})
+                    if sc.get("id"):
+                        difficulty_map[sc["id"]] = sc.get("difficulty", 0)
+
         # Sort by attempt count (most popular first)
         sorted_scenarios = sorted(scenario_stats.items(), key=lambda x: x[1]["count"], reverse=True)
         for sid, stats in sorted_scenarios[:20]:
             avg = stats["total_score"] / stats["count"] if stats["count"] > 0 else 0
             icon = "🎓" if stats["mode"] == "learn" else "🎲"
-            lines.append(f"{icon} `{sid}` — {stats['count']} attempts, avg {avg:.0f}/100")
+            diff = difficulty_map.get(sid, 0)
+            diff_text = f" {'⭐' * diff}" if diff > 0 else ""
+            lines.append(f"{icon} `{sid}`{diff_text} — {stats['count']} attempts, avg {avg:.0f}/100")
         text = "\n".join(lines)
 
     await callback.message.edit_text(  # type: ignore[union-attr]
@@ -411,6 +433,199 @@ async def on_admin_casebook(
                 f"• {e.get('persona_type', '?')} / {e.get('scenario_type', '?')} "
                 f"— Quality: {e.get('quality_score', 0):.1f}"
             )
+        text = "\n".join(lines)
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+        ]),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:leaderboard")
+async def on_admin_leaderboard(
+    callback: CallbackQuery,
+    admin_usernames: list[str],
+    analytics_service: TeamAnalyticsService | None = None,
+) -> None:
+    """Show team leaderboard ranked by performance."""
+    username = (callback.from_user.username or "").lower()
+    if username not in admin_usernames:
+        await callback.answer("🔒 Admin only", show_alert=True)
+        return
+
+    if not analytics_service:
+        await callback.message.edit_text(  # type: ignore[union-attr]
+            "🏆 *Leaderboard*\n\nAnalytics service not available.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+            ]),
+        )
+        await callback.answer()
+        return
+
+    leaderboard = await analytics_service.team_leaderboard()
+
+    if not leaderboard:
+        text = "🏆 *Leaderboard*\n\nNo team members with activity yet."
+    else:
+        lines = ["🏆 *Team Leaderboard*\n━━━━━━━━━━━━━━━━━━━━━━━━\n"]
+        for i, entry in enumerate(leaderboard, 1):
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"#{i}"
+            name = entry["username"] or entry["first_name"] or "N/A"
+            lines.append(
+                f"{medal} @{name} — Avg: {entry['avg_score']}/100 | "
+                f"Level {entry['current_level']} | {entry['total_xp']} XP | "
+                f"{entry['total_attempts']} attempts"
+            )
+        text = "\n".join(lines)
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+        ]),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:trends")
+async def on_admin_trends(
+    callback: CallbackQuery,
+    admin_usernames: list[str],
+    analytics_service: TeamAnalyticsService | None = None,
+) -> None:
+    """Show performance trends — this week vs last week."""
+    username = (callback.from_user.username or "").lower()
+    if username not in admin_usernames:
+        await callback.answer("🔒 Admin only", show_alert=True)
+        return
+
+    if not analytics_service:
+        await callback.message.edit_text(  # type: ignore[union-attr]
+            "📈 *Trends*\n\nAnalytics service not available.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+            ]),
+        )
+        await callback.answer()
+        return
+
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    one_week_ago = (now - timedelta(days=7)).isoformat()
+    two_weeks_ago = (now - timedelta(days=14)).isoformat()
+
+    # Fetch recent attempts
+    all_recent = await analytics_service.attempt_repo.get_all_recent(limit=500)
+
+    this_week = [a for a in all_recent if a.created_at and a.created_at >= one_week_ago]
+    last_week = [
+        a for a in all_recent
+        if a.created_at and two_weeks_ago <= a.created_at < one_week_ago
+    ]
+
+    this_avg = sum(a.score for a in this_week) / len(this_week) if this_week else 0
+    last_avg = sum(a.score for a in last_week) / len(last_week) if last_week else 0
+
+    trend = this_avg - last_avg
+    trend_icon = "📈" if trend > 0 else "📉" if trend < 0 else "➡️"
+
+    # Category breakdown
+    categories = await analytics_service.category_performance()
+    cat_text = ""
+    for cat, data in categories.items():
+        cat_text += f"  • {cat}: {data['avg_score']}/100 ({data['attempts']} attempts)\n"
+
+    # Most improved user
+    leaderboard = await analytics_service.team_leaderboard()
+    most_improved = ""
+    if leaderboard:
+        for entry in leaderboard:
+            # Simple heuristic: highest XP gain
+            most_improved = f"@{entry['username']}" if entry['username'] else entry['first_name']
+            break
+
+    text = (
+        "📈 *Performance Trends*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"*This week:*\n"
+        f"  Avg Score: {this_avg:.0f}/100 ({len(this_week)} attempts)\n\n"
+        f"*Last week:*\n"
+        f"  Avg Score: {last_avg:.0f}/100 ({len(last_week)} attempts)\n\n"
+        f"{trend_icon} Trend: {'+' if trend > 0 else ''}{trend:.1f} points\n\n"
+    )
+    if cat_text:
+        text += f"*By Category:*\n{cat_text}\n"
+    if most_improved:
+        text += f"*Top Performer:* {most_improved}\n"
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+        ]),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:gen_scenarios")
+async def on_admin_gen_scenarios(
+    callback: CallbackQuery,
+    admin_usernames: list[str],
+    generated_scenario_repo: GeneratedScenarioRepo,
+) -> None:
+    """Show generated scenario pool status."""
+    username = (callback.from_user.username or "").lower()
+    if username not in admin_usernames:
+        await callback.answer("🔒 Admin only", show_alert=True)
+        return
+
+    count = await generated_scenario_repo.count()
+    scenarios = await generated_scenario_repo.get_all(limit=50)
+
+    if not scenarios:
+        text = (
+            "🤖 *Generated Scenarios*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Pool: {count} scenarios\n\n"
+            "No generated scenarios yet. The background generator will create them "
+            "automatically if a shared OpenRouter key is configured."
+        )
+    else:
+        lines = [
+            "🤖 *Generated Scenarios*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Pool: {count} scenarios\n"
+        ]
+
+        # Difficulty breakdown
+        d1 = sum(1 for s in scenarios if s.difficulty == 1)
+        d2 = sum(1 for s in scenarios if s.difficulty == 2)
+        d3 = sum(1 for s in scenarios if s.difficulty == 3)
+        lines.append(f"⭐ Easy: {d1} | ⭐⭐ Medium: {d2} | ⭐⭐⭐ Hard: {d3}\n")
+
+        # Avg quality
+        used = [s for s in scenarios if s.times_used > 0]
+        if used:
+            avg_quality = sum(s.avg_score for s in used) / len(used)
+            lines.append(f"Avg Quality Score: {avg_quality:.0f}/100 (from {len(used)} used)\n")
+
+        # Recent entries
+        lines.append("*Recent:*")
+        for s in scenarios[:10]:
+            cat = s.category or "general"
+            used_text = f"used {s.times_used}x" if s.times_used > 0 else "unused"
+            lines.append(f"  • `{s.scenario_id}` — {cat} ({'⭐' * s.difficulty}) [{used_text}]")
+
         text = "\n".join(lines)
 
     await callback.message.edit_text(  # type: ignore[union-attr]

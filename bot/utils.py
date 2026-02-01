@@ -160,5 +160,12 @@ def format_training_feedback(output: dict) -> str:
         if improving:
             parts.append(f"📈 Improving: {improving}")
 
+    # Ideal response comparison (shown inline if provided)
+    ideal = output.get("ideal_response_comparison")
+    if ideal:
+        parts.append("")
+        parts.append("💡 *Ideal Response:*")
+        parts.append(_sanitize(str(ideal)))
+
     result = "\n".join(parts)
     return truncate_message(result)

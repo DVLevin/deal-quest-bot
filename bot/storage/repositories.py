@@ -10,6 +10,8 @@ from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import (
     AttemptModel,
     CasebookModel,
+    GeneratedScenarioModel,
+    LeadActivityModel,
     LeadRegistryModel,
     ScenarioSeenModel,
     SupportSessionModel,
@@ -184,6 +186,28 @@ class AttemptRepo:
             return [AttemptModel(**r) for r in rows]
         return []
 
+    async def get_all_recent(self, limit: int = 100) -> list[AttemptModel]:
+        """Get recent attempts across all users (for team analytics)."""
+        rows = await self.client.query(
+            self.table,
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [AttemptModel(**r) for r in rows]
+        return []
+
+    async def get_team_for_scenario(self, scenario_id: str) -> list[AttemptModel]:
+        """Get all team answers for a specific scenario."""
+        rows = await self.client.query(
+            self.table,
+            filters={"scenario_id": scenario_id},
+            order="created_at.desc",
+        )
+        if rows and isinstance(rows, list):
+            return [AttemptModel(**r) for r in rows]
+        return []
+
 
 class SupportSessionRepo:
     def __init__(self, client: InsForgeClient) -> None:
@@ -285,9 +309,42 @@ class LeadRegistryRepo:
         self.table = "lead_registry"
 
     async def create(self, lead: LeadRegistryModel) -> LeadRegistryModel:
-        data = lead.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        data = lead.model_dump(
+            exclude_none=True,
+            exclude={"id", "created_at", "updated_at", "followup_count"},
+        )
         result = await self.client.create(self.table, data)
         return LeadRegistryModel(**result) if result else lead
+
+    async def find_duplicate(
+        self, telegram_id: int, prospect_name: str | None, prospect_company: str | None,
+    ) -> LeadRegistryModel | None:
+        """Find an existing lead that matches by name or company for this user."""
+        if not prospect_name and not prospect_company:
+            return None
+
+        # Fetch user's recent leads and match in Python (PostgREST has limited fuzzy support)
+        leads = await self.get_for_user(telegram_id, limit=50)
+        for lead in leads:
+            # Match by name (case-insensitive)
+            if prospect_name and lead.prospect_name:
+                if prospect_name.lower().strip() == lead.prospect_name.lower().strip():
+                    return lead
+                # Partial match: one name contains the other (e.g. "Arta" matches "Arta Ubaydullayeva")
+                a, b = prospect_name.lower().strip(), lead.prospect_name.lower().strip()
+                if len(a) > 2 and len(b) > 2 and (a in b or b in a):
+                    return lead
+
+            # Match by company (exact, case-insensitive)
+            if (
+                prospect_company
+                and lead.prospect_company
+                and prospect_company.lower().strip() == lead.prospect_company.lower().strip()
+                and prospect_name  # only match by company if we also have a name context
+            ):
+                return lead
+
+        return None
 
     async def get_for_user(self, telegram_id: int, limit: int = 20) -> list[LeadRegistryModel]:
         rows = await self.client.query(
@@ -327,6 +384,60 @@ class LeadRegistryRepo:
             updates["notes"] = notes
         await self.client.update(self.table, {"id": lead_id}, updates)
 
+    async def update_lead(self, lead_id: int, **kwargs: Any) -> LeadRegistryModel | None:
+        """Update arbitrary fields on a lead."""
+        kwargs["updated_at"] = datetime.now(timezone.utc).isoformat()
+        result = await self.client.update(self.table, {"id": lead_id}, kwargs)
+        return LeadRegistryModel(**result) if result else None
+
+    async def get_due_followups(self, now_iso: str) -> list[LeadRegistryModel]:
+        """Get leads where next_followup <= now and status is active (not closed)."""
+        try:
+            rows = await self.client.query(
+                self.table,
+                filters={"next_followup": f"lte.{now_iso}"},
+                order="next_followup.asc",
+                limit=50,
+            )
+        except Exception:
+            # Fallback: fetch all leads and filter in Python
+            logger.warning("PostgREST lte filter failed, falling back to Python filtering")
+            rows = await self.client.query(
+                self.table,
+                order="created_at.desc",
+                limit=200,
+            )
+
+        if not rows or not isinstance(rows, list):
+            return []
+
+        leads = [LeadRegistryModel(**r) for r in rows]
+
+        # Filter in Python: exclude closed, verify next_followup is due
+        from datetime import datetime as _dt
+        try:
+            now_dt = _dt.fromisoformat(now_iso.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return []
+
+        due = []
+        for lead in leads:
+            if lead.status in ("closed_won", "closed_lost"):
+                continue
+            if not lead.next_followup:
+                continue
+            try:
+                followup_dt = _dt.fromisoformat(lead.next_followup.replace("Z", "+00:00"))
+                if followup_dt <= now_dt:
+                    due.append(lead)
+            except (ValueError, TypeError):
+                continue
+        return due
+
+    async def delete_lead(self, lead_id: int) -> None:
+        """Delete a lead by ID."""
+        await self.client.delete(self.table, {"id": lead_id})
+
     async def count_by_status(self) -> dict[str, int]:
         """Get lead counts grouped by status."""
         rows = await self.client.query(self.table, select="status")
@@ -336,6 +447,51 @@ class LeadRegistryRepo:
                 s = row.get("status", "unknown")
                 counts[s] = counts.get(s, 0) + 1
         return counts
+
+    async def count_by_status_for_user(self, telegram_id: int) -> dict[str, int]:
+        """Get lead counts grouped by status for a specific user."""
+        rows = await self.client.query(
+            self.table, select="status", filters={"telegram_id": telegram_id}
+        )
+        counts: dict[str, int] = {}
+        if rows and isinstance(rows, list):
+            for row in rows:
+                s = row.get("status", "unknown")
+                counts[s] = counts.get(s, 0) + 1
+        return counts
+
+
+class LeadActivityRepo:
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "lead_activity_log"
+
+    async def create(self, activity: LeadActivityModel) -> LeadActivityModel:
+        data = activity.model_dump(exclude_none=True, exclude={"id", "created_at"})
+        result = await self.client.create(self.table, data)
+        return LeadActivityModel(**result) if result else activity
+
+    async def get_for_lead(self, lead_id: int, limit: int = 20) -> list[LeadActivityModel]:
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id},
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadActivityModel(**r) for r in rows]
+        return []
+
+    async def get_recent_for_user(self, telegram_id: int, limit: int = 10) -> list[LeadActivityModel]:
+        rows = await self.client.query(
+            self.table,
+            filters={"telegram_id": telegram_id},
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadActivityModel(**r) for r in rows]
+        return []
 
 
 class CasebookRepo:
@@ -358,3 +514,56 @@ class CasebookRepo:
         data = entry.model_dump(exclude_none=True, exclude={"id", "created_at"})
         result = await self.client.create(self.table, data)
         return CasebookModel(**result) if result else entry
+
+
+class GeneratedScenarioRepo:
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "generated_scenarios"
+
+    async def get_all(self, limit: int = 100) -> list[GeneratedScenarioModel]:
+        rows = await self.client.query(
+            self.table,
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [GeneratedScenarioModel(**r) for r in rows]
+        return []
+
+    async def get_unseen(self, seen_ids: list[str], limit: int = 50) -> list[GeneratedScenarioModel]:
+        """Get generated scenarios not in the seen list."""
+        all_scenarios = await self.get_all(limit=200)
+        return [s for s in all_scenarios if s.scenario_id not in seen_ids][:limit]
+
+    async def create(self, scenario: GeneratedScenarioModel) -> GeneratedScenarioModel:
+        data = scenario.model_dump(exclude_none=True, exclude={"id", "created_at"})
+        result = await self.client.create(self.table, data)
+        return GeneratedScenarioModel(**result) if result else scenario
+
+    async def increment_usage(self, scenario_id: str, score: int) -> None:
+        """Increment times_used and update running avg_score."""
+        rows = await self.client.query(
+            self.table,
+            filters={"scenario_id": scenario_id},
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return
+
+        current = rows[0]
+        times_used = current.get("times_used", 0) + 1
+        old_avg = current.get("avg_score", 0.0)
+        new_avg = ((old_avg * (times_used - 1)) + score) / times_used
+
+        await self.client.update(
+            self.table,
+            {"scenario_id": scenario_id},
+            {"times_used": times_used, "avg_score": round(new_avg, 2)},
+        )
+
+    async def count(self) -> int:
+        rows = await self.client.query(self.table, select="id")
+        if rows and isinstance(rows, list):
+            return len(rows)
+        return 0

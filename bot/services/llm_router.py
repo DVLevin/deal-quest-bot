@@ -233,3 +233,45 @@ def create_provider(
         return OpenRouterProvider(api_key, model=model or "moonshotai/kimi-k2.5")
     else:
         raise ValueError(f"Unknown provider: {provider_name}")
+
+
+async def web_research_call(api_key: str, query: str) -> str:
+    """Call Grok via OpenRouter with web search plugin for deep prospect research."""
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        try:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://getdeal.ai",
+                    "X-Title": "Deal Quest Bot",
+                },
+                json={
+                    "model": "x-ai/grok-4.1-fast",
+                    "plugins": [{"id": "web"}],
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are a sales research analyst. Research this person and their company "
+                                "thoroughly using web search. Find:\n"
+                                "- Their LinkedIn activity, recent posts, career history\n"
+                                "- Company news, funding rounds, recent announcements\n"
+                                "- Industry trends relevant to their role\n"
+                                "- Mutual connections or shared interests\n"
+                                "- Any public speaking, articles, or thought leadership\n\n"
+                                "Provide a comprehensive research brief that a sales rep can use "
+                                "to personalize their outreach."
+                            ),
+                        },
+                        {"role": "user", "content": query},
+                    ],
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error("Web research call failed: %s", e)
+            return f"Web research unavailable: {e}"
