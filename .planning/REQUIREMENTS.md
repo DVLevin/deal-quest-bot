@@ -61,7 +61,7 @@
 
 - [ ] **LEAD-01**: Lead pipeline view — paginated list of leads with name, company, title, status badge
 - [ ] **LEAD-02**: Lead detail view — full analysis, strategy, engagement plan, draft, photos, web research
-- [ ] **LEAD-03**: Status management — update lead status (Analyzed → Reached Out → Meeting → In Progress → Closed)
+- [ ] **LEAD-03**: Status management — update lead status (Analyzed -> Reached Out -> Meeting -> In Progress -> Closed)
 - [ ] **LEAD-04**: Add context/notes to existing leads
 - [ ] **LEAD-05**: Lead activity log — timeline of status changes and actions taken
 
@@ -141,70 +141,70 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| FOUND-03 | — | Pending |
-| FOUND-04 | — | Pending |
-| FOUND-05 | — | Pending |
-| FOUND-06 | — | Pending |
-| FOUND-07 | — | Pending |
-| FOUND-08 | — | Pending |
-| FOUND-09 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| LEARN-01 | — | Pending |
-| LEARN-02 | — | Pending |
-| LEARN-03 | — | Pending |
-| LEARN-04 | — | Pending |
-| LEARN-05 | — | Pending |
-| TRAIN-01 | — | Pending |
-| TRAIN-02 | — | Pending |
-| TRAIN-03 | — | Pending |
-| TRAIN-04 | — | Pending |
-| TRAIN-05 | — | Pending |
-| TRAIN-06 | — | Pending |
-| SUPP-01 | — | Pending |
-| SUPP-02 | — | Pending |
-| SUPP-03 | — | Pending |
-| SUPP-04 | — | Pending |
-| SUPP-05 | — | Pending |
-| CASE-01 | — | Pending |
-| CASE-02 | — | Pending |
-| CASE-03 | — | Pending |
-| CASE-04 | — | Pending |
-| CASE-05 | — | Pending |
-| LEAD-01 | — | Pending |
-| LEAD-02 | — | Pending |
-| LEAD-03 | — | Pending |
-| LEAD-04 | — | Pending |
-| LEAD-05 | — | Pending |
-| GAME-01 | — | Pending |
-| GAME-02 | — | Pending |
-| GAME-03 | — | Pending |
-| GAME-04 | — | Pending |
-| GAME-05 | — | Pending |
-| PROF-01 | — | Pending |
-| PROF-02 | — | Pending |
-| PROF-03 | — | Pending |
-| PROF-04 | — | Pending |
-| PROF-05 | — | Pending |
-| ADMIN-01 | — | Pending |
-| ADMIN-02 | — | Pending |
-| ADMIN-03 | — | Pending |
-| ADMIN-04 | — | Pending |
-| ADMIN-05 | — | Pending |
-| ADMIN-06 | — | Pending |
-| BOT-01 | — | Pending |
-| BOT-02 | — | Pending |
-| BOT-03 | — | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Pending |
+| FOUND-05 | Phase 1 | Pending |
+| FOUND-06 | Phase 1 | Pending |
+| FOUND-07 | Phase 1 | Pending |
+| FOUND-08 | Phase 1 | Pending |
+| FOUND-09 | Phase 1 | Pending |
+| DASH-01 | Phase 2 | Pending |
+| DASH-02 | Phase 2 | Pending |
+| DASH-03 | Phase 2 | Pending |
+| DASH-04 | Phase 2 | Pending |
+| LEARN-01 | Phase 3 | Pending |
+| LEARN-02 | Phase 3 | Pending |
+| LEARN-03 | Phase 3 | Pending |
+| LEARN-04 | Phase 3 | Pending |
+| LEARN-05 | Phase 3 | Pending |
+| TRAIN-01 | Phase 3 | Pending |
+| TRAIN-02 | Phase 3 | Pending |
+| TRAIN-03 | Phase 3 | Pending |
+| TRAIN-04 | Phase 3 | Pending |
+| TRAIN-05 | Phase 3 | Pending |
+| TRAIN-06 | Phase 3 | Pending |
+| SUPP-01 | Phase 4 | Pending |
+| SUPP-02 | Phase 4 | Pending |
+| SUPP-03 | Phase 4 | Pending |
+| SUPP-04 | Phase 4 | Pending |
+| SUPP-05 | Phase 4 | Pending |
+| CASE-01 | Phase 4 | Pending |
+| CASE-02 | Phase 4 | Pending |
+| CASE-03 | Phase 4 | Pending |
+| CASE-04 | Phase 4 | Pending |
+| CASE-05 | Phase 4 | Pending |
+| LEAD-01 | Phase 5 | Pending |
+| LEAD-02 | Phase 5 | Pending |
+| LEAD-03 | Phase 5 | Pending |
+| LEAD-04 | Phase 5 | Pending |
+| LEAD-05 | Phase 5 | Pending |
+| PROF-01 | Phase 2 | Pending |
+| PROF-02 | Phase 2 | Pending |
+| PROF-03 | Phase 2 | Pending |
+| PROF-04 | Phase 2 | Pending |
+| PROF-05 | Phase 5 | Pending |
+| GAME-01 | Phase 6 | Pending |
+| GAME-02 | Phase 6 | Pending |
+| GAME-03 | Phase 6 | Pending |
+| GAME-04 | Phase 6 | Pending |
+| GAME-05 | Phase 6 | Pending |
+| ADMIN-01 | Phase 6 | Pending |
+| ADMIN-02 | Phase 6 | Pending |
+| ADMIN-03 | Phase 6 | Pending |
+| ADMIN-04 | Phase 6 | Pending |
+| ADMIN-05 | Phase 6 | Pending |
+| ADMIN-06 | Phase 6 | Pending |
+| BOT-01 | Phase 7 | Pending |
+| BOT-02 | Phase 7 | Pending |
+| BOT-03 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 52 total
-- Mapped to phases: 0
-- Unmapped: 52
+- v1 requirements: 58 total
+- Mapped to phases: 58
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after initial definition*
+*Last updated: 2026-02-01 after roadmap creation*
