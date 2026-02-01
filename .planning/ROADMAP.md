@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Monorepo scaffold + Telegram SDK + shared types package (Wave 1)
+- [x] 01-01-PLAN.md -- Monorepo scaffold + Telegram SDK + shared types package (Wave 1)
 - [ ] 01-02-PLAN.md -- Auth flow: Edge Function, InsForge client, JWT, RLS policies (Wave 2)
 - [ ] 01-03-PLAN.md -- Design system: Tailwind v4 tokens, base UI components, NavBar, AppLayout (Wave 2)
 - [ ] 01-04-PLAN.md -- Routing shell, Telegram button hooks, session resilience, integration (Wave 3)
@@ -143,7 +143,7 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/4 | Planned | - |
+| 1. Foundation & Auth | 1/4 | In progress | - |
 | 2. Dashboard & Profile | 0/2 | Not started | - |
 | 3. Learn & Train | 0/3 | Not started | - |
 | 4. Support & Casebook | 0/2 | Not started | - |
