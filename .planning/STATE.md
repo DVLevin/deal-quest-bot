@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 1 of 2 (Foundation - Tracing Infrastructure & Storage)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-02-02 — Roadmap created with 2 phases covering 24 v1 requirements
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-02 — Completed 01-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 25% (1/4 plans in phase 1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: N/A
-- Total execution time: 0.0 hours
+- Total plans completed: 1
+- Average duration: 3.4 min
+- Total execution time: 0.06 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation | 0/TBD | - | - |
+| 1. Foundation | 1/4 | 3.4 min | 3.4 min |
 | 2. Operations | 0/TBD | - | - |
 
 **Recent Trend:**
-- Last 5 plans: N/A
-- Trend: Not yet established
+- Last 5 plans: 3.4min
+- Trend: Just started
 
 *Updated after each plan completion*
 
@@ -43,10 +43,15 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- InsForge for trace storage — Consistent with existing data layer, accessible from future TMA (Pending)
-- Real LLM calls for synthetic tests — Need actual latency data, not just plumbing tests (Pending)
-- Summary-only in /admin, full I/O stored for TMA — Telegram message limits make full I/O impractical (Pending)
-- Instrument at handler level, not runner internals — Minimal code changes, wrap call sites like ProgressUpdater does (Pending)
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 01-01 | Use ContextVar instead of thread-local | threading.local fails in asyncio, contextvars propagates automatically |
+| 01-01 | Dual timing (datetime + perf_counter) | Avoid clock mixing, perf_counter is monotonic and high-precision |
+| 01-01 | No FK constraint spans→traces | PostgREST ordering issues, collector may insert spans before trace |
+| 01-01 | 50KB limit on I/O serialization | Prevent storage explosion from large LLM I/O |
+| 01-01 | Simple schema (no partitioning initially) | Can add partitioning reactively when volume justifies |
+| Roadmap | InsForge for trace storage | Consistent with existing data layer, accessible from future TMA |
+| Roadmap | Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does |
 
 ### Pending Todos
 
@@ -58,6 +63,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-02 (roadmap creation)
-Stopped at: Roadmap created, ready to plan Phase 1
+Last session: 2026-02-02
+Stopped at: Completed 01-01-PLAN.md (Tracing Infrastructure & Storage)
 Resume file: None
