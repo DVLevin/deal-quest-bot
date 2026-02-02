@@ -7,12 +7,12 @@
 
 ### Tracing Infrastructure
 
-- [ ] **TRACE-01**: Every pipeline execution generates a trace with unique trace_id, capturing start/end timestamps and overall duration
-- [ ] **TRACE-02**: Each pipeline step (handler entry, LLM call, DB write, Telegram API call, transcription) is recorded as a span with name, start/end time, and parent trace_id
-- [ ] **TRACE-03**: Trace context propagates across async boundaries using contextvars so spans created in subtasks link to the correct parent trace
-- [ ] **TRACE-04**: Agent I/O is captured per span — full prompt sent to LLM and full response received, stored alongside timing data
-- [ ] **TRACE-05**: Traces persist in an InsForge `pipeline_traces` table with spans in a `pipeline_spans` table, queryable by trace_id, telegram_id, pipeline name, and date range
-- [ ] **TRACE-06**: Trace instrumentation wraps existing call sites (context manager pattern like ProgressUpdater) without modifying PipelineRunner internals
+- [x] **TRACE-01**: Every pipeline execution generates a trace with unique trace_id, capturing start/end timestamps and overall duration
+- [x] **TRACE-02**: Each pipeline step (handler entry, LLM call, DB write, Telegram API call, transcription) is recorded as a span with name, start/end time, and parent trace_id
+- [x] **TRACE-03**: Trace context propagates across async boundaries using contextvars so spans created in subtasks link to the correct parent trace
+- [x] **TRACE-04**: Agent I/O is captured per span — full prompt sent to LLM and full response received, stored alongside timing data
+- [x] **TRACE-05**: Traces persist in an InsForge `pipeline_traces` table with spans in a `pipeline_spans` table, queryable by trace_id, telegram_id, pipeline name, and date range
+- [x] **TRACE-06**: Trace instrumentation wraps existing call sites (context manager pattern like ProgressUpdater) without modifying PipelineRunner internals
 
 ### Admin Health
 
@@ -76,12 +76,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRACE-01 | Phase 1 | Pending |
-| TRACE-02 | Phase 1 | Pending |
-| TRACE-03 | Phase 1 | Pending |
-| TRACE-04 | Phase 1 | Pending |
-| TRACE-05 | Phase 1 | Pending |
-| TRACE-06 | Phase 1 | Pending |
+| TRACE-01 | Phase 1 | Complete |
+| TRACE-02 | Phase 1 | Complete |
+| TRACE-03 | Phase 1 | Complete |
+| TRACE-04 | Phase 1 | Complete |
+| TRACE-05 | Phase 1 | Complete |
+| TRACE-06 | Phase 1 | Complete |
 | ADMIN-01 | Phase 2 | Pending |
 | ADMIN-02 | Phase 2 | Pending |
 | ADMIN-03 | Phase 2 | Pending |
@@ -108,4 +108,4 @@
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after roadmap creation*
+*Last updated: 2026-02-02 after Phase 1 completion*
