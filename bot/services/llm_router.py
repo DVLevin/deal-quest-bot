@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from bot.tracing import traced_span
+
 logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
@@ -81,6 +83,7 @@ class ClaudeProvider(LLMProvider):
             timeout=120.0,
         )
 
+    @traced_span("llm:claude")
     async def complete(
         self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
     ) -> dict[str, Any]:
@@ -152,6 +155,7 @@ class OpenRouterProvider(LLMProvider):
             timeout=120.0,
         )
 
+    @traced_span("llm:openrouter")
     async def complete(
         self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
     ) -> dict[str, Any]:
