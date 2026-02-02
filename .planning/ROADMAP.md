@@ -32,12 +32,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Agent prompts and responses are captured and stored alongside timing data
   5. Traces can be queried from InsForge by trace_id, telegram_id, pipeline name, and date range
 
-**Plans**: TBD (to be refined during planning)
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Tracing core module (TraceContext, traced_span, TraceCollector) + storage layer (TraceRepo, SQL migration)
+- [ ] 01-02-PLAN.md — Handler instrumentation (wire TraceCollector lifecycle in main.py, wrap learn/train/support call sites)
 
 ### Phase 2: Operations - Admin Commands & Synthetic Testing
 
@@ -69,8 +68,8 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation - Tracing Infrastructure & Storage | 0/TBD | Not started | - |
+| 1. Foundation - Tracing Infrastructure & Storage | 0/2 | Not started | - |
 | 2. Operations - Admin Commands & Synthetic Testing | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-02 after initial roadmap creation*
+*Last updated: 2026-02-02 after Phase 1 planning (2 plans, 2 waves)*
