@@ -1,0 +1,95 @@
+{
+  "tracks": {
+    "foundations": {
+      "name": "Foundations",
+      "description": "Master the basics of your product positioning and sales approach",
+      "levels": {
+        "1.1": {
+          "title": "The Elevator Pitch",
+          "lesson": "Your elevator pitch should be 30 seconds max. Lead with the problem you solve, not what you do.\n\nBad: 'We're an AI-powered platform that...'\nGood: 'Companies waste 200+ hours on due diligence. We cut that to 20.'",
+          "scenario": {
+            "persona": "Alex Rivera",
+            "title": "VP of Business Development",
+            "company": "TechCorp Industries",
+            "context": "Networking event. You have 30 seconds before they move on.",
+            "message": "So, what does your company do exactly?",
+            "difficulty": "easy"
+          },
+          "rubric": {
+            "criteria": [
+              {"name": "Problem-first framing", "points": 25, "description": "Led with the problem, not the solution"},
+              {"name": "Specificity", "points": 25, "description": "Used concrete numbers or examples"},
+              {"name": "Clear CTA", "points": 25, "description": "Ended with a next step or hook"},
+              {"name": "Brevity", "points": 25, "description": "Kept it under 30 seconds (roughly 75 words)"}
+            ]
+          }
+        },
+        "1.2": {
+          "title": "Handling 'Not Interested'",
+          "lesson": "When someone says 'not interested', they usually mean 'you haven't shown me why I should be interested yet.' Don't give up — reframe.\n\nKey technique: Acknowledge, then pivot to a question that reveals their actual pain point.",
+          "scenario": {
+            "persona": "Sarah Chen",
+            "title": "Head of Corporate Development",
+            "company": "FinanceFlow Inc",
+            "context": "Cold LinkedIn outreach. Sarah responded briefly.",
+            "message": "Thanks but we're not looking for anything like this right now.",
+            "difficulty": "medium"
+          },
+          "rubric": {
+            "criteria": [
+              {"name": "Graceful acknowledgment", "points": 20, "description": "Didn't push back aggressively"},
+              {"name": "Curiosity question", "points": 30, "description": "Asked a question to understand their situation"},
+              {"name": "Value reframe", "points": 30, "description": "Reframed the value prop from their perspective"},
+              {"name": "Low-pressure CTA", "points": 20, "description": "Offered something low-commitment"}
+            ]
+          }
+        }
+      }
+    }
+  },
+  "train_pool": {
+    "description": "Random practice scenarios — pool for /train mode (never-repeat)",
+    "scenarios": [
+      {
+        "id": "train_001",
+        "title": "The Skeptical PE Partner",
+        "difficulty": "hard",
+        "persona": "David Kim",
+        "persona_title": "Managing Director",
+        "company": "Summit Capital Partners",
+        "company_context": "PE firm, $5B AUM, enterprise software focus",
+        "setting": "Conference cocktail hour. Introduced by mutual contact.",
+        "message": "I've heard the name. But we have our own deal sourcing team. We see 500 deals a year. What could you show us that we haven't seen?",
+        "rubric": {
+          "criteria": [
+            {"name": "Acknowledged their strength", "points": 20, "description": "Validated their deal flow before positioning"},
+            {"name": "Complementary positioning", "points": 25, "description": "Positioned as complement, not replacement"},
+            {"name": "Specific differentiator", "points": 25, "description": "Named something specific they can't get elsewhere"},
+            {"name": "Concrete CTA", "points": 15, "description": "Proposed a specific next step"},
+            {"name": "Confidence without arrogance", "points": 15, "description": "Tone was peer-level, not salesy"}
+          ]
+        }
+      },
+      {
+        "id": "train_002",
+        "title": "The Price-Sensitive Founder",
+        "difficulty": "medium",
+        "persona": "Maria Santos",
+        "persona_title": "CEO & Co-founder",
+        "company": "DataStream AI",
+        "company_context": "Series B startup, 80 employees, considering strategic options",
+        "setting": "Zoom call. She reached out after seeing your LinkedIn content.",
+        "message": "I like what you're doing, but honestly, we're bootstrapped on the advisory side. What are your fees? I've heard M&A advisors take 5-10% and that feels steep for what we need right now.",
+        "rubric": {
+          "criteria": [
+            {"name": "Empathy first", "points": 20, "description": "Acknowledged the cost concern genuinely"},
+            {"name": "Value reframe", "points": 25, "description": "Shifted focus from cost to value/time saved"},
+            {"name": "Pricing clarity", "points": 25, "description": "Explained fee structure clearly and honestly"},
+            {"name": "Risk removal", "points": 15, "description": "Addressed the 'what if it doesn't work' concern"},
+            {"name": "Urgency/timing", "points": 15, "description": "Mentioned why now is the right time to explore"}
+          ]
+        }
+      }
+    ]
+  }
+}

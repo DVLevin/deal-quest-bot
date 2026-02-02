@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Quest Bot - Your AI Sales Coach</title>
+    <style>
+        /* ═══════════════════════════════════════════════
+           DESIGN TOKENS
+           ═══════════════════════════════════════════════ */
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-card: #111118;
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(99, 102, 241, 0.3);
+
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #55556a;
+
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --accent-hot: #f43f5e;
+            --accent-gold: #f59e0b;
+            --accent-green: #10b981;
+            --accent-cyan: #06b6d4;
+
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+
+            --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+            --shadow-glow: 0 0 60px rgba(99, 102, 241, 0.08);
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2);
+
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ═══════════════════════════════════════════════
+           RESET & BASE
+           ═══════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        ::selection {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        /* ═══════════════════════════════════════════════
+           LAYOUT
+           ═══════════════════════════════════════════════ */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        /* ═══════════════════════════════════════════════
+           TYPOGRAPHY
+           ═══════════════════════════════════════════════ */
+        h1 {
+            font-size: clamp(2.8rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+        }
+
+        .label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* ═══════════════════════════════════════════════
+           HERO
+           ═══════════════════════════════════════════════ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 60px 0;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 70% 80%, rgba(244, 63, 94, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .accent {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hot));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin: 0 auto 40px;
+            max-width: 540px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 100px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-glass);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            backdrop-filter: blur(8px);
+        }
+
+        .hero-badge .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse-dot 2s ease infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .cta-row {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        /* ═══════════════════════════════════════════════
+           SECTION HEADERS
+           ═══════════════════════════════════════════════ */
+        .section-header {
+            margin-bottom: 60px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-primary);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent-primary);
+            margin-bottom: 20px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           FEATURE CARDS
+           ═══════════════════════════════════════════════ */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 32px 28px;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            opacity: 0;
+            transition: var(--transition-smooth);
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .feature-card h3 { color: var(--text-primary); }
+        .feature-card p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ═══════════════════════════════════════════════
+           STORY STEPS (THE WALKTHROUGH)
+           ═══════════════════════════════════════════════ */
+        .story-step {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin-bottom: 120px;
+        }
+
+        .story-step:nth-child(even) {
+            direction: rtl;
+        }
+
+        .story-step:nth-child(even) > * {
+            direction: ltr;
+        }
+
+        .story-visual {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-visual::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        .story-visual:hover::after { opacity: 1; }
+
+        .chat-bubble {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .chat-bubble.bot {
+            border-left: 3px solid var(--accent-primary);
+            margin-right: 24px;
+        }
+
+        .chat-bubble.user {
+            border-right: 3px solid var(--accent-green);
+            margin-left: 24px;
+            text-align: right;
+        }
+
+        .chat-bubble .command {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .chat-bubble .score {
+            font-family: var(--font-mono);
+            color: var(--accent-gold);
+            font-weight: 700;
+            font-size: 1.4rem;
+        }
+
+        .btn-row-mock {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .mock-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+        }
+
+        /* ═══════════════════════════════════════════════
+           COMMAND REFERENCE
+           ═══════════════════════════════════════════════ */
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 40px;
+        }
+
+        .command-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            transition: var(--transition-smooth);
+        }
+
+        .command-item:hover {
+            border-color: var(--border-accent);
+        }
+
+        .command-item .cmd {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .command-item .desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* ═══════════════════════════════════════════════
+           TIMELINE (GETTING STARTED)
+           ═══════════════════════════════════════════════ */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin-top: 48px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-primary), var(--accent-hot), transparent);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 48px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            border: 3px solid var(--bg-deep);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .timeline-item h3 {
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .timeline-item p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .timeline-item code {
+            font-family: var(--font-mono);
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-cyan);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* ═══════════════════════════════════════════════
+           FAQ ACCORDION
+           ═══════════════════════════════════════════════ */
+        .faq-list {
+            margin-top: 40px;
+        }
+
+        .faq-item {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .faq-item:hover {
+            border-color: var(--border-accent);
+        }
+
+        .faq-question {
+            padding: 20px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.05rem;
+            background: var(--bg-card);
+            user-select: none;
+        }
+
+        .faq-question .arrow {
+            transition: var(--transition-smooth);
+            color: var(--text-muted);
+        }
+
+        .faq-item.open .faq-question .arrow {
+            transform: rotate(180deg);
+            color: var(--accent-primary);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .faq-answer-inner {
+            padding: 0 24px 20px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 300px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════ */
+        footer {
+            padding: 60px 0;
+            text-align: center;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        footer p {
+            margin: 0 auto;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ═══════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            section { padding: 60px 0; }
+
+            .story-step,
+            .story-step:nth-child(even) {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                direction: ltr;
+                margin-bottom: 80px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .command-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container { padding: 0 16px; }
+        }
+
+        /* ═══════════════════════════════════════════════
+           DECORATIVE GRID BG
+           ═══════════════════════════════════════════════ */
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        section, header, footer { position: relative; z-index: 1; }
+
+        /* Scroll-reveal animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <!-- ════════════════════════════════════════════════════
+         HERO
+         ════════════════════════════════════════════════════ -->
+    <section class="hero">
+        <div class="hero-content container">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                Telegram Bot &middot; AI-Powered
+            </div>
+            <h1>Your AI <span class="accent">Sales Coach</span><br>in Telegram</h1>
+            <p>Deal Quest Bot trains your team to sell smarter. Practice scenarios, analyze real deals, track leads, and level up &mdash; all inside a chat.</p>
+            <div class="cta-row">
+                <a href="#start" class="btn btn-primary">Get Started</a>
+                <a href="#features" class="btn btn-ghost">See What It Does</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         WHAT IS THIS?
+         ════════════════════════════════════════════════════ -->
+    <section id="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="label">What You Get</span>
+                <h2>Six tools, one chat window</h2>
+                <p>Everything a GetDeal.ai partnership manager needs to close deals and grow skills &mdash; no extra apps, no dashboards, no spreadsheets.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <span class="feature-icon">💼</span>
+                    <h3>Deal Support</h3>
+                    <p>Paste any prospect situation and get an instant closing strategy, engagement tactics, and a ready-to-send draft message.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="feature-icon">🎓</span>
+                    <h3>Structured Learning</h3>
+                    <p>Work through training levels that teach you positioning, objection handling, and closing. Pass a scenario to unlock the next level.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="feature-icon">🎲</span>
+                    <h3>Practice Mode</h3>
+                    <p>Random sales scenarios test your skills. Choose difficulty, answer by voice or text, and get scored feedback with improvement tips.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="feature-icon">📋</span>
+                    <h3>Lead Pipeline</h3>
+                    <p>Every analyzed prospect becomes a tracked lead. Manage status, get engagement plans, generate LinkedIn comments, and get AI advice.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="feature-icon">📊</span>
+                    <h3>Progress Tracking</h3>
+                    <p>XP, levels, score trends, and streaks. See how you're improving and where to focus next. Jump straight into training from your stats.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="feature-icon">🏆</span>
+                    <h3>Team Leaderboard</h3>
+                    <p>Admins see the full team ranked by performance. Track trends, compare answers to the same scenario, and find coaching moments.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         HOW IT WORKS — WALKTHROUGH
+         ════════════════════════════════════════════════════ -->
+    <section id="start">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="label">Step by Step</span>
+                <h2>From zero to first deal in 60 seconds</h2>
+                <p>No downloads. No signups. Just open Telegram and go.</p>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">1</div>
+                    <h3>Open the bot in Telegram</h3>
+                    <p>Search for <strong>@l2gd_bot</strong> in Telegram, or ask your team lead for the link. Tap <strong>Start</strong>.</p>
+                    <p style="margin-top:12px;">That's it. You're talking to your AI coach.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble bot">
+                        <strong>Deal Quest Bot</strong><br>
+                        Welcome! Your personal AI-powered sales training & support assistant.<br><br>
+                        Let's get you set up (takes 30 seconds)!
+                    </div>
+                    <div class="btn-row-mock">
+                        <span class="mock-btn" style="border-color: var(--accent-primary); color: var(--accent-primary);">Quick Setup (Recommended)</span>
+                        <span class="mock-btn">Use My Own API Key</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">2</div>
+                    <h3>One-tap setup</h3>
+                    <p>Tap <strong>"Quick Setup"</strong> and you're done. The bot uses a shared team AI key &mdash; no accounts, no payments, no config.</p>
+                    <p style="margin-top:12px;">Power users can bring their own Claude or OpenRouter key instead.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble bot">
+                        You're all set, Alex!<br><br>
+                        What would you like to do first?
+                    </div>
+                    <div class="btn-row-mock">
+                        <span class="mock-btn" style="border-color: var(--accent-green); color: var(--accent-green);">Start Learning</span>
+                        <span class="mock-btn">I Have a Deal</span>
+                        <span class="mock-btn">Jump Into Practice</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Support -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">3</div>
+                    <h3>Analyze a real prospect</h3>
+                    <p>Type <code>/support</code> and describe your prospect. You can paste text, send a LinkedIn screenshot, or even a voice message.</p>
+                    <p style="margin-top:12px;">The AI gives you a full playbook: analysis, strategy, engagement tactics, and a draft outreach message.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble user">
+                        <span class="command">/support</span><br>
+                        VP of Biz Dev at a mid-market SaaS company. They asked "How is this different from a broker?"
+                    </div>
+                    <div class="chat-bubble bot">
+                        <strong>PROSPECT ANALYSIS</strong><br>
+                        Type: Tech Buyer | Signal: High<br><br>
+                        <strong>CLOSING STRATEGY</strong><br>
+                        1. Reframe from "broker" to "marketplace"<br>
+                        2. Emphasize AI-powered matching...<br><br>
+                        <strong>DRAFT</strong><br>
+                        "Great question. Unlike brokers, we..."
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Train -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">4</div>
+                    <h3>Practice with random scenarios</h3>
+                    <p>Type <code>/train</code>, pick a difficulty, and get a random sales scenario. Answer by text or voice &mdash; the AI scores you and gives feedback.</p>
+                    <p style="margin-top:12px;">Retry tough ones, track your scores, and watch yourself improve.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble bot">
+                        <strong>Training Scenario</strong><br><br>
+                        <strong>Sarah Chen</strong><br>
+                        <em>CFO at a PE-backed portfolio company</em><br><br>
+                        "We already have investment bankers. Why would we need your platform?"
+                    </div>
+                    <div class="chat-bubble bot" style="margin-top:16px;">
+                        <span class="score">Score: 82/100</span><br>
+                        XP earned: +82<br><br>
+                        Strengths: Clear M&A positioning<br>
+                        To improve: Mention confidentiality
+                    </div>
+                    <div class="btn-row-mock">
+                        <span class="mock-btn" style="border-color: var(--accent-primary); color: var(--accent-primary);">Next Scenario</span>
+                        <span class="mock-btn">Retry This One</span>
+                        <span class="mock-btn">View Stats</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Learn -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">5</div>
+                    <h3>Level up with structured lessons</h3>
+                    <p>Type <code>/learn</code> to start the training track. Each level teaches a skill, then tests you with a scenario. Score 60+ to unlock the next level.</p>
+                    <p style="margin-top:12px;">After scoring, tap "Show Ideal Response" to see the model answer and common mistakes.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble bot">
+                        <strong>Track 1: Foundations</strong><br><br>
+                        &#9989; Level 1.1: What is GetDeal.ai?<br>
+                        &#128275; Level 1.2: Buyer Types<br>
+                        &#128274; Level 1.3: Objection Handling<br>
+                        &#128274; Level 1.4: Closing Techniques
+                    </div>
+                    <div class="btn-row-mock">
+                        <span class="mock-btn" style="border-color: var(--accent-green); color: var(--accent-green);">&#9989; Level 1.1</span>
+                        <span class="mock-btn" style="border-color: var(--accent-primary); color: var(--accent-primary);">&#9654; Level 1.2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Leads -->
+            <div class="story-step reveal">
+                <div>
+                    <div class="step-number">6</div>
+                    <h3>Track your pipeline</h3>
+                    <p>Every prospect you analyze with <code>/support</code> becomes a lead in your pipeline. Use <code>/leads</code> to manage them.</p>
+                    <p style="margin-top:12px;">Move leads through stages, add updates, get AI advice, and generate LinkedIn comments &mdash; all from the chat.</p>
+                </div>
+                <div class="story-visual">
+                    <div class="chat-bubble bot">
+                        <strong>Lead Registry</strong><br>
+                        Total: 8 leads (3 with plans)<br><br>
+                        &#128269; Analyzed: 3<br>
+                        &#128232; Reached Out: 2<br>
+                        &#128197; Meeting Booked: 2<br>
+                        &#9989; Closed Won: 1
+                    </div>
+                    <div class="btn-row-mock">
+                        <span class="mock-btn">&#10071;&#128248; Sarah Chen @ Nexus</span>
+                        <span class="mock-btn">&#128221; James Park @ Apex</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         COMMAND REFERENCE
+         ════════════════════════════════════════════════════ -->
+    <section>
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="label">Quick Reference</span>
+                <h2>All commands at a glance</h2>
+                <p>Type any of these in the chat to get started.</p>
+            </div>
+
+            <div class="command-grid reveal">
+                <div class="command-item">
+                    <span class="cmd">/start</span>
+                    <span class="desc">Set up your account</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/support</span>
+                    <span class="desc">Analyze a prospect</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/learn</span>
+                    <span class="desc">Training levels</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/train</span>
+                    <span class="desc">Random practice</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/leads</span>
+                    <span class="desc">Manage pipeline</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/stats</span>
+                    <span class="desc">View progress</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/settings</span>
+                    <span class="desc">Account &amp; AI model</span>
+                </div>
+                <div class="command-item">
+                    <span class="cmd">/admin</span>
+                    <span class="desc">Team dashboard</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         GETTING STARTED TIMELINE
+         ════════════════════════════════════════════════════ -->
+    <section>
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="label">Your First 5 Minutes</span>
+                <h2>The fastest onboarding ever</h2>
+            </div>
+
+            <div class="timeline reveal">
+                <div class="timeline-item">
+                    <h3>Open Telegram</h3>
+                    <p>Search for <code>@l2gd_bot</code> or click the link your team lead shared.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3>Tap Start &rarr; Quick Setup</h3>
+                    <p>One tap. No API keys, no config. You're ready in 3 seconds.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3>Pick your first action</h3>
+                    <p>The bot asks what you want to do. Tap <strong>"Start Learning"</strong> to begin training, or <strong>"I Have a Deal"</strong> to analyze a real prospect.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3>Answer a scenario</h3>
+                    <p>The bot gives you a sales situation. Type your answer (or send a voice message). Get scored feedback immediately.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3>Check your stats</h3>
+                    <p>Type <code>/stats</code> to see your XP, level, and how you compare. You're already on the board.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         FAQ
+         ════════════════════════════════════════════════════ -->
+    <section>
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="label">FAQ</span>
+                <h2>Quick answers</h2>
+            </div>
+
+            <div class="faq-list reveal">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>Do I need to install anything?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">No. It's a Telegram bot. If you have Telegram (phone or desktop), you're good. Just search for @l2gd_bot and tap Start.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>Does it cost money?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">No. The Quick Setup uses a shared team AI key that's free for you. Power users can optionally bring their own Claude API key for premium quality.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>Can I use voice instead of typing?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">Yes! You can send voice messages for both /support and training scenarios. The bot transcribes your voice and evaluates your response. It's actually encouraged &mdash; real sales happen on calls, not keyboards.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>How does scoring work?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">Each scenario has a rubric with weighted criteria (positioning, objection handling, brevity, etc.). The AI evaluates your response against these criteria and gives you a score out of 100, plus specific feedback on strengths and areas to improve.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>Is my data private?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">Your API keys are encrypted with Fernet symmetric encryption before storage. Your conversations and prospect data are only visible to you (and team admins for aggregate analytics). Nothing is shared externally.</div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                        <span>What if I get stuck?</span>
+                        <span class="arrow">&#9660;</span>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">Type <code>/cancel</code> at any point to exit the current flow. Type <code>/start</code> to see the main menu. If something feels broken, reach out to your team lead or check the bot's /settings.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════
+         FOOTER
+         ════════════════════════════════════════════════════ -->
+    <footer>
+        <div class="container">
+            <p>Deal Quest Bot &mdash; Built for <a href="https://getdeal.ai" target="_blank" rel="noopener">GetDeal.ai</a> Partnership Managers</p>
+            <p style="margin-top: 8px;"><a href="https://github.com/DVLevin/deal-quest-bot" target="_blank" rel="noopener">View Source on GitHub</a></p>
+        </div>
+    </footer>
+
+    <!-- ════════════════════════════════════════════════════
+         SCROLL REVEAL
+         ════════════════════════════════════════════════════ -->
+    <script>
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        reveals.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>

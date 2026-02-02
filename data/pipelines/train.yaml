@@ -1,0 +1,15 @@
+name: train
+description: "Training pipeline: trainer scores response → memory update (background)"
+steps:
+  - agent: trainer
+    mode: sequential
+    input_mapping:
+      knowledge_base: "ctx.knowledge_base"
+      user_memory: "ctx.user_memory"
+      scenario: "ctx.scenario"
+
+  - agent: memory
+    mode: background
+    input_mapping:
+      trainer_output: "result.trainer"
+      user_memory: "ctx.user_memory"

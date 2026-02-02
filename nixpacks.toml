@@ -1,0 +1,2 @@
+# Force Python provider — repo also has package.json (for TMA) which confuses auto-detection
+providers = ["python"]
