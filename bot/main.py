@@ -36,10 +36,13 @@ from bot.storage.repositories import (
     LeadRegistryRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
+    TraceRepo,
     TrackProgressRepo,
     UserMemoryRepo,
     UserRepo,
 )
+from bot.tracing import init_collector
+from bot.tracing.collector import get_collector
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +75,7 @@ async def main() -> None:
     lead_repo = LeadRegistryRepo(insforge)
     activity_repo = LeadActivityRepo(insforge)
     generated_scenario_repo = GeneratedScenarioRepo(insforge)
+    trace_repo = TraceRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -104,6 +108,11 @@ async def main() -> None:
     pipelines = load_all_pipelines()
     logger.info("Loaded %d pipelines: %s", len(pipelines), list(pipelines.keys()))
 
+    # Initialize tracing collector
+    trace_collector = init_collector(trace_repo)
+    await trace_collector.start()
+    logger.info("Trace collector started")
+
     # Initialize bot and dispatcher
     bot = Bot(
         token=cfg.telegram_bot_token,
@@ -133,6 +142,7 @@ async def main() -> None:
             "lead_repo": lead_repo,
             "activity_repo": activity_repo,
             "generated_scenario_repo": generated_scenario_repo,
+            "trace_repo": trace_repo,
             "insforge": insforge,
             "crypto": crypto,
             "knowledge": knowledge,
@@ -184,6 +194,10 @@ async def main() -> None:
     try:
         await dp.start_polling(bot)
     finally:
+        collector = get_collector()
+        if collector:
+            await collector.stop()
+            logger.info("Trace collector stopped")
         await insforge.close()
         logger.info("Bot stopped.")
 
