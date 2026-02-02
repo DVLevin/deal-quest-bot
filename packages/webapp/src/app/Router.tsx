@@ -7,7 +7,7 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { AppLayout } from '@/shared/layouts/AppLayout';
 import { Skeleton } from '@/shared/ui';
 import { useBackButton } from '@/shared/hooks/useBackButton';
@@ -47,13 +47,14 @@ function AppRoutes() {
       <Suspense fallback={<PageSkeleton />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/learn" element={<Learn />} />
-          <Route path="/train" element={<Train />} />
-          <Route path="/support" element={<Support />} />
+          <Route path="/learn/*" element={<Learn />} />
+          <Route path="/train/*" element={<Train />} />
+          <Route path="/support/*" element={<Support />} />
           <Route path="/casebook" element={<Casebook />} />
-          <Route path="/leads" element={<Leads />} />
+          <Route path="/leads/*" element={<Leads />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/*" element={<Admin />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </AppLayout>
