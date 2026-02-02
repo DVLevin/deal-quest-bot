@@ -31,6 +31,7 @@ from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider, web_research_call
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
+from bot.tracing import TraceContext
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadRegistryModel, SupportSessionModel
@@ -151,8 +152,9 @@ async def _run_support_pipeline(
         # Run support pipeline
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        async with ProgressUpdater(status_msg, Phase.ANALYSIS):
-            await runner.run(pipeline_config, ctx)
+        async with TraceContext(pipeline_name="support", telegram_id=tg_id, user_id=user.id or 0):
+            async with ProgressUpdater(status_msg, Phase.ANALYSIS):
+                await runner.run(pipeline_config, ctx)
 
         # Get strategist output
         strategist_result = ctx.get_result("strategist")
@@ -842,8 +844,9 @@ async def on_support_action(
 
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
-            await runner.run(pipeline_config, ctx)
+        async with TraceContext(pipeline_name="support_regen", telegram_id=tg_id, user_id=user.id or 0):
+            async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
+                await runner.run(pipeline_config, ctx)
 
         strategist_result = ctx.get_result("strategist")
         if strategist_result and strategist_result.success:

@@ -28,6 +28,7 @@ from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
+from bot.tracing import TraceContext
 from bot.states import TrainState
 from bot.storage.models import AttemptModel
 from bot.storage.repositories import (
@@ -294,8 +295,9 @@ async def _run_train_answer(
 
         pipeline_config = load_pipeline("train")
         runner = PipelineRunner(agent_registry)
-        async with ProgressUpdater(status_msg, Phase.EVALUATION):
-            await runner.run(pipeline_config, ctx)
+        async with TraceContext(pipeline_name="train", telegram_id=tg_id, user_id=user.id or 0):
+            async with ProgressUpdater(status_msg, Phase.EVALUATION):
+                await runner.run(pipeline_config, ctx)
 
         trainer_result = ctx.get_result("trainer")
         if not trainer_result or not trainer_result.success:
