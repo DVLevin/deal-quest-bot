@@ -22,6 +22,19 @@ Deal Quest is a Telegram bot that acts as an always-available sales coach. It lo
 
 ---
 
+## Repository Structure
+
+This repository contains two projects sharing the same InsForge backend:
+
+| Project | Path | Stack | Description |
+|---------|------|-------|-------------|
+| **Bot** | `bot/` | Python, aiogram 3 | Telegram bot — commands, pipelines, agents |
+| **TMA** | `packages/webapp/` | React, TypeScript, Vite | Telegram Mini App — web companion UI |
+
+They share an InsForge (PostgreSQL) database, serverless functions (`functions/`), and a shared types package (`packages/shared/`).
+
+---
+
 ## Features
 
 ### `/support` — Deal Closing Assistant
@@ -30,6 +43,8 @@ Paste any prospect situation and get a complete closing strategy:
 - **Closing Strategy** — Multi-step approach tailored to the prospect
 - **Engagement Tactics** — LinkedIn likes, comment drafts, pre-outreach warmup
 - **Draft Response** — Ready-to-send message using your playbook language
+
+Supports text, voice messages, and images.
 
 ### `/learn` — Structured Training
 Work through curriculum tracks with progressive difficulty:
@@ -84,7 +99,7 @@ Telegram User
 |  start, support,    |     +--+----------+----+
 |  learn, train,      |        |          |
 |  stats, settings,   |        v          v
-|  admin              |   Sequential  Background
+|  admin, leads       |   Sequential  Background
 +--------------------+    execution    (fire & forget)
      |
      v
@@ -106,17 +121,19 @@ Telegram User
 +--------------------+     |  Casebook        |
      |                      +------------------+
      v
-+--------------------+
-|  InsForge DB       |
-|  (PostgreSQL)      |
-|                    |
-|  7 tables:         |
-|  users, attempts,  |
-|  user_memory,      |
-|  scenarios_seen,   |
-|  support_sessions, |
-|  track_progress,   |
-|  casebook          |
++--------------------+     +------------------+
+|  InsForge DB       |     |  Tracing Layer   |
+|  (PostgreSQL)      |     |                  |
+|                    |     |  TraceContext     |
+|  9 tables:         |     |  traced_span     |
+|  users, attempts,  |     |  TraceCollector  |
+|  user_memory,      |     |  (async batch    |
+|  scenarios_seen,   |     |   flush to DB)   |
+|  support_sessions, |     |                  |
+|  track_progress,   |     |  pipeline_traces |
+|  casebook,         |     |  pipeline_spans  |
+|  pipeline_traces,  |     +------------------+
+|  pipeline_spans    |
 +--------------------+
 ```
 
@@ -131,6 +148,21 @@ Telegram User
 | LLM integration | User-provided keys (encrypted) | Cost on users, supports free models |
 | Knowledge approach | Context stuffing (~70K tokens) | No chunking, no vector DB, instant retrieval |
 | Background processing | asyncio.create_task | No Celery/Redis needed |
+| Tracing | stdlib contextvars + perf_counter | Zero external deps, async-safe propagation |
+| TMA frontend | React + Vite + InsForge SDK | Same DB, Telegram-native auth |
+
+---
+
+## Observability
+
+Every pipeline execution is traced with step-level timing and agent I/O:
+
+- **TraceContext** wraps each pipeline call (learn, train, support)
+- **traced_span** decorator records timing on agent `.run()` and LLM `.complete()` methods
+- **TraceCollector** batches spans and flushes to InsForge in the background
+- Traces are queryable by `trace_id`, `telegram_id`, `pipeline_name`, and date range
+
+Span hierarchy: `TraceContext (pipeline)` > `agent:trainer` > `llm:openrouter`
 
 ---
 
@@ -146,7 +178,7 @@ deal-quest-bot/
 │   ├── utils.py                # Telegram formatting helpers
 │   ├── agents/
 │   │   ├── base.py             # BaseAgent ABC + typed I/O
-│   │   ├── registry.py         # Agent name → instance lookup
+│   │   ├── registry.py         # Agent name -> instance lookup
 │   │   ├── strategist.py       # /support analysis & strategy
 │   │   ├── trainer.py          # /learn + /train scoring
 │   │   └── memory.py           # Background memory updates
@@ -159,19 +191,38 @@ deal-quest-bot/
 │   │   ├── support.py          # Deal analysis flow
 │   │   ├── learn.py            # Structured training
 │   │   ├── train.py            # Random scenario practice
+│   │   ├── leads.py            # Lead management
 │   │   ├── stats.py            # Progress display
 │   │   ├── settings.py         # Provider management
-│   │   └── admin.py            # Admin panel (restricted)
+│   │   ├── admin.py            # Admin panel (restricted)
+│   │   └── progress.py         # Progress utilities
 │   ├── services/
 │   │   ├── llm_router.py       # LLM provider abstraction
 │   │   ├── knowledge.py        # Playbook + company KB loader
 │   │   ├── casebook.py         # Reusable response retrieval
 │   │   ├── scoring.py          # XP calculation
-│   │   └── crypto.py           # Fernet encryption for API keys
+│   │   ├── crypto.py           # Fernet encryption for API keys
+│   │   ├── transcription.py    # AssemblyAI voice transcription
+│   │   ├── progress.py         # ProgressUpdater (real-time status)
+│   │   ├── analytics.py        # Analytics service
+│   │   ├── engagement.py       # Engagement tracking
+│   │   ├── followup_scheduler.py # Follow-up scheduling
+│   │   └── scenario_generator.py # Dynamic scenario generation
+│   ├── tracing/
+│   │   ├── __init__.py         # Public API exports
+│   │   ├── context.py          # TraceContext + traced_span
+│   │   ├── collector.py        # Background flush to InsForge
+│   │   └── models.py           # Trace/Span Pydantic models
 │   └── storage/
 │       ├── insforge_client.py  # Async HTTP client for InsForge
-│       ├── repositories.py     # 7 repository classes
+│       ├── repositories.py     # 11 repository classes
 │       └── models.py           # Pydantic data models
+├── packages/
+│   ├── webapp/                 # Telegram Mini App (React)
+│   │   ├── src/pages/          # Dashboard, Support, Learn, Train, Admin, etc.
+│   │   └── package.json
+│   └── shared/                 # Shared TypeScript types
+├── functions/                  # InsForge serverless functions
 ├── data/
 │   ├── playbook.md             # Your sales playbook (gitignored)
 │   ├── company_knowledge.md    # Company info (gitignored)
@@ -182,16 +233,15 @@ deal-quest-bot/
 │       ├── learn.yaml
 │       └── train.yaml
 ├── prompts/                    # Agent system prompts
-│   ├── strategist_agent.md
-│   ├── trainer_agent.md
-│   └── memory_agent.md
 ├── docs/                       # Design documentation
-│   ├── ARCHITECTURE.md
-│   ├── TASK_BRIEF.md
-│   └── MVP_VISION.md
+├── migrations/                 # Original DB migrations
+├── insforge/migrations/        # Observability DB migrations
+├── .planning/                  # GSD project tracking
 ├── .env.example
 ├── requirements.txt
-└── railway.toml
+├── railway.toml
+├── package.json                # pnpm workspace root
+└── pnpm-workspace.yaml
 ```
 
 ---
@@ -210,7 +260,7 @@ deal-quest-bot/
 ```bash
 git clone https://github.com/dvlevin/deal-quest-bot.git
 cd deal-quest-bot
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -225,7 +275,7 @@ Edit `.env` with your values. See `.env.example` for descriptions of each variab
 
 Generate an encryption key:
 ```bash
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
 ### 3. Add your content
@@ -242,12 +292,14 @@ The example files document the expected format. The bot loads these into every L
 
 ### 4. Set up the database
 
-Create the required tables in your InsForge project. The schema includes 7 tables: `users`, `user_memory`, `scenarios_seen`, `attempts`, `support_sessions`, `track_progress`, and `casebook`. See `docs/` for the full schema.
+Create the required tables in your InsForge project:
+- **Core tables** (7): `users`, `user_memory`, `scenarios_seen`, `attempts`, `support_sessions`, `track_progress`, `casebook` — see `migrations/`
+- **Observability tables** (2): `pipeline_traces`, `pipeline_spans` — see `insforge/migrations/001_pipeline_traces.sql`
 
 ### 5. Run
 
 ```bash
-python -m bot.main
+python3 -m bot.main
 ```
 
 ---
@@ -268,7 +320,7 @@ Set all environment variables from `.env.example` in the Railway dashboard.
 
 ### Other Platforms
 
-The bot is a standard Python process with no special infrastructure requirements. It works anywhere you can run `python -m bot.main` with the environment variables set.
+The bot is a standard Python process with no special infrastructure requirements. It works anywhere you can run `python3 -m bot.main` with the environment variables set.
 
 ---
 
@@ -342,10 +394,12 @@ The bot supports two levels of access:
 | Component | Technology |
 |-----------|------------|
 | Bot Framework | [aiogram 3.x](https://docs.aiogram.dev/) |
-| Language | Python 3.11+ (async) |
+| Language (Bot) | Python 3.11+ (async) |
+| Language (TMA) | TypeScript (React 18 + Vite 7) |
 | Database | PostgreSQL via [InsForge](https://insforge.com) |
 | LLM (Free) | [OpenRouter](https://openrouter.ai) |
 | LLM (Premium) | [Anthropic Claude API](https://console.anthropic.com) |
+| Voice | [AssemblyAI](https://www.assemblyai.com) |
 | Encryption | cryptography (Fernet) |
 | Config | pydantic-settings |
 | Deployment | Railway / any Python host |
