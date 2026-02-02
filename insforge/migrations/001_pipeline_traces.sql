@@ -47,3 +47,9 @@ ALTER TABLE pipeline_spans ENABLE ROW LEVEL SECURITY;
 -- Service role can do everything (bot uses service role key)
 CREATE POLICY traces_service_all ON pipeline_traces FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY spans_service_all ON pipeline_spans FOR ALL USING (true) WITH CHECK (true);
+
+-- Grant sequence usage to anon role (required for SERIAL auto-increment via PostgREST)
+GRANT USAGE, SELECT ON SEQUENCE pipeline_traces_id_seq TO anon;
+GRANT USAGE, SELECT ON SEQUENCE pipeline_spans_id_seq TO anon;
+GRANT ALL ON TABLE pipeline_traces TO anon;
+GRANT ALL ON TABLE pipeline_spans TO anon;

@@ -44,10 +44,10 @@ PROVIDER_KEYBOARD = InlineKeyboardMarkup(
 
 MODEL_KEYBOARD = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text="Qwen3 Coder (Free)", callback_data="model:qwen/qwen3-coder")],
-        [InlineKeyboardButton(text="DeepSeek R1 (Free)", callback_data="model:deepseek/deepseek-r1")],
+        [InlineKeyboardButton(text="GPT-OSS 120B (Free)", callback_data="model:openai/gpt-oss-120b")],
+        [InlineKeyboardButton(text="Kimi K2.5 (Free)", callback_data="model:moonshotai/kimi-k2.5")],
         [InlineKeyboardButton(text="Gemini Flash (Free)", callback_data="model:google/gemini-flash")],
-        [InlineKeyboardButton(text="Llama 3 8B (Free)", callback_data="model:meta-llama/llama-3-8b-instruct")],
+        [InlineKeyboardButton(text="DeepSeek R1 (Free)", callback_data="model:deepseek/deepseek-r1")],
         [InlineKeyboardButton(text="🔙 Back", callback_data="settings:back")],
     ]
 )

@@ -15,7 +15,7 @@ class UserModel(BaseModel):
     first_name: str | None = None
     provider: str = "openrouter"
     encrypted_api_key: str | None = None
-    openrouter_model: str = "qwen/qwen3-coder"
+    openrouter_model: str = "openai/gpt-oss-120b"
     total_xp: int = 0
     current_level: int = 1
     streak_days: int = 0

@@ -329,8 +329,8 @@ The bot is a standard Python process with no special infrastructure requirements
 ### OpenRouter (Default — Free)
 
 Free models available:
-- `qwen/qwen3-coder` — Good general purpose (default)
-- `deepseek/deepseek-r1` — Strong reasoning
+- `openai/gpt-oss-120b` — Fast non-reasoning model (default)
+- `moonshotai/kimi-k2.5` — Strong reasoning
 - `google/gemini-flash` — Fast responses
 
 Users can self-configure during onboarding, or the admin can set a shared team key for zero-friction setup.

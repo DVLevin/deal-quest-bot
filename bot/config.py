@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Configuration
     log_level: str = "INFO"
-    default_openrouter_model: str = "moonshotai/kimi-k2.5"
+    default_openrouter_model: str = "openai/gpt-oss-120b"
 
     # Authorization
     admin_usernames: str = ""  # comma-separated

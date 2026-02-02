@@ -197,7 +197,7 @@ async def on_custom_setup(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.edit_text(  # type: ignore[union-attr]
         "🔑 *Custom Setup*\n\n"
         "Choose your AI provider:\n\n"
-        "🆓 *OpenRouter* — Free models available (Qwen3, DeepSeek)\n"
+        "🆓 *OpenRouter* — Free models available (GPT-OSS, Kimi, Gemini)\n"
         "   Get a key at: openrouter.ai/keys\n\n"
         "⭐ *Claude API* — Best quality, paid\n"
         "   Get a key at: console.anthropic.com\n",
