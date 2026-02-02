@@ -148,3 +148,33 @@ class GeneratedScenarioModel(BaseModel):
     times_used: int = 0
     avg_score: float = 0.0
     created_at: str | None = None
+
+
+class PipelineTraceModel(BaseModel):
+    id: int | None = None
+    trace_id: str
+    pipeline_name: str
+    telegram_id: int
+    user_id: int | None = None
+    start_time: str
+    end_time: str
+    duration_ms: float
+    success: bool = True
+    error: str | None = None
+    created_at: str | None = None
+
+
+class PipelineSpanModel(BaseModel):
+    id: int | None = None
+    span_id: str
+    trace_id: str
+    parent_span_id: str | None = None
+    span_name: str
+    start_time: str
+    end_time: str
+    duration_ms: float
+    success: bool = True
+    error: str | None = None
+    input_data: dict[str, Any] | None = None
+    output_data: dict[str, Any] | None = None
+    created_at: str | None = None

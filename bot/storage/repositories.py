@@ -13,6 +13,8 @@ from bot.storage.models import (
     GeneratedScenarioModel,
     LeadActivityModel,
     LeadRegistryModel,
+    PipelineSpanModel,
+    PipelineTraceModel,
     ScenarioSeenModel,
     SupportSessionModel,
     TrackProgressModel,
@@ -580,3 +582,54 @@ class GeneratedScenarioRepo:
         if rows and isinstance(rows, list):
             return len(rows)
         return 0
+
+
+class TraceRepo:
+    """Repository for pipeline traces and spans."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.traces_table = "pipeline_traces"
+        self.spans_table = "pipeline_spans"
+
+    async def create_trace(self, trace: PipelineTraceModel) -> PipelineTraceModel | None:
+        data = trace.model_dump(exclude_none=True, exclude={"id", "created_at"})
+        result = await self.client.create(self.traces_table, data)
+        return PipelineTraceModel(**result) if result else trace
+
+    async def create_span(self, span: PipelineSpanModel) -> PipelineSpanModel | None:
+        data = span.model_dump(exclude_none=True, exclude={"id", "created_at"})
+        result = await self.client.create(self.spans_table, data)
+        return PipelineSpanModel(**result) if result else span
+
+    async def get_traces(
+        self,
+        *,
+        telegram_id: int | None = None,
+        pipeline_name: str | None = None,
+        limit: int = 20,
+    ) -> list[PipelineTraceModel]:
+        filters: dict[str, Any] = {}
+        if telegram_id is not None:
+            filters["telegram_id"] = telegram_id
+        if pipeline_name is not None:
+            filters["pipeline_name"] = pipeline_name
+        rows = await self.client.query(
+            self.traces_table,
+            filters=filters if filters else None,
+            order="created_at.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [PipelineTraceModel(**r) for r in rows]
+        return []
+
+    async def get_spans_for_trace(self, trace_id: str) -> list[PipelineSpanModel]:
+        rows = await self.client.query(
+            self.spans_table,
+            filters={"trace_id": trace_id},
+            order="start_time.asc",
+        )
+        if rows and isinstance(rows, list):
+            return [PipelineSpanModel(**r) for r in rows]
+        return []
