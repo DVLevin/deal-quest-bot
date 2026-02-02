@@ -1,372 +1,339 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-01
+**Analysis Date:** 2026-02-02
 
 ## Directory Layout
 
 ```
-insforge/insforge/frontend/
-├── public/                 # Static assets (favicon, robots.txt, etc.)
-├── src/
-│   ├── App.tsx            # Root component with all providers
-│   ├── main.tsx           # React DOM entry point
-│   ├── index.css          # Global styles
-│   ├── rdg.css            # React Data Grid styles
-│   ├── vite-env.d.ts      # Vite type definitions
-│   ├── assets/            # Images, SVGs, icons
-│   │   ├── icons/
-│   │   └── [other assets]
-│   ├── components/        # Shared UI components (not feature-specific)
-│   │   ├── index.ts       # Barrel export
-│   │   ├── layout/        # Layout components (AppHeader, AppSidebar, Layout)
-│   │   ├── datagrid/      # Data grid cell editors and formatters
-│   │   ├── radix/         # Radix UI wrappers (Button, Dialog, Popover, etc.)
-│   │   └── [individual components]  # Reusable components (ConfirmDialog, CopyButton, etc.)
-│   ├── features/          # Feature-specific modules (domain-driven)
-│   │   ├── auth/          # Authentication/user management
-│   │   │   ├── pages/     # UsersPage, AuthMethodsPage, ConfigurationPage
-│   │   │   ├── components/# Feature-specific UI components
-│   │   │   ├── hooks/     # Feature-specific hooks
-│   │   │   ├── services/  # Auth API service
-│   │   │   ├── contexts/  # Feature-specific context (if any)
-│   │   │   └── index.ts   # Barrel export
-│   │   ├── database/      # Database management
-│   │   │   ├── pages/     # TablesPage, SQLEditorPage, IndexesPage, etc.
-│   │   │   ├── components/# DataGrid, RecordForm, TableForm, etc.
-│   │   │   ├── hooks/     # useTables, useRecords, useRawSQL, useCSVImport
-│   │   │   ├── services/  # tableService, recordService, databaseService
-│   │   │   ├── templates/ # Database templates for schema bootstrap
-│   │   │   ├── contexts/  # SQLEditorContext (tab management)
-│   │   │   ├── schema.ts  # Zod schemas for form validation
-│   │   │   ├── helpers.ts # Utility functions (buildDynamicSchema, etc.)
-│   │   │   ├── constants.ts# Column types, UI constants
-│   │   │   └── index.ts   # Barrel export
-│   │   ├── storage/       # File storage management
-│   │   │   ├── pages/     # StoragePage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── functions/     # Serverless functions
-│   │   │   ├── pages/     # FunctionsPage, SecretsPage, SchedulesPage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── realtime/      # Real-time channels & permissions
-│   │   │   ├── pages/     # RealtimeChannelsPage, RealtimeMessagesPage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── logs/          # Logging and audit features
-│   │   │   ├── pages/     # LogsPage, MCPLogsPage, AuditsPage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── ai/            # AI features
-│   │   │   ├── pages/     # AIPage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── login/         # Authentication entry point
-│   │   │   ├── pages/     # LoginPage, CloudLoginPage
-│   │   │   ├── components/
-│   │   │   ├── services/  # loginService, partnershipService
-│   │   │   └── index.ts
-│   │   ├── onboard/       # Onboarding wizard
-│   │   │   ├── pages/
-│   │   │   ├── components/# OnboardingController, OnboardingModal, step components
-│   │   │   ├── components/mcp/  # MCP setup steps
-│   │   │   └── index.ts
-│   │   ├── dashboard/     # Main dashboard
-│   │   │   ├── pages/     # DashboardPage
-│   │   │   ├── components/
-│   │   │   ├── prompts/   # Prompt templates
-│   │   │   └── index.ts
-│   │   ├── visualizer/    # Database visualizer
-│   │   │   ├── pages/     # VisualizerPage
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   ├── deployments/   # Deployment management
-│   │   │   ├── pages/     # DeploymentsPage
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── index.ts
-│   │   └── settings/      # Settings page
-│   │       ├── pages/     # SettingsPage
-│   │       ├── components/
-│   │       └── index.ts
-│   └── lib/               # Shared, non-feature-specific utilities
-│       ├── api/           # API client
-│       │   └── client.ts  # ApiClient singleton class
-│       ├── contexts/      # Global state providers
-│       │   ├── AuthContext.tsx      # Authentication state
-│       │   ├── SocketContext.tsx    # WebSocket connection & real-time updates
-│       │   ├── ModalContext.tsx     # Modal dialog state
-│       │   └── ThemeContext.tsx     # Dark/light theme
-│       ├── hooks/         # Shared custom hooks
-│       │   ├── useAuth.ts            # useAuth hook wrapper
-│       │   ├── useToast.tsx          # Toast notifications
-│       │   ├── useModal.tsx          # Modal dialog trigger
-│       │   ├── useConfirm.ts         # Confirmation dialog
-│       │   ├── useMetadata.ts        # System metadata query
-│       │   ├── usePagination.ts      # Pagination logic
-│       │   ├── useMediaQuery.ts      # Responsive design breakpoints
-│       │   ├── useInterval.ts        # Interval hook
-│       │   └── useTimeout.ts         # Timeout hook
-│       ├── routing/       # Navigation & route protection
-│       │   ├── AppRoutes.tsx         # Route definitions
-│       │   └── RequireAuth.tsx       # Auth guard wrapper
-│       ├── services/      # Shared services
-│       │   └── metadata.service.ts   # System metadata API
-│       ├── analytics/     # Analytics integration
-│       │   └── posthog.tsx           # PostHog analytics provider
-│       ├── utils/         # Utility functions
-│       │   ├── utils.ts              # General utilities (isIframe, convertValueForColumn, etc.)
-│       │   ├── constants.ts          # App constants
-│       │   ├── menuItems.ts          # Main menu navigation items
-│       │   ├── schemaValidations.ts  # Form validation helpers
-│       │   └── cloudMessaging.ts     # Parent window messaging for cloud embed
-│       └── routing/
-│           └── [routing utilities]
-├── tsconfig.json          # TypeScript configuration
-├── tsconfig.node.json     # TypeScript for Vite config
-├── vite.config.ts         # Vite build configuration
-├── vitest.config.ts       # Test runner configuration
-├── components.json        # UI component documentation (shadcn/ui)
-├── package.json           # Dependencies
-└── .eslintrc*, .prettierrc*  # Linting & formatting config
+GD_playground/
+├── deal-quest-bot/                # Main application monorepo
+│   ├── bot/                       # Python Telegram bot
+│   ├── packages/                  # TypeScript workspaces
+│   │   ├── webapp/                # React TMA
+│   │   └── shared/                # Shared types
+│   ├── functions/                 # Edge functions
+│   ├── data/                      # Knowledge base & configs
+│   ├── migrations/                # Database migrations
+│   └── docs/                      # Documentation
+├── insforge/                      # Self-hosted backend
+│   ├── insforge/                  # InsForge application
+│   │   ├── backend/               # Node.js API
+│   │   ├── frontend/              # React admin UI
+│   │   └── functions/             # Backend functions
+│   └── migrations/                # Backend migrations
+└── .planning/                     # GSD project tracking
 ```
 
 ## Directory Purposes
 
-**`src/App.tsx`:**
-- Purpose: Root React component that wraps entire app with providers
-- Contains: Nested provider components (QueryClientProvider, AuthProvider, SocketProvider, etc.)
-- Responsibilities: Establish provider hierarchy, pass config (QueryClient options) to providers
+**`deal-quest-bot/`:**
+- Purpose: Root of Deal Quest application monorepo
+- Contains: Bot, webapp, shared types, functions, data, migrations
+- Workspace: pnpm monorepo (packages/webapp, packages/shared)
+- Key files: `package.json`, `pnpm-workspace.yaml`, `requirements.txt`, `.env`
 
-**`src/main.tsx`:**
-- Purpose: Vite entry point that mounts React app to DOM
-- Contains: ReactDOM.createRoot() call, BrowserRouter wrapper
-- Responsibilities: Initialize React DOM, mount App component to #root element
-
-**`src/components/`:**
-- Purpose: Shared UI components used across multiple features
-- Contains: Layout components, Radix UI wrappers, reusable dialogs/buttons/inputs
+**`deal-quest-bot/bot/`:**
+- Purpose: Python Telegram bot with AI agent system
+- Contains: Handlers, agents, services, storage, pipeline, tracing
 - Key files:
-  - `layout/Layout.tsx`: Main page layout wrapper (header, sidebar, content)
-  - `layout/AppHeader.tsx`: Top navigation bar with user menu
-  - `layout/AppSidebar.tsx`: Feature navigation sidebar
-  - `radix/`: Customized Radix UI components (Button, Dialog, Popover, etc.)
-  - `datagrid/`: Cell editors and custom renderers for react-data-grid
+  - `main.py`: Entry point with DI wiring and polling loop
+  - `config.py`: Pydantic settings loaded from .env
+  - `middleware.py`: Username authorization
+  - `states.py`: FSM state definitions
+  - `utils.py`: Telegram formatting helpers
 
-**`src/features/`:**
-- Purpose: Domain-driven modules organizing code by business capability
-- Organization: Each feature is self-contained with its own pages, components, hooks, services
-- Structure: Features do NOT depend on each other; they only depend on lib/shared-schemas
-- Barrel exports: Each feature exports public API via index.ts
+**`deal-quest-bot/bot/handlers/`:**
+- Purpose: Telegram command handlers for bot features
+- Contains: start.py, support.py, learn.py, train.py, stats.py, settings.py, leads.py, admin.py, progress.py
+- Pattern: One router per feature area, uses aiogram Router, FSM for state management
 
-**`src/features/{feature}/pages/`:**
-- Purpose: Top-level page components for feature routes
-- Pattern: One page component per route, handles routing-level state and composition
-- Examples: `database/pages/TablesPage.tsx`, `storage/pages/StoragePage.tsx`
+**`deal-quest-bot/bot/agents/`:**
+- Purpose: AI agents for pipeline execution
+- Contains:
+  - `base.py`: BaseAgent ABC with AgentInput/AgentOutput types
+  - `strategist.py`: Deal analysis & strategy generation
+  - `trainer.py`: Scenario evaluation & scoring
+  - `memory.py`: User memory updates
+  - `registry.py`: Agent name → instance lookup
 
-**`src/features/{feature}/components/`:**
-- Purpose: Feature-specific UI components that are NOT pages
-- Pattern: Exported via `index.ts` barrel for use in pages or other features
-- Examples: `database/components/RecordFormDialog.tsx`, `database/components/TableSidebar.tsx`
+**`deal-quest-bot/bot/services/`:**
+- Purpose: Business logic and external integrations
+- Contains:
+  - `llm_router.py`: LLM provider abstraction (Claude/OpenRouter)
+  - `knowledge.py`: Playbook & knowledge base loader
+  - `casebook.py`: Reusable response retrieval
+  - `scoring.py`: XP calculation
+  - `crypto.py`: Fernet encryption for API keys
+  - `transcription.py`: AssemblyAI voice transcription
+  - `progress.py`: Real-time progress updates
+  - `analytics.py`: Team analytics
+  - `engagement.py`: Engagement tracking
+  - `followup_scheduler.py`: Follow-up scheduling
+  - `scenario_generator.py`: Dynamic scenario generation
 
-**`src/features/{feature}/hooks/`:**
-- Purpose: Feature-specific custom hooks combining React Query with business logic
-- Pattern: Hooks return { data, isLoading, error, actions } combining useQuery + useMutation
-- Examples: `database/hooks/useTables.ts`, `database/hooks/useRecords.ts`
+**`deal-quest-bot/bot/pipeline/`:**
+- Purpose: YAML-defined agent pipeline execution
+- Contains:
+  - `runner.py`: PipelineRunner (sequential/parallel/background)
+  - `context.py`: PipelineContext (shared state)
+  - `config_loader.py`: YAML pipeline config loader
 
-**`src/features/{feature}/services/`:**
-- Purpose: Encapsulate API communication for feature domain
-- Pattern: Service class with static/singleton methods wrapping apiClient.request()
-- Examples: `database/services/tableService.ts`, `storage/services/storageService.ts`
+**`deal-quest-bot/bot/storage/`:**
+- Purpose: Data access layer with repository pattern
+- Contains:
+  - `insforge_client.py`: Async HTTP client for PostgREST API
+  - `repositories.py`: 11 repository classes (UserRepo, AttemptRepo, etc.)
+  - `models.py`: Pydantic data models for all tables
 
-**`src/lib/api/client.ts`:**
-- Purpose: HTTP client singleton managing requests, auth tokens, CSRF, retries
-- Contains: ApiClient class with methods: request(), setAccessToken(), setCsrfToken(), etc.
-- Responsibilities:
-  - Inject Authorization header (Bearer token)
-  - Queue 401 refresh requests and retry
-  - Parse responses and content-range pagination headers
-  - Clear tokens on auth failure
+**`deal-quest-bot/bot/tracing/`:**
+- Purpose: Pipeline observability system
+- Contains:
+  - `context.py`: TraceContext (async context manager), traced_span decorator
+  - `collector.py`: TraceCollector (batched background flush)
+  - `models.py`: TraceModel, SpanModel (Pydantic)
 
-**`src/lib/contexts/`:**
-- Purpose: Global state providers for cross-cutting concerns
-- AuthContext: User session, login/logout, token management, auth error handling
-- SocketContext: WebSocket connection, real-time data update broadcasting
-- ModalContext: Global modal dialog state (confirm, prompt, generic)
-- ThemeContext: Dark/light theme preference and system detection
-- SQLEditorContext: SQL editor tab management and persistence
+**`deal-quest-bot/packages/webapp/`:**
+- Purpose: React Telegram Mini App frontend
+- Contains: src/, public/, vite.config.ts, package.json
+- Key files:
+  - `index.html`: Entry HTML
+  - `src/main.tsx`: React DOM mount point
+  - `src/app/App.tsx`: Root with providers (Auth, Query)
+  - `src/app/Router.tsx`: Route definitions with lazy loading
 
-**`src/lib/hooks/`:**
-- Purpose: Shared custom hooks used across features
-- useAuth: Access AuthContext state and methods
-- useToast: Show toast notification (info, success, error, warning)
-- useModal: Trigger modal dialogs (confirm, prompt, generic)
-- useConfirm: Simplified confirmation dialog pattern
-- useMetadata: Fetch system metadata (project info, features)
-- usePagination: Pagination state and helpers
+**`deal-quest-bot/packages/webapp/src/pages/`:**
+- Purpose: TMA page components
+- Contains: Dashboard.tsx, Learn.tsx, Train.tsx, Support.tsx, Casebook.tsx, Leads.tsx, Profile.tsx, Admin.tsx
 
-**`src/lib/routing/AppRoutes.tsx`:**
-- Purpose: Define all application routes and route hierarchy
-- Pattern: Nested Routes (outer: auth-agnostic, inner: protected)
-- Structure:
-  - Outer: `/dashboard/login`, `/cloud/login` (public)
-  - Inner (wrapped in RequireAuth + Layout): All `/dashboard/*` routes
-  - Navigation: `/` redirects to `/dashboard`
+**`deal-quest-bot/packages/webapp/src/app/`:**
+- Purpose: Application shell and routing
+- Contains:
+  - `App.tsx`: Root component with provider nesting
+  - `Router.tsx`: Route definitions with lazy loading and BackButton integration
+  - `providers/`: AuthProvider, QueryProvider
 
-**`src/lib/utils/`:**
-- Purpose: Non-domain-specific utility functions and constants
-- constants.ts: App-level constants (timeouts, page sizes, etc.)
-- utils.ts: General helpers (type converters, browser detection, etc.)
-- menuItems.ts: Navigation structure for AppSidebar and AppHeader
-- schemaValidations.ts: Form validation helpers
-- cloudMessaging.ts: PostMessage protocol for cloud embed communication
+**`deal-quest-bot/packages/webapp/src/lib/`:**
+- Purpose: Shared utilities and clients
+- Contains:
+  - `insforge.ts`: InsForge SDK client wrapper
+  - `telegram.ts`: Telegram SDK initialization
 
-**`src/features/database/schema.ts`:**
-- Purpose: Zod schemas for database feature forms and validation
-- Contains: tableFormSchema, tableFormColumnSchema, tableFormForeignKeySchema
-- Usage: Form validation in TableForm, column editing, record creation
+**`deal-quest-bot/packages/webapp/src/shared/`:**
+- Purpose: Shared UI components and hooks
+- Contains: layouts/, ui/, hooks/, utils/
 
-**`src/features/database/helpers.ts`:**
-- Purpose: Feature-specific utility functions
-- Contains: buildDynamicSchema(), getInitialValues()
-- Usage: Dynamic form generation from table schemas
+**`deal-quest-bot/packages/shared/`:**
+- Purpose: Shared TypeScript types for bot and webapp
+- Contains:
+  - `src/tables.ts`: Table row types (UserRow, AttemptRow, etc.)
+  - `src/enums.ts`: Enum-like string literal types
+  - `src/constants.ts`: Game constants (XP_PER_LEVEL, RANK_TITLES)
+  - `src/index.ts`: Barrel export
 
-**`src/features/database/templates/`:**
-- Purpose: Pre-defined database templates for quick schema bootstrap
-- Contains: Template components and template definitions
-- Usage: User can select template in TablesPage to auto-create tables
+**`deal-quest-bot/functions/`:**
+- Purpose: InsForge edge functions
+- Contains:
+  - `db-proxy.js`: Database proxy function
+  - `verify-telegram/`: Telegram auth verification (HMAC validation)
+
+**`deal-quest-bot/data/`:**
+- Purpose: Knowledge base and pipeline configurations
+- Contains:
+  - `playbook.md`: Sales playbook (gitignored)
+  - `company_knowledge.md`: Company info (gitignored)
+  - `scenarios.json`: Training scenarios (gitignored)
+  - `pipelines/`: YAML agent pipeline definitions (support.yaml, learn.yaml, train.yaml)
+  - `user_memory/`: User memory YAML files
+
+**`deal-quest-bot/migrations/`:**
+- Purpose: Database migrations for core tables
+- Contains: `001_enable_rls_and_policies.sql`
+
+**`insforge/`:**
+- Purpose: Self-hosted Supabase-like backend
+- Contains: insforge/ (application), migrations/ (observability tables)
+
+**`insforge/insforge/backend/`:**
+- Purpose: Node.js backend service
+- Contains: src/ (TypeScript backend code), package.json, tsconfig.json
+
+**`insforge/insforge/frontend/`:**
+- Purpose: React admin frontend for InsForge management
+- Contains: src/features/ (feature modules), src/components/ (shared UI), src/lib/ (utilities)
+
+**`insforge/insforge/frontend/src/features/`:**
+- Purpose: Feature-based organization for admin UI
+- Contains: database/, auth/, storage/, functions/, realtime/, logs/, ai/, login/, onboard/, dashboard/, visualizer/, deployments/, settings/
+- Pattern: Each feature has pages/, components/, hooks/, services/, contexts/
+
+**`insforge/insforge/functions/`:**
+- Purpose: Backend serverless functions
+- Contains: InsForge edge function implementations
+
+**`insforge/migrations/`:**
+- Purpose: Observability database migrations
+- Contains: `001_pipeline_traces.sql` (pipeline_traces, pipeline_spans tables)
+
+**`.planning/`:**
+- Purpose: GSD project tracking and codebase documentation
+- Contains:
+  - `PROJECT.md`: Project definition
+  - `ROADMAP.md`: Phase breakdown
+  - `STATE.md`: Current state
+  - `REQUIREMENTS.md`: Requirement traceability
+  - `phases/`: Phase-specific planning documents
+  - `codebase/`: Codebase analysis documents (this file)
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/main.tsx`: React DOM mount point
-- `src/App.tsx`: Root component with providers
-- `src/lib/routing/AppRoutes.tsx`: Route definitions
-- `src/components/layout/Layout.tsx`: Main layout wrapper
+- `deal-quest-bot/bot/main.py`: Bot entry point
+- `deal-quest-bot/packages/webapp/src/main.tsx`: Webapp entry point
+- `insforge/insforge/backend/src/`: InsForge backend entry
 
 **Configuration:**
-- `tsconfig.json`: TypeScript compiler options, path aliases (@ = src/)
-- `vite.config.ts`: Vite build config, dev server, plugins
-- `vitest.config.ts`: Test runner configuration
-- `package.json`: Dependencies (React, TanStack Query, Socket.io, Vite, etc.)
+- `deal-quest-bot/.env`: Bot environment variables
+- `deal-quest-bot/bot/config.py`: Pydantic settings loader
+- `deal-quest-bot/packages/webapp/vite.config.ts`: Vite build config
+- `deal-quest-bot/package.json`: Monorepo root config
+- `deal-quest-bot/pnpm-workspace.yaml`: Workspace definition
+- `deal-quest-bot/requirements.txt`: Python dependencies
+- `deal-quest-bot/railway.toml`: Railway deployment config
+- `deal-quest-bot/nixpacks.toml`: Nixpacks build config
 
 **Core Logic:**
-- `src/lib/api/client.ts`: HTTP client with token/CSRF management
-- `src/lib/contexts/AuthContext.tsx`: Auth state and session management
-- `src/lib/contexts/SocketContext.tsx`: WebSocket connection and real-time updates
-- `src/features/login/services/loginService.ts`: Login/logout/token refresh logic
+- `deal-quest-bot/bot/pipeline/runner.py`: Pipeline execution engine
+- `deal-quest-bot/bot/agents/base.py`: Agent abstraction
+- `deal-quest-bot/bot/storage/insforge_client.py`: Database client
+- `deal-quest-bot/bot/tracing/context.py`: Observability system
+- `deal-quest-bot/bot/services/llm_router.py`: LLM provider abstraction
 
-**Database Feature:**
-- `src/features/database/pages/TablesPage.tsx`: Main tables list & record editor
-- `src/features/database/pages/SQLEditorPage.tsx`: SQL query editor
-- `src/features/database/hooks/useTables.ts`: Fetch & mutate tables
-- `src/features/database/hooks/useRecords.ts`: Fetch & mutate records
-- `src/features/database/services/tableService.ts`: Table CRUD API calls
-
-**Storage Feature:**
-- `src/features/storage/pages/StoragePage.tsx`: File browser & uploader
-- `src/features/storage/services/storageService.ts`: File API calls
-
-**Real-time Feature:**
-- `src/features/realtime/pages/RealtimeChannelsPage.tsx`: Channel management
-- `src/features/realtime/services/realtimeService.ts`: Channel API calls
-
-**Authentication Feature:**
-- `src/features/auth/pages/UsersPage.tsx`: User management
-- `src/features/auth/pages/AuthMethodsPage.tsx`: Auth provider config
-- `src/features/auth/services/authService.ts`: User/auth API calls
+**Testing:**
+- No test files detected in bot/
+- No test files detected in packages/webapp/
+- Testing infrastructure: Not implemented
 
 ## Naming Conventions
 
 **Files:**
-- Components: PascalCase.tsx (e.g., `TableForm.tsx`, `RecordFormDialog.tsx`)
-- Hooks: camelCase.ts starting with "use" (e.g., `useTables.ts`, `useMetadata.ts`)
-- Services: camelCase.service.ts (e.g., `table.service.ts`, `record.service.ts`)
-- Utilities: camelCase.ts (e.g., `utils.ts`, `constants.ts`)
-- Styles: Corresponding component name + .css (e.g., `index.css`, `rdg.css`)
-- Types/Schemas: camelCase.ts (e.g., `schema.ts`)
+- Python modules: snake_case.py (e.g., `llm_router.py`, `insforge_client.py`)
+- TypeScript components: PascalCase.tsx (e.g., `Dashboard.tsx`, `App.tsx`)
+- TypeScript utilities: camelCase.ts (e.g., `insforge.ts`, `telegram.ts`)
+- Config files: lowercase with dots (e.g., `vite.config.ts`, `pnpm-workspace.yaml`)
+- Data files: lowercase with underscores (e.g., `company_knowledge.md`, `playbook.md`)
 
 **Directories:**
-- Features: kebab-case (e.g., `database`, `auth`, `storage`, `realtime`)
-- Feature subdirectories: Explicit descriptors (pages, components, hooks, services, contexts, templates)
-- Shared utilities: Descriptive names (lib, utils, components, assets)
+- Python packages: snake_case (e.g., `bot`, `pipeline`, `tracing`)
+- TypeScript packages: kebab-case (e.g., `webapp`, `shared`)
+- Feature directories: lowercase (e.g., `handlers`, `agents`, `services`, `pages`)
 
-**Exports:**
-- Barrel exports: All public APIs exported from `index.ts` in feature/component directories
-- Example: `src/features/database/index.ts` exports components, hooks, services
-- Path aliases: `@/features/*`, `@/components`, `@/lib/*` (configured in tsconfig.json)
+**Python Naming:**
+- Classes: PascalCase (e.g., `BaseAgent`, `PipelineRunner`, `InsForgeClient`)
+- Functions/methods: snake_case (e.g., `load_settings()`, `get_by_telegram_id()`)
+- Variables: snake_case (e.g., `user_repo`, `trace_id`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`, `RETRY_DELAYS`)
+- Private methods: Leading underscore (e.g., `_run_step()`, `_get_client()`)
+
+**TypeScript Naming:**
+- Components: PascalCase (e.g., `Dashboard`, `AppRouter`)
+- Functions/hooks: camelCase (e.g., `initTelegramSDK()`, `useBackButton()`)
+- Variables: camelCase (e.g., `root`, `AppRouter`)
+- Types: PascalCase (e.g., `UserRow`, `AttemptRow`)
+- Constants: UPPER_SNAKE_CASE (e.g., `XP_PER_LEVEL`, `MAX_LEVEL`)
 
 ## Where to Add New Code
 
-**New Feature:**
-1. Create `src/features/{feature-name}/` directory
-2. Add subdirectories: `pages/`, `components/`, `hooks/`, `services/`, `contexts/` (if needed)
-3. Create feature's `index.ts` barrel with public exports
-4. Add route to `src/lib/routing/AppRoutes.tsx`
-5. Add navigation item to `src/lib/utils/menuItems.ts`
-6. Pages: `src/features/{feature}/pages/{Feature}Page.tsx`
-7. Components: `src/features/{feature}/components/{Component}.tsx`
-8. Hooks: `src/features/{feature}/hooks/use{Hook}.ts`
-9. Services: `src/features/{feature}/services/{entity}.service.ts`
+**New Bot Handler:**
+- Primary code: `deal-quest-bot/bot/handlers/{feature}.py`
+- Router: Create aiogram Router, register in `bot/main.py`
+- Tests: `deal-quest-bot/bot/handlers/{feature}_test.py` (future)
 
-**New Shared Component:**
-- Implementation: `src/components/{Component}.tsx`
-- Export: Add to `src/components/index.ts` barrel
-- If component has subcomponents: Create `src/components/{ComponentDir}/index.tsx` + subfiles
-
-**New Utility Function:**
-- Shared helpers: `src/lib/utils/` or create new file
-- Feature-specific: `src/features/{feature}/helpers.ts` or `src/features/{feature}/utils.ts`
-
-**New Hook:**
-- Feature-specific: `src/features/{feature}/hooks/use{Hook}.ts`
-- Shared (cross-feature): `src/lib/hooks/use{Hook}.ts`
-- Export from feature `index.ts` or lib barrel
+**New Agent:**
+- Implementation: `deal-quest-bot/bot/agents/{agent_name}.py`
+- Inherit from: `BaseAgent` in `bot/agents/base.py`
+- Register: Add to AgentRegistry in `bot/main.py`
+- Decorate run() method with `@traced_span("{agent_name}")`
 
 **New Service:**
-- Feature-specific: `src/features/{feature}/services/{entity}.service.ts`
-- Follow pattern: Class with static methods wrapping `apiClient.request()`
-- Export singleton instance: `export const {entity}Service = new {Entity}Service();`
+- Implementation: `deal-quest-bot/bot/services/{service_name}.py`
+- Pattern: Class with async methods, inject dependencies via __init__
+- Wire in: Add to DI container in `bot/main.py` workflow_data
 
-**New Page:**
-- Location: `src/features/{feature}/pages/{Feature}Page.tsx`
-- Add route: Update `src/lib/routing/AppRoutes.tsx` with new Route element
-- Import: Use lazy loading if appropriate (React.lazy + Suspense)
+**New Repository:**
+- Implementation: Add class to `deal-quest-bot/bot/storage/repositories.py`
+- Model: Add Pydantic model to `deal-quest-bot/bot/storage/models.py`
+- Pattern: Inherit from base repo pattern, wrap InsForgeClient methods
+- Wire in: Instantiate in `bot/main.py`, add to workflow_data
+
+**New Pipeline:**
+- Definition: `deal-quest-bot/data/pipelines/{pipeline_name}.yaml`
+- Format: YAML with name, description, steps (agent, mode, input_mapping)
+- Invoke: PipelineRunner.run(load_pipeline("{pipeline_name}"), ctx)
+
+**New Webapp Page:**
+- Implementation: `deal-quest-bot/packages/webapp/src/pages/{Feature}.tsx`
+- Route: Add to `src/app/Router.tsx` with lazy loading
+- Pattern: Use lazy() + Suspense for code splitting
+
+**New Shared Type:**
+- Implementation: `deal-quest-bot/packages/shared/src/tables.ts` or `enums.ts`
+- Export: Add to `src/index.ts` barrel
+- Pattern: Export type keyword for type-only imports
+
+**New Edge Function:**
+- Implementation: `deal-quest-bot/functions/{function-name}/`
+- Entry: Create index.js or index.ts with default export handler
+- Deploy: InsForge automatically discovers and serves functions
+
+**New Migration:**
+- Core tables: `deal-quest-bot/migrations/{NNN}_description.sql`
+- Observability: `insforge/migrations/{NNN}_description.sql`
+- Pattern: SQL file with CREATE TABLE, indexes, RLS policies
+- Run: Apply via psql or InsForge migration tool
+
+**Utilities:**
+- Bot shared helpers: `deal-quest-bot/bot/utils.py`
+- Webapp shared helpers: `deal-quest-bot/packages/webapp/src/shared/utils/`
 
 ## Special Directories
 
-**`src/assets/`:**
-- Purpose: Static images, SVGs, icons
-- Generated: No (manually added)
-- Committed: Yes
+**`deal-quest-bot/data/`:**
+- Purpose: Contains knowledge base and configuration files
+- Generated: No (manually authored)
+- Committed: No (gitignored for privacy)
+- Pattern: Markdown for knowledge, JSON for scenarios, YAML for pipelines
 
-**`node_modules/`:**
-- Purpose: Installed npm dependencies
-- Generated: Yes (run `npm install`)
+**`deal-quest-bot/node_modules/`:**
+- Purpose: pnpm dependencies for workspace packages
+- Generated: Yes (run `pnpm install`)
 - Committed: No (listed in .gitignore)
 
-**`dist/`:**
-- Purpose: Production build output from Vite
-- Generated: Yes (run `npm run build`)
+**`deal-quest-bot/packages/webapp/dist/`:**
+- Purpose: Vite production build output
+- Generated: Yes (run `pnpm build`)
 - Committed: No
 
-**`public/`:**
-- Purpose: Static files copied to build root (favicon, robots.txt, manifest.json)
-- Generated: No (manually added)
+**`deal-quest-bot/.venv/`:**
+- Purpose: Python virtual environment
+- Generated: Yes (run `python3 -m venv .venv`)
+- Committed: No
+
+**`deal-quest-bot/bot/__pycache__/`:**
+- Purpose: Python bytecode cache
+- Generated: Yes (automatic)
+- Committed: No
+
+**`insforge/insforge/docker-init/`:**
+- Purpose: Docker initialization scripts and data
+- Generated: Yes (Docker Compose volumes)
+- Committed: No
+
+**`.planning/`:**
+- Purpose: GSD project tracking and documentation
+- Generated: No (manually authored)
 - Committed: Yes
+- Pattern: Markdown files with structured templates
 
 ---
 
-*Structure analysis: 2026-02-01*
+*Structure analysis: 2026-02-02*

@@ -1,245 +1,265 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-01
+**Analysis Date:** 2026-02-02
 
 ## Naming Patterns
 
-**Files:**
-- `src/utils/validations.ts` - camelCase with .ts/.tsx extension
-- `src/services/auth/oauth-pkce.service.ts` - kebab-case for multi-word services/managers
-- `src/infra/database/database.manager.ts` - descriptive names with pattern suffix
-- Component files: `TableSidebar.tsx`, `RecordFormDialog.tsx` - PascalCase for React components
-- Test files: `email.test.ts`, `response.test.ts` - filename.test.ts or filename.spec.ts
+**Python Files:**
+- snake_case for all Python files: `llm_router.py`, `config_loader.py`, `support.py`
+- Module names match purpose: `bot/handlers/support.py`, `bot/services/llm_router.py`
 
-**Functions:**
-- Regular functions: camelCase
-- `validateEmail()`, `generateUUID()`, `successResponse()` - verb + noun pattern
-- `getPasswordRequirementsMessage()` - descriptive, clear intent
-- Private functions: prefix with underscore (if needed)
+**TypeScript Files:**
+- PascalCase for React components: `Button.tsx`, `Card.tsx`, `AuthProvider.tsx`
+- camelCase for utilities and hooks: `useAuth.ts`, `store.ts`, `cn.ts`
+- PascalCase for pages: `Dashboard.tsx`, `Support.tsx`, `Learn.tsx`
 
-**Variables:**
-- Constants: UPPER_CASE - `SYSTEM_FIELDS`, `IDENTIFIER_REGEX`, `ERROR_CODES`
-- Local variables: camelCase - `queryClient`, `emailService`, `oldEnv`, `schemaFields`
-- Destructured imports: preserves original case
+**JavaScript Files:**
+- kebab-case for edge functions: `db-proxy.js`
+- camelCase for variables within: `corsHeaders`, `respond`
 
-**Types:**
-- Interfaces: PascalCase - `AuthConfigSchema`, `ColumnSchema`, `EmailService`
-- Type aliases: PascalCase - `ColumnType` (from shared-schemas)
-- Union/literal types: camelCase or UPPER_CASE for enum-like values
+**Python Functions/Methods:**
+- snake_case for all functions: `load_settings()`, `create_provider()`, `format_support_response()`
+- Private functions prefixed with underscore: `_extract_json()`, `_sanitize()`, `_safe_serialize()`
+- Async functions use `async def`: all handlers and service methods
+
+**TypeScript Functions:**
+- camelCase for regular functions: `authenticateWithTelegram()`, `createAuthenticatedClient()`
+- PascalCase for React components: `Button()`, `Card()`, `Dashboard()`
+
+**Python Variables:**
+- snake_case for variables: `telegram_id`, `user_message`, `pipeline_ctx`
+- UPPER_SNAKE_CASE for constants: `MAX_MESSAGE_LENGTH`, `MAX_RETRIES`, `RETRY_DELAYS`
+- Private variables prefixed with underscore: `_trace_id`, `_span_stack`, `_prompt_template`
+- ContextVar variables: `_trace_id: ContextVar[str | None]`
+
+**TypeScript Variables:**
+- camelCase for regular variables: `telegramId`, `isLoading`, `authClient`
+- PascalCase for React components stored in variables: `Component`
+- Short names for Zustand selectors: `useAuthStore((s) => s.telegramId)`
+
+**Python Classes:**
+- PascalCase with descriptive suffixes:
+  - `BaseAgent`, `StrategistAgent`, `TrainerAgent` - Agent classes
+  - `ClaudeProvider`, `OpenRouterProvider` - Provider classes
+  - `CasebookService`, `EngagementService`, `KnowledgeService` - Service classes
+  - `UserRepo`, `LeadRegistryRepo`, `SupportSessionRepo` - Repository classes
+  - `UserModel`, `AttemptModel`, `PipelineTraceModel` - Model classes
+  - `TraceContext`, `PipelineContext` - Context classes
+  - `PipelineRunner` - Orchestration classes
+  - `Settings` - Configuration classes
+
+**TypeScript Types/Interfaces:**
+- PascalCase for interfaces: `AuthState`, `ButtonProps`, `CardProps`
+- Suffix `Row` for database types: `UserRow`, `AttemptRow`, `LeadRegistryRow`
+- Suffix `Props` for component props: `ButtonProps`, `CardProps`
+- Type aliases use PascalCase: `TrackStatus`, `AttemptMode`, `LLMProvider`
 
 ## Code Style
 
-**Formatting:**
-- Tool: Prettier
-- Tab Width: 2 spaces
-- Print Width: 100 characters
-- Trailing Comma: es5 (arrays/objects only, not function params)
-- Quotes: single quotes (`) for regular strings, double quotes (`"`) for JSX
+**Python Formatting:**
+- No explicit formatter config detected (no `black`, `ruff format`, `yapf`)
+- Inferred from codebase:
+  - 4 spaces indentation (standard Python)
+  - Line length: ~100-120 characters (soft limit, not enforced)
+  - Double quotes for docstrings (standard)
+  - Mixed single/double quotes for regular strings (no enforced preference)
+  - Blank line between imports and code
+  - Two blank lines between top-level definitions
 
-**Prettier Config** (`/.prettierrc`):
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "printWidth": 100,
-  "endOfLine": "lf",
-  "jsxSingleQuote": false
-}
-```
+**TypeScript Formatting:**
+- No Prettier config detected
+- Inferred from codebase:
+  - 2 spaces indentation
+  - Single quotes for imports and strings
+  - Trailing commas in objects and arrays
+  - Semicolons used consistently
+  - Arrow functions preferred: `const Button = forwardRef<...>(...)`
 
-**Linting:**
-- Tool: ESLint with TypeScript support
-- Config: `/eslint.config.js` (flat config format)
-- Separate configs per workspace: frontend, backend, auth, shared-schemas, mcp
-- Key enforced rules:
-  - `@typescript-eslint/no-floating-promises: error` - catch unhandled promises
-  - `@typescript-eslint/require-await: error` - async functions must use await
-  - `@typescript-eslint/no-unused-vars: error` - with underscore prefix allowed
-  - `eqeqeq: ['error', 'always']` - strict equality only
-  - `curly: ['error', 'all']` - braces required for all blocks
-  - `no-console: ['warn', { allow: ['warn', 'error'] }]` - restrict console logs
-  - `prefer-const: error` - use const by default
-  - `no-var: error` - var is forbidden
-  - React: `react/jsx-pascal-case: error` - component names must be PascalCase
+**Python Linting:**
+- No explicit linter config detected
+- Type checking via Pydantic and type hints
+- Modern Python patterns: `from __future__ import annotations` for forward references
+
+**TypeScript Linting:**
+- No ESLint config detected in project root
+- TypeScript compiler flags provide strict type checking via `tsconfig.json`:
+  - `strict: true`
+  - `noUnusedLocals: true`
+  - `noUnusedParameters: true`
+  - `noFallthroughCasesInSwitch: true`
+  - `forceConsistentCasingInFileNames: true`
 
 ## Import Organization
 
-**Order:**
-1. Node.js built-ins (`crypto`, `fs`, `path`, `express`)
-2. Third-party packages (`react`, `axios`, `zod`, `jose`)
-3. Types/Schemas from shared packages (`@insforge/shared-schemas`)
-4. Relative imports from same workspace
+**Python Order:**
+1. Future imports: `from __future__ import annotations`
+2. Standard library: `import asyncio`, `import logging`, `from datetime import datetime`
+3. Third-party: `from aiogram import Bot, F, Router`, `from pydantic import BaseModel`
+4. Local imports (absolute): `from bot.agents.registry import AgentRegistry`
 
-**Path Aliases:**
-- `@/` maps to `./src/` (backend and frontend)
-- `@insforge/shared-schemas/` for accessing shared types from other workspaces
-- Used for absolute imports to avoid relative path complexity
+**Python Path Style:**
+- Absolute imports from project root: `from bot.services.llm_router import create_provider`
+- Grouped by category: `from aiogram.types import (CallbackQuery, InlineKeyboardButton, ...)`
 
-**Example import block:**
-```typescript
-import crypto from 'crypto';
-import { z } from 'zod';
-import { ColumnType, type AuthConfigSchema } from '@insforge/shared-schemas';
-import { validateEmail } from '@/utils/validations';
-```
+**TypeScript Order:**
+1. React imports (if needed): `import { forwardRef } from 'react'`
+2. Third-party: `import { create } from 'zustand'`, `import { clsx } from 'clsx'`
+3. Path alias imports: `import { Card } from '@/shared/ui'`
+4. Relative imports: `import { cn } from '@/shared/lib/cn'`
+
+**TypeScript Path Aliases:**
+- `@/*` maps to `./src/*` in webapp package (`packages/webapp/tsconfig.json`)
+- Workspace dependencies: `@deal-quest/shared` via `workspace:*`
+- No path aliases in shared package (relative imports only)
 
 ## Error Handling
 
-**Patterns:**
-- Custom error class: `AppError` (in `src/api/middlewares/error.ts`)
-- AppError takes: message, statusCode, errorCode, nextActions
-- Errors are thrown from utility/validation functions
-- Routes catch errors and pass to error middleware
-- Example from `validations.ts`:
-
-```typescript
-export function validateIdentifier(identifier: string): boolean {
-  if (!identifier || !identifier.trim()) {
-    throw new AppError(
-      `Invalid identifier name: cannot be empty`,
-      400,
-      ERROR_CODES.DATABASE_VALIDATION_ERROR,
-      `Please provide a valid identifier name`
-    );
-  }
-  return true;
-}
+**Python Patterns:**
+- Try-except blocks with specific exception types first, generic `Exception` last
+- Log errors before handling: `logger.error("Agent %s failed: %s", step.agent, e)`
+- Return error states in data models: `AgentOutput(success=False, error=str(e))`
+- HTTP errors caught specifically: `except httpx.HTTPStatusError as e:`
+- Retry logic with exponential backoff:
+```python
+MAX_RETRIES = 3
+RETRY_DELAYS = [1, 3, 8]
+for attempt in range(MAX_RETRIES):
+    try:
+        # ... operation
+    except httpx.HTTPStatusError as e:
+        if attempt < MAX_RETRIES - 1:
+            await asyncio.sleep(RETRY_DELAYS[attempt])
+        else:
+            raise
 ```
+- Fallback values for JSON parsing: `return {"raw_response": text}` when parsing fails
+- Context managers for cleanup: `async with TraceContext(...): ...`
 
-- Axios errors are caught and re-thrown as AppError with context
-- Network errors, auth failures, rate limits have specific error messages
+**TypeScript Patterns:**
+- Promise-based async/await (no explicit try-catch in UI components)
+- Error states in Zustand stores: `error: string | null`
+- InsForge SDK returns `{ data, error }` tuples (no exceptions thrown)
 
 ## Logging
 
-**Framework:** Winston logger
+**Python Framework:**
+- Standard library `logging` module
+- Logger per module: `logger = logging.getLogger(__name__)`
 
-**Pattern:** `logger.info()`, `logger.warn()`, `logger.error()`
+**Python Patterns:**
+- Info level for milestones: `logger.info("Running pipeline: %s (%d steps)", config.name, len(config.steps))`
+- Error level for failures: `logger.error("Agent %s failed: %s", step.agent, e)`
+- Warning level for missing resources: `logger.warning("Strategist prompt not found: %s", _PROMPT_PATH)`
+- Format: %-style string formatting: `logger.info("New lead %s created for user %s", saved_lead_id, tg_id)`
 
-**Usage:**
-- Import as: `import logger from '@/utils/logger';`
-- Log level controlled by `LOG_LEVEL` environment variable (default: 'info')
-- Only console.warn and console.error allowed by ESLint
-- Examples from logs:
-
-```typescript
-logger.info('Starting server...');
-logger.warn('Deprecated endpoint used');
-logger.error('Database connection failed');
-```
+**TypeScript Logging:**
+- No structured logging framework detected
+- Console methods used directly (not observed in reviewed files)
 
 ## Comments
 
-**When to Comment:**
-- JSDoc for exported functions and utilities
-- Explain WHY not WHAT the code does
-- Regex patterns with complexity get block comments
-- Example from `validations.ts`:
+**Python When to Comment:**
+- Module-level docstrings for all modules: `"""Handler for /support — deal analysis with strategist agent pipeline."""`
+- Class docstrings: `"""Abstract base agent."""`
+- Method docstrings: `"""Execute the agent's logic."""`
+- Inline comments for non-obvious logic: `# Try direct parse`, `# Strip markdown code fences`
+- Context comments for complex sections: `# Wall-clock timestamps for DB storage`
+- Algorithm explanations: `# Group steps by execution mode`
 
-```typescript
-/**
- * Validates PostgreSQL identifier names (tables, columns, etc.)
- * Prevents SQL injection and ensures valid PostgreSQL identifiers
- *
- * Regex breakdown: ^[^"...]+ means entire string must NOT contain:
- * - " (double quotes) - could break SQL queries
- * - \x00-\x1F (ASCII 0-31) - control characters like null, tab, newline
- * - \x7F (ASCII 127) - DEL character
- */
-const IDENTIFIER_REGEX = /^[^"\x00-\x1F\x7F]+$/;
+**TypeScript When to Comment:**
+- JSDoc-style block comments for interfaces and complex types
+- Field documentation in interfaces: `/** JWT from verify-telegram Edge Function */`
+- Important behavioral notes: `// Start as loading -- auth runs on mount`
+- File-level explanations (see `packages/shared/src/tables.ts`)
+
+**Python JSDoc/Docstrings:**
+- Triple-quoted strings
+- Single-line: `"""Execute the agent's logic."""`
+- Multi-line with usage examples:
+```python
+"""Async context manager for pipeline tracing.
+
+Usage mirrors ProgressUpdater pattern:
+
+    async with TraceContext("learn", telegram_id=123, user_id=1):
+        await runner.run(pipeline_config, ctx)
+
+Automatically captures:
+- Pipeline execution timing (both wall-clock and perf_counter)
+- Success/failure status
+- Trace ID for span correlation
+"""
 ```
 
-## JSDoc/TSDoc
-
-**Usage:**
-- Document public functions and exports
-- Include param types, return type, and purpose
-- Examples from utils:
-
-```typescript
-/**
- * Generates a user-friendly error message listing all password requirements
- * @param config - Authentication configuration with password requirements
- * @returns A formatted message listing all enabled password requirements
- */
-export function getPasswordRequirementsMessage(config: AuthConfigSchema): string {
-  // ...
-}
-
-/**
- * Validates a PostgreSQL identifier and returns boolean without throwing
- * @param identifier - The identifier to validate
- * @returns true if valid, false if invalid
- */
-export function isValidIdentifier(identifier: string): boolean {
-  // ...
-}
-```
+**TypeScript JSDoc/TSDoc:**
+- JSDoc comments for type documentation: `/** Telegram user ID from initData */`
+- Block comments for file-level context (convention notes, important warnings)
 
 ## Function Design
 
-**Size:** Generally under 50 lines per function
-- Complex logic broken into smaller helper functions
-- Services may be larger (database managers, etc.)
+**Python Size:**
+- Handler functions: 50-200 lines (orchestration logic with multiple phases)
+- Service functions: 20-80 lines (focused single responsibility)
+- Helper functions: 10-30 lines (utilities like `_sanitize()`, `_extract_json()`)
+- Agent run methods: 20-60 lines (LLM interaction + error handling)
 
-**Parameters:**
-- Explicit parameters preferred over objects when 2-3 args
-- Use object destructuring for many params
-- No implicit dependencies (pass what you need)
+**Python Parameters:**
+- Type hints required: `async def run(self, input_data: AgentInput, pipeline_ctx: PipelineContext) -> AgentOutput:`
+- Return type hints required
+- Optional parameters use union type: `image_b64: str | None = None`
+- Default values for optional params: `max_size: int = 50000`
+- Pydantic models for complex params: `input_data: AgentInput`
 
-**Return Values:**
-- Explicit return types for public APIs
-- Use unions for conditional returns: `boolean | string`
-- Void returns for side-effect functions
-- Consistent null/undefined handling (throw error instead of returning null)
+**TypeScript Parameters:**
+- Type annotations required (strict mode enabled)
+- Optional parameters use `?`: `isLoading?: boolean`
+- Default values in destructuring: `padding = 'md'`
+- Props spread pattern: `...props`
+- Destructuring in function signature: `({ className, variant, size, ...props })`
 
-**Async Functions:**
-- Must have explicit `async` keyword
-- Must `await` something (enforced by linter)
-- Error handling via try-catch or passing to middleware
+**Python Return Values:**
+- Explicit return type hints: `-> dict[str, Any]`, `-> AgentOutput`, `-> bool`
+- Pydantic models for structured returns: `AgentOutput(success=True, data=result)`
+- Tuples for multiple values: `tuple[int, int, int]` in `format_xp_level()`
+- Async functions return `Coroutine[Any, Any, ReturnType]` (implicit)
+
+**TypeScript Return Values:**
+- Explicit return types for functions: `: Promise<AuthResult>`
+- React components return JSX.Element (implicit)
+- Void for side-effect functions (implicit)
+- Zustand store methods use `set()` for state updates
 
 ## Module Design
 
-**Exports:**
-- Named exports for most functions and classes
-- Default exports only for top-level modules (pages, routes)
-- Services exported as singletons (getInstance pattern)
-
-**Barrel Files:**
-- Not heavily used, explicit imports preferred
-- Routes use barrel exports: `export * from './submodule.routes.js'`
-
-**Service Pattern:**
-Example from token manager:
-```typescript
-export class TokenManager {
-  private static instance: TokenManager;
-
-  static getInstance(): TokenManager {
-    if (!TokenManager.instance) {
-      TokenManager.instance = new TokenManager();
-    }
-    return TokenManager.instance;
-  }
-  // ...
-}
+**Python Exports:**
+- Classes and functions exported by module-level definition (no explicit export)
+- `__init__.py` files expose public API:
+```python
+from bot.tracing.context import TraceContext, traced_span
+from bot.tracing.collector import init_collector, get_collector
 ```
+- Private functions (underscore prefix) not imported in `__init__.py`
 
-## TypeScript
+**TypeScript Exports:**
+- Named exports for components: `export const Button = forwardRef<...>(...)`
+- Named exports for utilities: `export function cn(...inputs: ClassValue[]) { ... }`
+- Type exports: `export type { UserRow, AttemptRow }`
+- Default exports for pages: `export default function Dashboard() { ... }`
 
-**Configuration:**
-- Backend: `backend/tsconfig.json` - Node.js target
-- Frontend: `frontend/tsconfig.json` - DOM lib included
-- `strict: true` mode enabled
-- `module: esnext` for ESM compatibility
+**Python Barrel Files:**
+- Used in package `__init__.py`: `bot/tracing/__init__.py`, `bot/agents/__init__.py`
+- Re-exports provide clean public API
 
-**Type Annotations:**
-- Required for function parameters and returns
-- Optional for locally inferred variables
-- Use `type` imports for types: `import type { AuthConfigSchema }`
-- Any usage warned/errored depending on context
+**TypeScript Barrel Files:**
+- Used for UI components: `packages/webapp/src/shared/ui/index.ts`
+- Used for shared types: `packages/shared/src/index.ts` re-exports from multiple files
+- Pattern:
+```typescript
+export type { UserRow, AttemptRow } from './tables';
+export type { TrackStatus, AttemptMode } from './enums';
+export { XP_PER_LEVEL, RANK_TITLES } from './constants';
+```
 
 ---
 
-*Convention analysis: 2026-02-01*
+*Convention analysis: 2026-02-02*

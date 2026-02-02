@@ -1,418 +1,397 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-01
+**Analysis Date:** 2026-02-02
 
 ## Test Framework
 
-**Runner:**
-- Vitest 3.2.4
-- Config files:
-  - Backend: `backend/vitest.config.ts`
-  - Frontend: `frontend/vitest.config.ts`
+**Python:**
+- No test framework detected in dependencies
+- `requirements.txt` does not include pytest, unittest, or other testing frameworks
+- No test files found in `bot/` directory structure
 
-**Assertion Library:**
-- Vitest built-in (uses standard expect syntax)
+**TypeScript:**
+- No test framework detected in package.json
+- No Vitest, Jest, or Mocha configuration files found
+- No test files (*.test.ts, *.spec.ts) found in `packages/webapp/src/` or `packages/shared/src/`
 
 **Run Commands:**
 ```bash
-npm run test              # Run all tests in workspace
-npm run test:watch       # Watch mode (all packages)
-npm run test:coverage    # Generate coverage reports
-
-# Backend specific
-cd backend && npm run test
-cd backend && npm run test:watch
-cd backend && npm run test:coverage
-
-# Frontend specific
-cd frontend && npm run test
-cd frontend && npm run test:ui       # Vitest UI
-cd frontend && npm run test:coverage
+# No test commands configured
+# Neither package.json nor requirements.txt include testing scripts
 ```
 
 ## Test File Organization
 
-**Backend Tests:**
-- Location: `backend/tests/unit/` for unit tests
-- Naming: `*.test.ts` (not .spec.ts)
-- Single file per module: `email.test.ts`, `response.test.ts`, `validations.test.ts`
+**Location:**
+- No test files present in codebase
 
-**Frontend Tests:**
-- Location: TBD (no frontend tests found in codebase)
-- Would follow: `src/**/*.test.tsx` co-located pattern
+**Expected Future Organization:**
+- Python: tests could follow pytest convention with `tests/` directory or `test_*.py` files co-located
+- TypeScript: tests would likely use `*.test.ts` or `*.spec.ts` co-located with source files
 
-**Test Structure:**
-```
-backend/
-├── tests/
-│   ├── unit/              # Unit tests for services, utilities
-│   │   ├── email.test.ts
-│   │   ├── response.test.ts
-│   │   ├── validations.test.ts
-│   │   └── ...
-│   ├── setup.ts           # Global test setup
-│   └── verify-bootstrap-import.js
-└── src/
-```
+**Structure:**
+- Not applicable (no tests present)
 
 ## Test Structure
 
 **Suite Organization:**
-All tests use Vitest's `describe` and `it` structure:
+Not applicable - no tests present in codebase.
 
+**Expected Pattern (Python):**
+```python
+# Future pytest pattern
+import pytest
+from bot.services.llm_router import create_provider
+
+@pytest.fixture
+def mock_api_key():
+    return "test_key_12345"
+
+def test_create_provider_claude(mock_api_key):
+    provider = create_provider("claude", mock_api_key, "claude-sonnet-4")
+    assert provider is not None
+    assert provider.name == "claude"
+```
+
+**Expected Pattern (TypeScript):**
 ```typescript
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+// Future Vitest pattern
+import { describe, it, expect } from 'vitest';
+import { cn } from '@/shared/lib/cn';
 
-describe('EmailService', () => {
-  let emailService: EmailService;
-
-  beforeEach(async () => {
-    // Setup before each test
-    vi.resetAllMocks();
-    emailService = EmailService.getInstance();
-  });
-
-  afterEach(() => {
-    // Cleanup after each test
-    process.env = oldEnv;
-  });
-
-  describe('getInstance', () => {
-    it('returns singleton instance', () => {
-      const instance1 = EmailService.getInstance();
-      const instance2 = EmailService.getInstance();
-      expect(instance1).toBe(instance2);
-    });
-  });
-
-  describe('sendWithTemplate', () => {
-    it('successfully sends email with template', async () => {
-      // Test body
-    });
+describe('cn utility', () => {
+  it('merges class names correctly', () => {
+    const result = cn('base', 'override');
+    expect(result).toBe('base override');
   });
 });
 ```
-
-**Patterns:**
-- One top-level `describe` per class/module
-- Nested `describe` blocks for method grouping
-- Each `it` is one test case with one primary assertion
-- `beforeEach`/`afterEach` for test isolation
-- Descriptive test names starting with verb: "successfully sends", "throws error", "handles X"
 
 ## Mocking
 
-**Framework:** Vitest's `vi` module
+**Framework:** Not applicable - no testing framework present
 
-**Patterns:**
-Module mocking with `vi.mock()`:
+**Expected Patterns:**
+
+Python (pytest):
+```python
+# Mock httpx for LLM API calls
+@pytest.mark.asyncio
+async def test_llm_router_retry_logic(mocker):
+    mock_post = mocker.patch('httpx.AsyncClient.post')
+    mock_post.side_effect = [
+        httpx.HTTPStatusError("500", request=..., response=...),
+        httpx.Response(200, json={"content": [{"text": "success"}]})
+    ]
+
+    provider = ClaudeProvider(api_key="test", model="claude-sonnet-4")
+    result = await provider.complete("system", "user")
+
+    assert mock_post.call_count == 2
+    assert result["analysis"] is not None
+```
+
+TypeScript (Vitest):
 ```typescript
-vi.mock('axios');
-vi.mock('jsonwebtoken');
-vi.mock('../../src/utils/logger', () => ({
-  default: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  },
+// Mock InsForge SDK calls
+import { vi } from 'vitest';
+
+vi.mock('@insforge/sdk', () => ({
+  createClient: vi.fn(() => ({
+    database: {
+      from: vi.fn(() => ({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      })),
+    },
+  })),
 }));
 ```
 
-Function spying and mocking:
-```typescript
-// Mock return value
-(jwt.sign as unknown as ReturnType<typeof vi.fn>).mockReturnValue('mocked-jwt-token');
-
-// Mock resolved value for async
-vi.mocked(axios.post).mockResolvedValue({
-  data: { success: true },
-});
-
-// Mock rejected value
-vi.mocked(axios.post).mockRejectedValue(error);
-
-// Spy on function
-const logSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger);
-expect(logSpy).toHaveBeenCalled();
-logSpy.mockRestore();
-```
-
 **What to Mock:**
-- External HTTP calls (axios, fetch)
-- JWT signing/verification
-- Logger calls
-- External service configuration
-- Environment variables (save/restore in beforeEach/afterEach)
+- HTTP calls (httpx in Python, fetch/InsForge SDK in TypeScript)
+- LLM API interactions (Claude, OpenRouter)
+- Database operations (InsForge client)
+- File system operations (reading prompts, scenarios)
+- Telegram Bot API calls (aiogram)
+- External services (AssemblyAI transcription)
 
 **What NOT to Mock:**
-- Core business logic being tested
-- Database queries (use in-memory or test DB)
-- Input validation (test real behavior)
-- Utility functions like `convertSqlTypeToColumnType`
+- Pydantic model validation
+- Pure utility functions (formatting, calculations)
+- Type definitions and constants
+- Configuration parsing (test with real Pydantic Settings)
 
 ## Fixtures and Factories
 
 **Test Data:**
-Simple test data defined inline or in test helpers:
-```typescript
-// From response.test.ts
-const data = { message: 'ok' };
-const error = 'ERROR';
-const message = 'Something went wrong';
+Not applicable - no tests present.
 
-// From email.test.ts
-const templateVariables = { token: '123456' };
-const email = 'user@example.com';
-const name = 'John Doe';
+**Expected Pattern (Python):**
+```python
+# bot/tests/fixtures.py
+import pytest
+from bot.storage.models import UserModel, AttemptModel
+
+@pytest.fixture
+def sample_user():
+    return UserModel(
+        telegram_id=123456789,
+        username="testuser",
+        provider="openrouter",
+        total_xp=500,
+        current_level=3
+    )
+
+@pytest.fixture
+def sample_attempt():
+    return AttemptModel(
+        telegram_id=123456789,
+        scenario_id="sales_101",
+        mode="practice",
+        score=75,
+        xp_earned=50
+    )
 ```
 
-**Factory Pattern:**
-Not heavily used. Tests create instances directly:
+**Expected Pattern (TypeScript):**
 ```typescript
-beforeEach(async () => {
-  const { config } = await import('../../src/app.config');
-  config.cloud.projectId = 'test-project-123';
-  emailService = EmailService.getInstance();
-});
+// packages/webapp/src/test/factories.ts
+import type { UserRow } from '@deal-quest/shared';
+
+export function createMockUser(overrides?: Partial<UserRow>): UserRow {
+  return {
+    id: 1,
+    telegram_id: 123456789,
+    username: 'testuser',
+    first_name: 'Test',
+    provider: 'openrouter',
+    encrypted_api_key: null,
+    openrouter_model: 'openai/gpt-oss-120b',
+    total_xp: 500,
+    current_level: 3,
+    streak_days: 5,
+    last_active_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
 ```
 
 **Location:**
-- No separate fixtures directory
-- Test data inline in test file
-- Environment setup in `tests/setup.ts`
+- Would be in `bot/tests/fixtures.py` for Python
+- Would be in `packages/webapp/src/test/factories.ts` for TypeScript
 
 ## Coverage
 
-**Requirements:** Not enforced at commit level
+**Requirements:** Not enforced - no coverage tooling configured
 
-**Frontend Coverage Thresholds** (from `frontend/vitest.config.ts`):
-```typescript
-coverage: {
-  provider: 'v8',
-  reporter: ['text', 'json', 'html'],
-  exclude: [
-    'node_modules/',
-    'src/test/',
-    '**/*.d.ts',
-    '**/*.config.*',
-    '**/mockData.ts',
-    'src/main.tsx',
-  ],
-  thresholds: {
-    lines: 60,
-    functions: 60,
-    branches: 60,
-    statements: 60,
-  },
-}
+**Expected Setup (Python):**
+```bash
+# Install pytest-cov
+pip install pytest pytest-cov
+
+# Run with coverage
+pytest --cov=bot --cov-report=html --cov-report=term
+
+# View coverage report
+open htmlcov/index.html
 ```
 
-**Backend Coverage:**
-```typescript
-coverage: {
-  provider: 'v8',
-  reporter: ['text', 'json', 'html'],
-  exclude: ['node_modules/', 'dist/', 'frontend/', 'tests/', '**/*.d.ts', '**/*.config.*'],
-}
+**Expected Setup (TypeScript):**
+```bash
+# Vitest includes coverage via v8 or istanbul
+npm install -D vitest @vitest/coverage-v8
+
+# Run with coverage
+npm run test:coverage
+
+# View report
+open coverage/index.html
 ```
 
 **View Coverage:**
-```bash
-npm run test:coverage    # Generates coverage reports
-# HTML report: coverage/index.html
-```
+Not applicable - no coverage configuration present
 
 ## Test Types
 
 **Unit Tests:**
-- Scope: Individual functions, services, utilities
-- Location: `backend/tests/unit/`
-- Files: 13 test files covering:
-  - Email service integration
-  - Response utility functions
-  - Password/identifier validation
-  - SQL type conversion
-  - Logger behavior
-  - Rate limiting
-  - Cloud token verification
-  - Database parsing
-  - Environment configuration
-- Approach: Mock external dependencies, test function behavior with various inputs
-
-Example from `validations.test.ts`:
-```typescript
-describe('validateEmail', () => {
-  test('valid email returns true', () => {
-    expect(validateEmail('test@example.com')).toBe(true);
-  });
-
-  test('invalid email returns false', () => {
-    expect(validateEmail('invalid-email')).toBe(false);
-  });
-});
-```
+- Not present in codebase
+- Would test:
+  - Python: Individual agent logic (`bot/agents/strategist.py`, `bot/agents/trainer.py`)
+  - Python: Service layer (`bot/services/llm_router.py`, `bot/services/scoring.py`)
+  - Python: Utilities (`bot/utils.py` formatting functions)
+  - TypeScript: UI components (`packages/webapp/src/shared/ui/Button.tsx`)
+  - TypeScript: Hooks (`packages/webapp/src/features/auth/useAuth.ts`)
 
 **Integration Tests:**
-- Not present in current test suite
-- Would test service interactions (email + auth flow)
-- Would use real or test database
+- Not present in codebase
+- Would test:
+  - Python: Pipeline execution end-to-end (`bot/pipeline/runner.py`)
+  - Python: InsForge repository operations (`bot/storage/repositories.py`)
+  - Python: Telegram handler flows (`bot/handlers/support.py`, `bot/handlers/learn.py`)
+  - TypeScript: Page-level interactions with mocked backend
 
 **E2E Tests:**
-- Framework: Not detected
-- Command: `npm run test:e2e` exists but implementation in `./tests/run-all-tests.sh`
-- Not actively maintained in main test suite
+- Not present in codebase
+- Would test:
+  - Full bot conversation flows via Telegram API
+  - TMA user journeys (login → support → save lead)
+  - Edge function integration
 
 ## Common Patterns
 
-**Async Testing:**
-All async tests use async/await with expect().rejects pattern:
-```typescript
-it('throws error if PROJECT_ID is not configured', async () => {
-  const { config } = await import('../../src/app.config');
-  config.cloud.projectId = 'local';
+**Async Testing (Python):**
+Expected pattern using pytest-asyncio:
+```python
+import pytest
 
-  await expect(
-    emailService.sendWithTemplate('user@example.com', 'John', 'email-verification-code', {
-      token: '123456',
-    })
-  ).rejects.toThrow(AppError);
+@pytest.mark.asyncio
+async def test_pipeline_runner_sequential():
+    """Test sequential step execution in pipeline."""
+    registry = AgentRegistry()
+    runner = PipelineRunner(registry)
 
-  await expect(
-    emailService.sendWithTemplate('user@example.com', 'John', 'email-verification-code', {
-      token: '123456',
-    })
-  ).rejects.toThrow('PROJECT_ID is not configured');
-
-  // Reset for other tests
-  config.cloud.projectId = 'test-project-123';
-});
-```
-
-**Error Testing:**
-Test both error type and message:
-```typescript
-it('throws error for invalid template type', async () => {
-  await expect(
-    emailService.sendWithTemplate(
-      'user@example.com',
-      'John',
-      '123456',
-      'invalid-template' as any  // Type cast for testing invalid input
+    config = load_pipeline("support")
+    ctx = PipelineContext(
+        user_message="Help with deal",
+        llm=mock_provider,
+        knowledge_base="Test KB"
     )
-  ).rejects.toThrow('Invalid template type');
-});
+
+    results = await runner.run(config, ctx)
+    assert results["strategist"].success is True
 ```
 
-Specific error handling:
+**Async Testing (TypeScript):**
+Expected pattern using Vitest:
 ```typescript
-it('handles 401 authentication error', async () => {
-  const error = new Error('Request failed') as any;
-  error.isAxiosError = true;
-  error.response = {
-    status: 401,
-    data: { message: 'Unauthorized' },
-  };
+import { describe, it, expect, vi } from 'vitest';
 
-  vi.mocked(axios.post).mockRejectedValue(error);
-  vi.mocked(axios.isAxiosError).mockReturnValue(true);
+describe('authenticateWithTelegram', () => {
+  it('successfully authenticates with valid initData', async () => {
+    vi.mock('@telegram-apps/sdk-react', () => ({
+      retrieveLaunchParams: () => ({ initDataRaw: 'mock_data' }),
+    }));
 
-  await expect(
-    emailService.sendWithTemplate('user@example.com', 'John', 'email-verification-code', {
-      token: '123456',
-    })
-  ).rejects.toThrow('Authentication failed with cloud email service');
-});
-```
+    const result = await authenticateWithTelegram();
 
-**Singleton Testing:**
-Tests verify singleton pattern works:
-```typescript
-describe('getInstance', () => {
-  it('returns singleton instance', () => {
-    const instance1 = EmailService.getInstance();
-    const instance2 = EmailService.getInstance();
-    expect(instance1).toBe(instance2);
+    expect(result.jwt).toBeDefined();
+    expect(result.telegramId).toBeGreaterThan(0);
   });
 });
 ```
 
-**Mock Spy Assertions:**
-From `response.test.ts`:
+**Error Testing (Python):**
+Expected pattern:
+```python
+def test_llm_router_invalid_provider():
+    """Test error handling for unsupported provider."""
+    with pytest.raises(ValueError, match="Unsupported provider"):
+        create_provider("invalid_provider", "key", "model")
+
+@pytest.mark.asyncio
+async def test_agent_handles_llm_failure():
+    """Test agent gracefully handles LLM errors."""
+    agent = StrategistAgent()
+    mock_llm = Mock()
+    mock_llm.complete.side_effect = Exception("API Error")
+
+    input_data = AgentInput(user_message="test")
+    ctx = PipelineContext(llm=mock_llm)
+
+    output = await agent.run(input_data, ctx)
+    assert output.success is False
+    assert "API Error" in output.error
+```
+
+**Error Testing (TypeScript):**
+Expected pattern:
 ```typescript
-it('successResponse returns data with correct status', () => {
-  const data = { message: 'ok' };
-  successResponse(res as Response, data, 201);
-  expect(res.status).toHaveBeenCalledWith(201);
-  expect(res.json).toHaveBeenCalledWith(data);
+describe('Button', () => {
+  it('disables button when isLoading is true', () => {
+    const { getByRole } = render(<Button isLoading>Click Me</Button>);
+    const button = getByRole('button');
+
+    expect(button).toBeDisabled();
+  });
 });
 ```
 
-## Test Setup
+## Test Coverage Gaps
 
-**Backend Setup File** (`backend/tests/setup.ts`):
-```typescript
-import { beforeEach, afterEach } from 'vitest';
-import fs from 'fs/promises';
+**Untested Areas (as of 2026-02-02):**
 
-// Clean up test database before each test
-beforeEach(async () => {
-  const testDataDir = './test-data';
-  try {
-    await fs.rm(testDataDir, { recursive: true, force: true });
-  } catch {
-    // Directory might not exist, that's ok
-  }
-});
+**Python Bot (`bot/`):**
+- All handler logic (`bot/handlers/*`)
+- All agent implementations (`bot/agents/*`)
+- All service layer (`bot/services/*`)
+- Pipeline orchestration (`bot/pipeline/runner.py`)
+- Tracing system (`bot/tracing/*`)
+- Repository layer (`bot/storage/repositories.py`)
+- Utilities (`bot/utils.py`)
 
-// Clean up after all tests
-afterEach(async () => {
-  const testDataDir = './test-data';
-  try {
-    await fs.rm(testDataDir, { recursive: true, force: true });
-  } catch {
-    // Directory might not exist, that's ok
-  }
-});
+**TypeScript Webapp (`packages/webapp/`):**
+- All React components (`src/shared/ui/*`, `src/pages/*`)
+- Authentication logic (`src/features/auth/useAuth.ts`)
+- State management (`src/features/auth/store.ts`)
+- Routing (`src/app/Router.tsx`)
+
+**TypeScript Shared (`packages/shared/`):**
+- Type definitions (types don't need runtime tests, but validation logic would)
+- Constants and calculations (`src/constants.ts`)
+
+**Edge Functions (`functions/`):**
+- Database proxy (`db-proxy.js`)
+- Telegram verification (`verify-telegram/`)
+
+**Priority for Testing:**
+1. High: Core bot logic (agents, handlers, services) - this is production code handling user interactions
+2. High: Pipeline execution and tracing - critical for observability
+3. Medium: Repository layer - data integrity matters
+4. Medium: UI components - user-facing but easier to test manually
+5. Low: Utilities and formatters - simple, low-risk code
+
+## Recommendations
+
+**Set Up Testing Infrastructure:**
+
+Python:
+```bash
+# Add to requirements.txt
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+httpx>=0.27.0  # Already present, needed for test fixtures
 ```
 
-**Backend vitest.config.ts Key Settings:**
-```typescript
-test: {
-  environment: 'node',
-  globals: true,          // describe, it, expect available globally
-  setupFiles: ['./tests/setup.ts'],
-  testTimeout: 10000,
-  // Run tests sequentially to avoid database conflicts
-  pool: 'forks',
-  poolOptions: {
-    forks: {
-      singleFork: true,   // Single worker to prevent race conditions
-    },
+TypeScript:
+```json
+// Add to packages/webapp/package.json
+{
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "jsdom": "^25.0.0"
   },
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  }
 }
 ```
 
-**Frontend vitest.config.ts Key Settings:**
-```typescript
-test: {
-  globals: true,
-  environment: 'jsdom',
-  setupFiles: './src/test/setup.ts',
-  css: true,
-}
-```
-
-## Testing Best Practices
-
-**In This Codebase:**
-- Tests reset mocks in beforeEach to prevent test pollution
-- Environment variables saved/restored per test
-- Descriptive test names that read like documentation
-- One assertion per test or grouped related assertions
-- Mock configuration done via vi.mock() at top level
-- TypeScript `as unknown as` used to safely cast mocks
-- Comments with eslint-disable for intentional type violations (e.g., testing invalid input)
+**Testing Strategy:**
+1. Start with unit tests for critical path (agent logic, LLM routing)
+2. Add integration tests for pipelines
+3. Mock external dependencies (Telegram API, LLM APIs, InsForge)
+4. Use fixtures for common test data (users, attempts, scenarios)
+5. Aim for 70%+ coverage on business logic, lower on UI
 
 ---
 
-*Testing analysis: 2026-02-01*
+*Testing analysis: 2026-02-02*

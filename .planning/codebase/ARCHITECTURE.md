@@ -1,251 +1,201 @@
 # Architecture
 
-**Analysis Date:** 2026-02-01
+**Analysis Date:** 2026-02-02
 
 ## Pattern Overview
 
-**Overall:** Layered architecture with feature-based organization and context-driven state management.
+**Overall:** Multi-language Monorepo with Service-Oriented Architecture
 
 **Key Characteristics:**
-- Feature-first modularity with isolated domains (database, auth, storage, realtime, etc.)
-- Global state via React Context (Auth, Socket, Modal, Theme, SQL Editor)
-- Service layer pattern for API communication
-- React Query (TanStack Query) for server state management
-- Hook-based composition for component logic
-- Barrel exports for encapsulation at feature boundaries
+- Python backend (Telegram bot) with async agent pipeline system
+- TypeScript frontend (React TMA) with client-side routing
+- Shared InsForge PostgreSQL backend (PostgREST API)
+- YAML-configured agent pipelines with sequential/parallel/background execution
+- Repository pattern for data access across all components
 
 ## Layers
 
-**Presentation Layer (Pages & Components):**
-- Purpose: User interface rendering and interaction
-- Location: `src/features/*/pages/`, `src/components/`
-- Contains: Page components, feature-specific UI components, shared UI library
-- Depends on: Hooks, contexts, services, utilities
-- Used by: Browser/user interaction
+**Telegram Bot Layer (Python):**
+- Purpose: Handle Telegram interactions and orchestrate AI-powered workflows
+- Location: `deal-quest-bot/bot/`
+- Contains: Command handlers, FSM states, middleware, agent pipelines
+- Depends on: InsForge database, LLM providers (OpenRouter/Claude), AssemblyAI
+- Used by: Telegram users via bot commands
 
-**Feature Domain Layer:**
-- Purpose: Feature-specific logic and components (database, auth, storage, functions, realtime, etc.)
-- Location: `src/features/{feature}/`
-- Contains: Pages, components, hooks, services, contexts, templates
-- Depends on: Services, shared-schemas, lib contexts
-- Used by: Pages, other features via barrel exports
+**Web Application Layer (TypeScript):**
+- Purpose: Telegram Mini App companion interface
+- Location: `deal-quest-bot/packages/webapp/`
+- Contains: React pages, UI components, client-side routing, state management
+- Depends on: InsForge SDK, Telegram SDK, shared types package
+- Used by: Telegram users via Mini App button
 
-**Hooks & Custom Logic Layer:**
-- Purpose: Encapsulate stateful logic and API integration patterns
-- Location: `src/lib/hooks/`, `src/features/*/hooks/`
-- Contains: React Query hooks (useTables, useRecords, etc.), custom hooks (useAuth, useModal, useToast, useMetadata)
-- Depends on: Services, contexts, react-query
-- Used by: Components, pages
+**Agent Pipeline Layer (Python):**
+- Purpose: Execute AI workflows with configurable step ordering
+- Location: `deal-quest-bot/bot/pipeline/`, `deal-quest-bot/bot/agents/`
+- Contains: Pipeline runner, agent implementations, YAML config loader
+- Depends on: LLM router service, knowledge service, tracing system
+- Used by: Command handlers (support, learn, train)
 
-**Context Layer (Global State):**
-- Purpose: Cross-cutting state concerns (auth, socket, modals, theme, SQL editor state)
-- Location: `src/lib/contexts/`
-- Contains: AuthContext, SocketContext, ModalContext, ThemeContext
-- Depends on: Services, API client, utilities
-- Used by: App root providers, feature hooks
+**Data Access Layer (Python/TypeScript):**
+- Purpose: Abstract database operations via repository pattern
+- Location: `deal-quest-bot/bot/storage/`, `deal-quest-bot/packages/webapp/src/lib/insforge.ts`
+- Contains: InsForge client wrappers, repository classes, data models
+- Depends on: InsForge PostgREST API
+- Used by: All business logic layers
 
-**Service Layer (API & Business Logic):**
-- Purpose: Encapsulate API communication and business logic
-- Location: `src/features/*/services/`, `src/lib/services/`
-- Contains: Service classes that wrap apiClient requests
-- Depends on: apiClient, shared-schemas types
-- Used by: Hooks, contexts
+**Business Services Layer (Python):**
+- Purpose: Encapsulate domain logic and external integrations
+- Location: `deal-quest-bot/bot/services/`
+- Contains: LLM router, knowledge loader, crypto, transcription, scoring, analytics
+- Depends on: External APIs (OpenRouter, Claude, AssemblyAI), repositories
+- Used by: Handlers and agents
 
-**API Client Layer:**
-- Purpose: HTTP request orchestration with token management and retry logic
-- Location: `src/lib/api/client.ts`
-- Contains: ApiClient class (singleton) managing auth headers, CSRF tokens, 401 handling
-- Depends on: None (primitive utilities)
-- Used by: All services
+**InsForge Backend Layer:**
+- Purpose: Self-hosted Supabase-like backend providing database, auth, storage, functions
+- Location: `insforge/insforge/`
+- Contains: Node.js backend, React admin frontend, PostgREST proxy, edge functions
+- Depends on: PostgreSQL, OAuth providers
+- Used by: Bot and webapp via HTTP API
 
-**Routing & Navigation:**
-- Purpose: Application route structure and access control
-- Location: `src/lib/routing/`
-- Contains: AppRoutes (route definitions), RequireAuth (auth guard)
-- Depends on: Contexts, feature pages
-- Used by: App component
-
-**Utilities & Helpers:**
-- Purpose: Shared functions and constants
-- Location: `src/lib/utils/`, `src/features/*/helpers.ts`
-- Contains: menuItems, schemaValidations, cloudMessaging, cloudUtils, conversion functions
-- Depends on: Types from shared-schemas
-- Used by: Throughout application
+**Edge Functions Layer:**
+- Purpose: Serverless functions for specialized operations
+- Location: `deal-quest-bot/functions/`
+- Contains: Database proxy (`db-proxy.js`), Telegram auth verification (`verify-telegram/`)
+- Depends on: InsForge runtime
+- Used by: Webapp for auth validation and proxied queries
 
 ## Data Flow
 
-**Authentication Flow:**
+**Support Flow (Deal Analysis):**
 
-1. User navigates to `/dashboard/login` → LoginPage component
-2. User submits credentials → loginService.loginWithPassword()
-3. apiClient sends POST to `/auth/admin/sessions` with email/password
-4. Backend returns user, accessToken, csrfToken
-5. apiClient.setAccessToken() and apiClient.setCsrfToken() store tokens
-6. AuthContext invalidates auth-related queries (tables, users, metadata, mcp-usage)
-7. AuthContext state updates (user, isAuthenticated = true)
-8. User redirected to `/dashboard`
+1. User sends `/support` command or message to bot
+2. Handler validates user, captures input (text/voice/image)
+3. If voice: TranscriptionService → AssemblyAI → text
+4. If image: Upload to InsForge storage bucket
+5. PipelineRunner loads `support.yaml` config
+6. TraceContext wraps pipeline execution for observability
+7. StrategistAgent: LLMRouter → OpenRouter/Claude with playbook context → analysis JSON
+8. MemoryAgent (background): Updates user memory in database
+9. Handler formats response with inline keyboard actions
+10. ProgressUpdater provides real-time Telegram message updates during pipeline
 
-**Data Fetching (React Query Pattern):**
+**Learn Flow (Structured Training):**
 
-1. Component mounts or dependency changes → Hook (e.g., useTables)
-2. Hook calls tableService.listTables() via React Query queryFn
-3. tableService calls apiClient.request('/tables/list')
-4. apiClient constructs request with Authorization Bearer header
-5. Backend responds with data
-6. React Query caches response with staleTime: 2 * 60 * 1000 (2 minutes)
-7. Hook returns { data: tables, isLoading, error, refetch }
-8. Component renders based on loading/error/data states
+1. User selects track and lesson from inline keyboard
+2. Handler loads scenario from `data/scenarios.json`
+3. PipelineRunner executes `learn.yaml` (TrainerAgent)
+4. TrainerAgent sends scenario to LLM with user response
+5. LLM returns scoring JSON (rubric-based evaluation)
+6. ScoringService calculates XP and streak bonuses
+7. AttemptRepo and TrackProgressRepo persist results
+8. Handler displays score, feedback, next lesson
 
-**Database Records Update:**
+**Train Flow (Random Practice):**
 
-1. User selects table in TableSidebar → TablesPage sets selectedTable
-2. useRecords(selectedTable) hook queries `/records/{table}`
-3. DatabaseDataGrid renders rows from query cache
-4. User submits RecordFormDialog → recordService.createRecord()
-5. Service sends POST to `/records/{table}`
-6. On success: React Query invalidates ['records', tableName] queryKey
-7. useRecords re-fetches latest data automatically
-8. DatabaseDataGrid updates with new records
+1. User triggers `/train` command
+2. ScenarioGeneratorService checks generated scenario pool
+3. If pool low: Background task generates new scenarios via LLM
+4. Handler fetches unseen scenario from GeneratedScenarioRepo
+5. PipelineRunner executes `train.yaml` (TrainerAgent)
+6. Scoring and persistence identical to Learn flow
 
-**Real-time Updates (Socket.io):**
+**Webapp Flow (TMA):**
 
-1. SocketProvider initializes socket.io connection in App
-2. Server emits `data:update` events with resource type and name
-3. Socket listener catches event (e.g., DatabaseResourceUpdate)
-4. If type === 'records' → invalidates ['records', name] in React Query
-5. useRecords() hook automatically re-fetches
-6. Component re-renders with fresh data
+1. Telegram opens Mini App with initData
+2. AuthProvider validates initData via `verify-telegram` edge function
+3. QueryProvider sets up TanStack Query with InsForge SDK client
+4. AppRouter lazy-loads page components
+5. Pages fetch data via useQuery hooks → InsForge PostgREST API
+6. User interactions trigger mutations → InsForge API → PostgreSQL
 
-**SQL Editor State Persistence:**
-
-1. SQLEditorProvider wraps App → initializes from localStorage
-2. User adds/edits SQL tab → updateTabQuery() updates local state
-3. useEffect triggers debouncedSave (500ms debounce)
-4. localStorage.setItem('sql-editor-tabs', JSON.stringify(tabs))
-5. On page reload → loadTabsFromStorage() restores state
-6. User executes query → useRawSQL() hook sends to backend
-7. Results displayed in modal or grid
+**State Management:**
+- Bot: aiogram FSMContext (in-memory per-user state)
+- Webapp: Zustand stores for client state, TanStack Query for server state
+- Database: PostgreSQL as source of truth for persistent data
 
 ## Key Abstractions
 
-**Service Classes:**
-- Purpose: Encapsulate API endpoints and error handling
-- Examples: `tableService`, `recordService`, `databaseService`, `loginService`, `storageService`
-- Pattern: Singleton instances exported from service files, called by hooks/contexts
-- Example location: `src/features/database/services/table.service.ts`
+**BaseAgent:**
+- Purpose: Abstract base for pipeline agents
+- Examples: `deal-quest-bot/bot/agents/strategist.py`, `deal-quest-bot/bot/agents/trainer.py`, `deal-quest-bot/bot/agents/memory.py`
+- Pattern: ABC with typed I/O (AgentInput → AgentOutput), `@traced_span` decorator for observability
 
-**Custom Hooks (React Query):**
-- Purpose: Bundle data fetching, caching, mutation, and error handling
-- Examples: `useTables()`, `useRecords()`, `useCSVImport()`
-- Pattern: Hooks return { data, isLoading, error, actions } from useQuery + useMutation combos
-- Example location: `src/features/database/hooks/useTables.ts`
+**PipelineRunner:**
+- Purpose: Execute YAML-defined agent workflows
+- Examples: `deal-quest-bot/bot/pipeline/runner.py`
+- Pattern: Interprets StepConfig, handles sequential/parallel/background modes, manages PipelineContext
 
-**Context Providers:**
-- Purpose: Global state and cross-cutting concerns
-- Examples: AuthProvider, SocketProvider, ModalProvider, ThemeProvider, SQLEditorProvider
-- Pattern: Context + custom hook (useAuth, useSocket, useModal, etc.)
-- Example location: `src/lib/contexts/AuthContext.tsx`
+**InsForgeClient:**
+- Purpose: Async HTTP wrapper for PostgREST API
+- Examples: `deal-quest-bot/bot/storage/insforge_client.py`
+- Pattern: CRUD methods (query/create/update/upsert/delete), PostgREST operator handling, file upload
 
-**Service Layer Pattern:**
-- Purpose: Decouple components from API details
-- Pattern: Services wrap apiClient.request(), handle data transformation
-- Example: recordService.updateRecords() calls apiClient.request() with computed endpoint
+**Repository Classes:**
+- Purpose: Table-specific data access with type safety
+- Examples: `UserRepo`, `AttemptRepo`, `TraceRepo` (11 total in `deal-quest-bot/bot/storage/repositories.py`)
+- Pattern: One repo per table, Pydantic models for row types, wraps InsForgeClient methods
 
-**Zod Schema Validation:**
-- Purpose: Runtime type checking and form validation
-- Examples: tableFormSchema, tableFormColumnSchema, tableFormForeignKeySchema
-- Location: `src/features/database/schema.ts`
+**LLMProvider:**
+- Purpose: Abstract LLM API calls (Claude/OpenRouter)
+- Examples: `ClaudeProvider`, `OpenRouterProvider` in `deal-quest-bot/bot/services/llm_router.py`
+- Pattern: ABC with `complete()` and `validate_key()`, automatic JSON extraction, retry logic, `@traced_span` instrumentation
+
+**TraceContext:**
+- Purpose: Pipeline observability with hierarchical span tracking
+- Examples: `deal-quest-bot/bot/tracing/context.py`
+- Pattern: Async context manager, ContextVar propagation, `@traced_span` decorator for agent/LLM methods
 
 ## Entry Points
 
-**Application Bootstrap:**
-- Location: `src/main.tsx`
-- Triggers: Vite starts app
-- Responsibilities: Create React root, mount App component into #root
+**Bot Entry Point:**
+- Location: `deal-quest-bot/bot/main.py`
+- Triggers: `python3 -m bot.main` or Railway/deployment
+- Responsibilities: DI wiring (repositories, services, agents), middleware registration, handler routers, polling loop, background tasks (followup scheduler, scenario generator)
 
-**App Root Component:**
-- Location: `src/App.tsx`
-- Triggers: Mounted by main.tsx
-- Responsibilities: Wrap application with nested providers (Query, Auth, Socket, Toast, Analytics, Modal, SQL Editor), render AppRoutes
+**Webapp Entry Point:**
+- Location: `deal-quest-bot/packages/webapp/src/main.tsx`
+- Triggers: Vite dev server or production build served by CDN
+- Responsibilities: Telegram SDK initialization, eruda debug console (dev only), React root rendering
 
-**Routing Entry Point:**
-- Location: `src/lib/routing/AppRoutes.tsx`
-- Triggers: Rendered from App.tsx
-- Responsibilities: Define all application routes, wrap protected routes with RequireAuth, nest feature routes under Layout
+**InsForge Entry Point:**
+- Location: `insforge/insforge/backend/src/` (Node.js server)
+- Triggers: Docker Compose or manual start
+- Responsibilities: PostgREST proxy, auth middleware, storage API, edge function runtime, admin frontend serving
 
-**Layout Component:**
-- Location: `src/components/layout/Layout.tsx`
-- Triggers: Wrapped around all authenticated routes
-- Responsibilities: Render AppHeader (if not iframe), AppSidebar, main content area, modal overlays
-
-**Feature Pages:**
-- Location: `src/features/{feature}/pages/*.tsx`
-- Examples: TablesPage, SQLEditorPage, DashboardPage, StoragePage
-- Responsibilities: Page-level state (selected tables, forms, filters), compose feature components, call hooks for data
+**Edge Function Entry Points:**
+- Location: `deal-quest-bot/functions/db-proxy.js`, `deal-quest-bot/functions/verify-telegram/`
+- Triggers: HTTP requests from webapp
+- Responsibilities: Telegram initData verification (HMAC validation), proxied database queries
 
 ## Error Handling
 
-**Strategy:** Centralized API error handling with context-level reset on 401 Unauthorized.
+**Strategy:** Graceful degradation with logging
 
 **Patterns:**
-
-**API Client (src/lib/api/client.ts):**
-- Intercepts 401 responses → triggers onRefreshAccessToken() handler if set
-- If refresh succeeds → retries original request with new token
-- If refresh fails → calls onAuthError() handler (clears tokens, logs out user)
-- All other errors → thrown as ApiError with response metadata
-
-**Service Layer:**
-- Services wrap apiClient.request() directly without additional error handling
-- Hooks (useMutation) catch errors and convert to toast messages
-
-**Hook Error Handling (React Query):**
-- useMutation onError: catches service errors → showToast(error.message, 'error')
-- useQuery error: stored in { error } state, component conditionally renders <ErrorState />
-
-**Context Error Handling (AuthContext):**
-- loginWithPassword catches errors → sets error state
-- Returns boolean (true/false) to indicate success
-- loginService.setAuthErrorHandler() allows apiClient to notify context of 401
-
-**Component-Level:**
-- Pages/components check { isLoading, error } from hooks
-- Render LoadingState, ErrorState, or data conditionally
-- User-triggered actions (mutations) show inline toast messages
+- Bot handlers: Try-catch with user-friendly error messages, state cleanup
+- Agents: Return `AgentOutput(success=False, error=str)` on failure
+- Pipeline runner: Catches agent exceptions, stores error in context, continues if possible
+- LLM providers: Exponential backoff retry (3 attempts), JSON extraction fallback
+- Repositories: HTTP exceptions logged and re-raised, caller handles
+- Webapp: React error boundaries (future), TanStack Query error states
 
 ## Cross-Cutting Concerns
 
-**Logging:**
-- No centralized logging framework detected
-- console.* used in contexts (localStorage errors, etc.)
-- Future: Consider adding structured logging service
+**Logging:** Python `logging` module (configured in `deal-quest-bot/bot/main.py`), console output for frontend
 
-**Validation:**
-- Form validation: Zod schemas in features (database/schema.ts)
-- API response types: Shared-schemas types used as catch-all
-- Input sanitization: Delegated to backend
+**Validation:** Pydantic models for all data structures (Settings, AgentInput/Output, table rows), Telegram user authorization middleware
 
 **Authentication:**
-- AuthContext manages user state, tokens, session refresh
-- apiClient handles token injection into headers
-- Socket connection authenticated via access token in socket.io options
-- Cloud iframe authentication: Special postMessage protocol for auth code exchange
+- Bot: Username-based allowlist (`deal-quest-bot/bot/middleware.py`)
+- Webapp: Telegram initData HMAC verification via edge function
+- InsForge: OAuth (GitHub/Google) for admin panel
 
-**Authorization:**
-- RequireAuth route wrapper checks isAuthenticated boolean
-- Feature-level permissions: Backend responds with 403 Forbidden if user lacks access
-- No frontend role-based UI hiding (all protected routes require auth)
+**Tracing:** `TraceContext` async context manager wraps pipeline execution, `@traced_span` decorator on agent/LLM methods, batched flush to `pipeline_traces`/`pipeline_spans` tables
 
-**CSRF Protection:**
-- apiClient stores csrfToken in cookie (insforge_csrf)
-- Backend validates CSRF token on state-changing requests
-- Tokens set during login/session refresh from server response
+**Configuration:** Pydantic Settings from `.env` files, YAML for pipeline definitions, JSON for static data (scenarios, knowledge)
 
-**Analytics:**
-- PostHogAnalyticsProvider wraps application
-- Integrated via src/lib/analytics/posthog module
-- Tracks user events and feature usage
+**Encryption:** Fernet symmetric encryption for user API keys stored in database
 
 ---
 
-*Architecture analysis: 2026-02-01*
+*Architecture analysis: 2026-02-02*
