@@ -5,32 +5,32 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 1 - Foundation & Auth
+**Current focus:** Phase 1 - Foundation & Auth (complete, pending checkpoint verification)
 
 ## Current Position
 
 Phase: 1 of 7 (Foundation & Auth)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-01 -- Completed 01-02-PLAN.md (InsForge Auth & RLS) and 01-03-PLAN.md (Design system)
+Plan: 4 of 4 in current phase
+Status: Phase complete (pending human verification checkpoint)
+Last activity: 2026-02-02 -- Completed 01-04-PLAN.md (Routing shell & Telegram integration)
 
-Progress: [███░░░░░░░░░░░░░░░░] 3/18 (17%)
+Progress: [████░░░░░░░░░░░░░░░] 4/18 (22%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4.7m
-- Total execution time: 14m
+- Total plans completed: 4
+- Average duration: 4.5m
+- Total execution time: 18m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation & Auth | 3/4 | 14m | 4.7m |
+| 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 
 **Recent Trend:**
-- Last 5 plans: 6m, 3m, 5m
+- Last 5 plans: 6m, 3m, 5m, 4m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -57,6 +57,9 @@ Recent decisions affecting current work:
 - [01-03]: oklch color space for brand palette (perceptually uniform)
 - [01-03]: 44px minimum touch targets on all interactive elements
 - [01-03]: NavBar has 5 items (Dashboard/Learn/Train/Support/Leads)
+- [01-04]: miniApp.isActive signal over raw WebApp events for session resilience
+- [01-04]: Wildcard route suffixes (/*) on pages with future sub-routes
+- [01-04]: SecondaryButton position default 'left' for A/B scenario branching
 
 ### Pending Todos
 
@@ -71,6 +74,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Completed 01-02-PLAN.md and 01-03-PLAN.md
+Last session: 2026-02-02
+Stopped at: Completed 01-04-PLAN.md, awaiting human verification checkpoint
 Resume file: None
