@@ -24,6 +24,7 @@ from bot.storage.repositories import (
     GeneratedScenarioRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
+    TraceRepo,
     TrackProgressRepo,
     UserMemoryRepo,
     UserRepo,
@@ -37,6 +38,7 @@ _DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
 ADMIN_MENU = InlineKeyboardMarkup(
     inline_keyboard=[
+        [InlineKeyboardButton(text="⏱ Pipeline Performance", callback_data="admin:perf")],
         [InlineKeyboardButton(text="📊 Team Statistics", callback_data="admin:stats")],
         [InlineKeyboardButton(text="🏆 Leaderboard", callback_data="admin:leaderboard")],
         [InlineKeyboardButton(text="📈 Trends", callback_data="admin:trends")],
@@ -633,6 +635,165 @@ async def on_admin_gen_scenarios(
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+        ]),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:perf")
+async def on_admin_perf(
+    callback: CallbackQuery,
+    trace_repo: TraceRepo,
+    admin_usernames: list[str],
+) -> None:
+    """Show pipeline performance — recent traces with timing breakdown."""
+    username = (callback.from_user.username or "").lower()
+    if username not in admin_usernames:
+        await callback.answer("🔒 Admin only", show_alert=True)
+        return
+
+    traces = await trace_repo.get_traces(limit=20)
+
+    if not traces:
+        await callback.message.edit_text(  # type: ignore[union-attr]
+            "⏱ *Pipeline Performance*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "No traces yet. Use /support, /learn, or /train first — "
+            "every pipeline execution is now traced automatically.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")],
+            ]),
+        )
+        await callback.answer()
+        return
+
+    # Per-pipeline averages
+    by_pipeline: dict[str, list[float]] = {}
+    for t in traces:
+        dur = float(t.duration_ms) if t.duration_ms else 0
+        by_pipeline.setdefault(t.pipeline_name, []).append(dur)
+
+    lines = ["⏱ *Pipeline Performance*\n━━━━━━━━━━━━━━━━━━━━━━━━\n"]
+
+    # Averages section
+    lines.append("*Avg Duration (last 20):*")
+    for name, durations in sorted(by_pipeline.items()):
+        avg_s = (sum(durations) / len(durations)) / 1000
+        max_s = max(durations) / 1000
+        lines.append(f"  {name}: *{avg_s:.1f}s* avg, {max_s:.1f}s max ({len(durations)} runs)")
+    lines.append("")
+
+    # Recent traces with drill-down buttons
+    lines.append("*Recent Executions:*")
+    buttons = []
+    for t in traces[:10]:
+        dur_s = float(t.duration_ms) / 1000 if t.duration_ms else 0
+        status = "✅" if t.success else "❌"
+        ts = t.created_at[:16] if t.created_at else "?"
+        lines.append(
+            f"  {status} {t.pipeline_name} — *{dur_s:.1f}s* ({ts})"
+        )
+        # Short trace_id for button
+        short_id = t.trace_id[:8] if t.trace_id else "?"
+        buttons.append(
+            [InlineKeyboardButton(
+                text=f"🔍 {t.pipeline_name} {dur_s:.1f}s ({short_id})",
+                callback_data=f"admin:trace:{t.trace_id}",
+            )]
+        )
+
+    text = "\n".join(lines)
+    buttons.append([InlineKeyboardButton(text="🔙 Back", callback_data="admin:back")])
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin:trace:"))
+async def on_admin_trace_detail(
+    callback: CallbackQuery,
+    trace_repo: TraceRepo,
+    admin_usernames: list[str],
+) -> None:
+    """Drill down into a specific trace — show per-step timing."""
+    username = (callback.from_user.username or "").lower()
+    if username not in admin_usernames:
+        await callback.answer("🔒 Admin only", show_alert=True)
+        return
+
+    trace_id = callback.data.split("admin:trace:", 1)[1]  # type: ignore[union-attr]
+    spans = await trace_repo.get_spans_for_trace(trace_id)
+
+    # Also get the trace itself for header info
+    traces = await trace_repo.get_traces(limit=1)
+    trace = None
+    for t in await trace_repo.client.query(
+        trace_repo.traces_table,
+        filters={"trace_id": trace_id},
+        limit=1,
+    ) or []:
+        trace = t
+        break
+
+    total_s = float(trace["duration_ms"]) / 1000 if trace and trace.get("duration_ms") else 0
+    pipeline = trace.get("pipeline_name", "?") if trace else "?"
+    success = trace.get("success", True) if trace else True
+    error_msg = trace.get("error", "") if trace else ""
+
+    lines = [
+        f"🔍 *Trace: {pipeline}*",
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n",
+        f"Total: *{total_s:.1f}s* {'✅' if success else '❌'}",
+        f"ID: `{trace_id[:8]}...`",
+    ]
+
+    if error_msg:
+        lines.append(f"Error: _{error_msg[:200]}_")
+
+    lines.append("")
+
+    if not spans:
+        lines.append("_No step-level spans recorded for this trace._")
+    else:
+        lines.append("*Step Breakdown:*\n")
+
+        # Build a simple bar chart
+        max_dur = max(float(s.duration_ms) for s in spans) if spans else 1
+
+        for s in spans:
+            dur_s = float(s.duration_ms) / 1000 if s.duration_ms else 0
+            dur_ms = float(s.duration_ms) if s.duration_ms else 0
+            status = "✅" if s.success else "❌"
+
+            # Visual bar (max 10 chars wide)
+            bar_len = int((dur_ms / max_dur) * 10) if max_dur > 0 else 0
+            bar = "█" * max(bar_len, 1)
+
+            # Indent child spans (those with parent_span_id)
+            indent = "  ↳ " if s.parent_span_id else ""
+
+            lines.append(f"{indent}{status} `{s.span_name}`")
+            lines.append(f"{indent}  {bar} *{dur_s:.1f}s*")
+
+        # Bottleneck callout
+        slowest = max(spans, key=lambda s: float(s.duration_ms) if s.duration_ms else 0)
+        slowest_s = float(slowest.duration_ms) / 1000 if slowest.duration_ms else 0
+        pct = (float(slowest.duration_ms) / float(trace["duration_ms"]) * 100) if trace and trace.get("duration_ms") else 0
+        lines.append(f"\n⚠️ *Bottleneck:* `{slowest.span_name}` — {slowest_s:.1f}s ({pct:.0f}% of total)")
+
+    text = "\n".join(lines)
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        text,
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="⏱ Back to Performance", callback_data="admin:perf")],
+            [InlineKeyboardButton(text="🔙 Main Menu", callback_data="admin:back")],
         ]),
     )
     await callback.answer()
