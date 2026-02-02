@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 1 of 2 (Foundation - Tracing Infrastructure & Storage)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-02 — Completed 01-01-PLAN.md
+Last activity: 2026-02-02 — Completed 01-03-PLAN.md
 
-Progress: [█░░░░░░░░░] 25% (1/4 plans in phase 1)
+Progress: [██░░░░░░░░] 50% (2/4 plans in phase 1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 3.4 min
-- Total execution time: 0.06 hours
+- Total plans completed: 2
+- Average duration: 2.6 min
+- Total execution time: 0.09 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation | 1/4 | 3.4 min | 3.4 min |
+| 1. Foundation | 2/4 | 5.2 min | 2.6 min |
 | 2. Operations | 0/TBD | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 3.4min
-- Trend: Just started
+- Last 5 plans: 3.4min, 1.8min
+- Trend: Accelerating (shorter plans)
 
 *Updated after each plan completion*
 
@@ -50,6 +50,9 @@ Recent decisions affecting current work:
 | 01-01 | No FK constraint spans→traces | PostgREST ordering issues, collector may insert spans before trace |
 | 01-01 | 50KB limit on I/O serialization | Prevent storage explosion from large LLM I/O |
 | 01-01 | Simple schema (no partitioning initially) | Can add partitioning reactively when volume justifies |
+| 01-02 | TraceContext outside ProgressUpdater | Trace full execution including progress updates |
+| 01-02 | Collector starts after pipeline load, stops in finally | Ensures all traces flushed before shutdown |
+| 01-02 | Transcription blocks NOT wrapped | Not pipeline calls, just AssemblyAI API |
 | Roadmap | InsForge for trace storage | Consistent with existing data layer, accessible from future TMA |
 | Roadmap | Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does |
 
@@ -64,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 01-01-PLAN.md (Tracing Infrastructure & Storage)
+Stopped at: Completed 01-02-PLAN.md (Handler Instrumentation)
 Resume file: None
