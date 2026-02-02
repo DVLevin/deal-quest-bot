@@ -12,7 +12,7 @@ Build observability and testing infrastructure for Deal Quest Bot's AI pipelines
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation - Tracing Infrastructure & Storage** - Instrument pipelines, collect traces, persist to InsForge
+- [x] **Phase 1: Foundation - Tracing Infrastructure & Storage** - Instrument pipelines, collect traces, persist to InsForge
 - [ ] **Phase 2: Operations - Admin Commands & Synthetic Testing** - Query traces via /admin, run synthetic tests, track errors and costs
 
 ## Phase Details
@@ -36,8 +36,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Tracing core module (TraceContext, traced_span, TraceCollector) + storage layer (TraceRepo, SQL migration)
-- [ ] 01-02-PLAN.md — Handler instrumentation (wire TraceCollector lifecycle in main.py, wrap learn/train/support call sites)
-- [ ] 01-03-PLAN.md — Step-level instrumentation (apply @traced_span to agent .run() methods and LLM .complete() calls)
+- [x] 01-02-PLAN.md — Handler instrumentation (wire TraceCollector lifecycle in main.py, wrap learn/train/support call sites)
+- [x] 01-03-PLAN.md — Step-level instrumentation (apply @traced_span to agent .run() methods and LLM .complete() calls)
 
 ### Phase 2: Operations - Admin Commands & Synthetic Testing
 
@@ -69,8 +69,8 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation - Tracing Infrastructure & Storage | 1/3 | In progress | - |
+| 1. Foundation - Tracing Infrastructure & Storage | 3/3 | Complete | 2026-02-02 |
 | 2. Operations - Admin Commands & Synthetic Testing | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-02 after completing 01-01-PLAN.md*
+*Last updated: 2026-02-02 after completing Phase 1*

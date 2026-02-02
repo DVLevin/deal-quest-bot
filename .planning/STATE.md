@@ -53,6 +53,9 @@ Recent decisions affecting current work:
 | 01-02 | TraceContext outside ProgressUpdater | Trace full execution including progress updates |
 | 01-02 | Collector starts after pipeline load, stops in finally | Ensures all traces flushed before shutdown |
 | 01-02 | Transcription blocks NOT wrapped | Not pipeline calls, just AssemblyAI API |
+| 01-03 | Decorator-only changes - no method body modifications | Minimal risk of breaking existing logic |
+| 01-03 | Span naming: agent:{name}, llm:{provider} | Clear categorization for filtering and analysis in TMA |
+| 01-03 | Selective instrumentation (only .run() and .complete()) | Only core execution paths need tracing |
 | Roadmap | InsForge for trace storage | Consistent with existing data layer, accessible from future TMA |
 | Roadmap | Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does |
 
@@ -67,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 01-02-PLAN.md (Handler Instrumentation)
+Stopped at: Completed 01-03-PLAN.md (Agent & LLM Instrumentation)
 Resume file: None
