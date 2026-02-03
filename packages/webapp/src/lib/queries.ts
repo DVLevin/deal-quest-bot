@@ -24,4 +24,16 @@ export const queryKeys = {
     all: ['badges'] as const,
     byUser: (telegramId: number) => ['badges', telegramId] as const,
   },
+  trackProgress: {
+    all: ['trackProgress'] as const,
+    byTrack: (telegramId: number, trackId: string) =>
+      ['trackProgress', telegramId, trackId] as const,
+    level: (telegramId: number, trackId: string, levelId: string) =>
+      ['trackProgress', telegramId, trackId, levelId] as const,
+  },
+  scenarios: {
+    all: ['scenarios'] as const,
+    pool: (difficulty?: number) => ['scenarios', 'pool', difficulty] as const,
+    seen: (telegramId: number) => ['scenarios', 'seen', telegramId] as const,
+  },
 } as const;
