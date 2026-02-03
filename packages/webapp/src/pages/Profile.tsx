@@ -1,22 +1,25 @@
-import { Card } from '@/shared/ui';
-import { useAuthStore } from '@/features/auth/store';
+/**
+ * Profile page -- full user profile with stats, badges, and attempt history.
+ *
+ * Replaces the stub from Phase 1. Renders:
+ * - ProfileHeader: avatar, name, rank, level, XP, member-since, streak
+ * - StatsOverview: aggregate stats grid
+ * - BadgeCollection: full badge grid (earned + locked)
+ * - AttemptHistory: paginated attempt list
+ */
+
+import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
+import { StatsOverview } from '@/features/profile/components/StatsOverview';
+import { BadgeCollection } from '@/features/profile/components/BadgeCollection';
+import { AttemptHistory } from '@/features/profile/components/AttemptHistory';
 
 export default function Profile() {
-  const telegramId = useAuthStore((s) => s.telegramId);
-
   return (
-    <div className="space-y-4 px-4 pt-4">
-      <h1 className="text-xl font-bold text-text">Profile</h1>
-      <Card>
-        <p className="text-sm text-text-hint">
-          Telegram ID: <span className="font-mono text-text">{telegramId}</span>
-        </p>
-      </Card>
-      <Card>
-        <p className="text-sm text-text-hint">
-          Your rank, badges, and statistics will appear here.
-        </p>
-      </Card>
+    <div className="space-y-4 px-4 pt-4 pb-4">
+      <ProfileHeader />
+      <StatsOverview />
+      <BadgeCollection />
+      <AttemptHistory />
     </div>
   );
 }
