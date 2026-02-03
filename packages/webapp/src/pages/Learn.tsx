@@ -1,18 +1,21 @@
 /**
  * Learn page with nested sub-routes.
  *
- * - index:            TrackList (overview of all levels with status)
- * - level/:levelId:   LevelDetail (lesson content + scenario practice)
+ * - index:                       TrackList (overview of all levels with status)
+ * - level/:levelId:              LevelDetail (lesson content + scenario practice)
+ * - level/:levelId/results:      LevelResults (score, feedback, ideal comparison)
  *
  * Uses React Router v7 nested Routes within the /learn/* wildcard.
  */
 
 import { useRef } from 'react';
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router';
+import { Button } from '@/shared/ui';
 import { TRACKS } from '@/features/learn/data/tracks';
 import { TrackList } from '@/features/learn/components/TrackList';
 import { LessonView } from '@/features/learn/components/LessonView';
 import { ScenarioPractice } from '@/features/learn/components/ScenarioPractice';
+import { LevelResults } from '@/features/learn/components/LevelResults';
 
 /**
  * Level detail view: lesson content followed by scenario practice.
@@ -57,6 +60,16 @@ function LevelDetail() {
       <div ref={practiceRef}>
         <ScenarioPractice scenario={level.scenario} levelId={level.id} />
       </div>
+
+      {/* View Results link */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => navigate(`/learn/level/${level.id}/results`)}
+      >
+        View Results
+      </Button>
     </div>
   );
 }
@@ -66,6 +79,7 @@ export default function Learn() {
     <Routes>
       <Route index element={<TrackList />} />
       <Route path="level/:levelId" element={<LevelDetail />} />
+      <Route path="level/:levelId/results" element={<LevelResults />} />
     </Routes>
   );
 }

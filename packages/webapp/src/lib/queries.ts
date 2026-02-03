@@ -19,6 +19,8 @@ export const queryKeys = {
     history: (telegramId: number, page: number) =>
       ['attempts', telegramId, 'history', page] as const,
     stats: (telegramId: number) => ['attempts', telegramId, 'stats'] as const,
+    latest: (telegramId: number, scenarioId: string, mode: string) =>
+      ['attempts', telegramId, 'latest', scenarioId, mode] as const,
   },
   badges: {
     all: ['badges'] as const,
