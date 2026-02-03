@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Auth** - Monorepo scaffold, Telegram SDK, initData auth, InsForge client, routing shell, design system
 - [x] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
 - [x] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
-- [ ] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
+- [x] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
 - [ ] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
 - [ ] **Phase 6: Gamification & Admin** - Badge wall, animations, streak visuals, and team admin dashboard
 - [ ] **Phase 7: Bot Integration** - Wire TMA into existing bot with inline buttons and deep links
@@ -85,8 +85,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Support mode: strategy builder input CTA, analysis display, session history (Wave 1)
-- [ ] 04-02-PLAN.md -- Casebook: browsable list with search, filter, detail view, and template flow (Wave 2)
+- [x] 04-01-PLAN.md -- Support mode: strategy builder input CTA, analysis display, session history (Wave 1)
+- [x] 04-02-PLAN.md -- Casebook: browsable list with search, filter, detail view, and template flow (Wave 2)
 
 ### Phase 5: Leads
 **Goal**: Users can manage their sales lead pipeline with status tracking, notes, and activity history
@@ -146,7 +146,7 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-02 |
 | 2. Dashboard & Profile | 2/2 | Complete | 2026-02-03 |
 | 3. Learn & Train | 3/3 | Complete | 2026-02-03 |
-| 4. Support & Casebook | 0/2 | Not started | - |
+| 4. Support & Casebook | 2/2 | Complete | 2026-02-03 |
 | 5. Leads | 0/2 | Not started | - |
 | 6. Gamification & Admin | 0/3 | Not started | - |
 | 7. Bot Integration | 0/2 | Not started | - |
