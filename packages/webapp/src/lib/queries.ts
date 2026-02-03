@@ -38,4 +38,9 @@ export const queryKeys = {
     pool: (difficulty?: number) => ['scenarios', 'pool', difficulty] as const,
     seen: (telegramId: number) => ['scenarios', 'seen', telegramId] as const,
   },
+  support: {
+    all: ['support'] as const,
+    sessions: (telegramId: number) => ['support', telegramId, 'sessions'] as const,
+    session: (sessionId: number) => ['support', 'session', sessionId] as const,
+  },
 } as const;
