@@ -65,12 +65,12 @@ Plans:
   3. User can start a random training scenario with difficulty filter (Easy/Medium/Hard/Random), see persona details and situation text, and submit a timed response
   4. After submitting a training response, user sees animated scoring results with XP earned, feedback, and quick actions (Next Scenario, Retry, View Stats)
   5. SecondaryButton presents A/B sales decision branching during scenarios as native Telegram buttons
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Learn mode -- track visualization, lessons, and practice
-- [ ] 03-02: Train mode -- scenario cards, timer, and difficulty filter
-- [ ] 03-03: Scoring and feedback display for both Learn and Train
+- [ ] 03-01-PLAN.md -- Learn mode: track visualization, lessons, and scenario practice with bot deep link (Wave 1)
+- [ ] 03-02-PLAN.md -- Train mode: difficulty filter, scenario cards, countdown timer, and A/B branching (Wave 1)
+- [ ] 03-03-PLAN.md -- Scoring and feedback display: animated scores, feedback breakdown, quick actions (Wave 2)
 
 ### Phase 4: Support & Casebook
 **Goal**: Users can get AI-powered deal support with strategy analysis and browse/reuse their saved response library
