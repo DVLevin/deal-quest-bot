@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 4 in progress -- Support mode complete, Casebook next.
+**Current focus:** Phase 4 complete. Ready for Phase 5 (Leads & Settings).
 
 ## Current Position
 
 Phase: 4 of 7 (Support & Casebook)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-03 -- Completed 04-01-PLAN.md (Support mode)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-03 -- Completed 04-02-PLAN.md (Casebook browser)
 
-Progress: [██████████░░░░░░░░░] 10/18 (56%)
+Progress: [███████████░░░░░░░░] 11/18 (61%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 4.7m
-- Total execution time: 47m
+- Total plans completed: 11
+- Average duration: 4.5m
+- Total execution time: 50m
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [██████████░░░░░░░░░] 10/18 (56%
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
 | 3. Learn & Train | 3/3 | 16m | 5.3m |
-| 4. Support & Casebook | 1/2 | 3m | 3m |
+| 4. Support & Casebook | 2/2 | 6m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 5m, 5m, 6m, 5m, 3m
+- Last 5 plans: 5m, 6m, 5m, 3m, 3m
 - Trend: improving
 
 *Updated after each plan completion*
@@ -86,6 +86,10 @@ Recent decisions affecting current work:
 - [04-01]: Dual CTA in SupportInput: primary Start Analysis + secondary Send Screenshot with Camera icon
 - [04-01]: Clipboard copy with textarea fallback for older Telegram WebViews
 - [04-01]: refetchOnWindowFocus on support session queries for auto-refresh after bot interaction
+- [04-02]: Team-wide casebook by default, My Entries toggle adds .eq('created_from_user', telegramId)
+- [04-02]: useCasebookFilterOptions with 5min staleTime for filter chip values
+- [04-02]: Search debouncing in parent via useDebouncedValue, SearchBar is pure controlled component
+- [04-02]: escapeIlike utility for PostgREST ilike special character safety
 
 ### Pending Todos
 
@@ -108,5 +112,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 04-01-PLAN.md (Support mode). Next: 04-02 (Casebook).
+Stopped at: Completed 04-02-PLAN.md (Casebook browser). Phase 4 complete. Next: Phase 5 (Leads & Settings).
 Resume file: None
