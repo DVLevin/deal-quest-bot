@@ -154,7 +154,8 @@
 
 **Webapp Entry Point:**
 - Location: `deal-quest-bot/packages/webapp/src/main.tsx`
-- Triggers: Vite dev server or production build served by CDN
+- Triggers: Vite dev server (local) or production build served by Railway (`serve dist -s`)
+- Deployment: Railway auto-deploys from remote branch; `packages/webapp/railway.toml` sets root_dir
 - Responsibilities: Telegram SDK initialization, eruda debug console (dev only), React root rendering
 
 **InsForge Entry Point:**

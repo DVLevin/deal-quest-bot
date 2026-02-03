@@ -277,10 +277,16 @@
 - Python version: 3.11
 
 **TMA Webapp Hosting:**
-- Platform: Static hosting (Vercel, Netlify, Cloudflare Pages, etc.)
-- Build command: `pnpm --filter @deal-quest/webapp build`
+- Platform: Railway (static SPA via `serve` package)
+- Config: `deal-quest-bot/packages/webapp/railway.toml`
+- Root directory: `packages/webapp` (Railway `root_dir` isolation — cannot access `../shared`)
+- Build command: `pnpm install && pnpm build`
+- Start command: `serve dist -s -l tcp://0.0.0.0:${PORT:-8080}`
 - Build output: `dist/` (ES2020 target)
+- Build env vars: `VITE_INSFORGE_URL`, `VITE_INSFORGE_ANON_KEY` (baked into client bundle)
+- Shared types: Inlined into `packages/webapp/src/types/` (copy of `packages/shared/src/`) due to root_dir isolation
 - HTTPS required: Telegram Mini Apps require secure context
+- Deploy trigger: Push to remote branch — Railway auto-deploys on push
 
 **InsForge Hosting:**
 - Platform: Self-hosted Node.js application or Docker

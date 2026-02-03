@@ -6,34 +6,40 @@
  */
 
 /**
- * XP required to reach each level.
- * Index 0 = Level 1 (starting), Index 7 = Level 8.
- * XP is cumulative: reaching Level 3 requires XP_PER_LEVEL[2] total XP.
+ * XP required to reach each level (cumulative thresholds).
+ * Index 0 = Level 1 (starting), Index 9 = Level 10.
+ * Matches bot formula: each level N requires N*200 XP to advance.
+ * Cumulative: Level 2 = 200, Level 3 = 200+400 = 600, Level 4 = 600+600 = 1200, etc.
  */
 export const XP_PER_LEVEL: readonly number[] = [
-  0,     // Level 1: Starting level (0 XP)
-  100,   // Level 2: 100 XP
-  300,   // Level 3: 300 XP
-  600,   // Level 4: 600 XP
-  1000,  // Level 5: 1000 XP
-  1500,  // Level 6: 1500 XP
-  2200,  // Level 7: 2200 XP
-  3000,  // Level 8: 3000 XP (max level)
+  0,      // Level 1: Starting level (0 XP)
+  200,    // Level 2: 200 XP (need 1*200 to advance from L1)
+  600,    // Level 3: 600 XP (need 2*200 to advance from L2)
+  1200,   // Level 4: 1200 XP (need 3*200 to advance from L3)
+  2000,   // Level 5: 2000 XP (need 4*200 to advance from L4)
+  3000,   // Level 6: 3000 XP (need 5*200 to advance from L5)
+  4200,   // Level 7: 4200 XP (need 6*200 to advance from L6)
+  5600,   // Level 8: 5600 XP (need 7*200 to advance from L7)
+  7200,   // Level 9: 7200 XP (need 8*200 to advance from L8)
+  9000,   // Level 10: 9000 XP (need 9*200 to advance from L9)
 ] as const;
 
 /**
- * Rank titles corresponding to user levels 1-8+.
+ * Rank titles corresponding to user levels 1-10.
+ * Matches bot/services/scoring.py get_rank_title().
  * Used for display in profile, leaderboard, and level-up animations.
  */
 export const RANK_TITLES: readonly string[] = [
-  'Rookie',      // Level 1
-  'Apprentice',  // Level 2
-  'Associate',   // Level 3
-  'Specialist',  // Level 4
-  'Expert',      // Level 5
-  'Master',      // Level 6
-  'Champion',    // Level 7
-  'Legend',       // Level 8+
+  'Rookie',            // Level 1
+  'Associate',         // Level 2
+  'Specialist',        // Level 3
+  'Expert',            // Level 4
+  'Strategist',        // Level 5
+  'Deal Closer',       // Level 6
+  'Senior Advisor',    // Level 7
+  'Master Negotiator', // Level 8
+  'VP of Deals',       // Level 9
+  'Deal Legend',        // Level 10+
 ] as const;
 
 /**
@@ -70,8 +76,9 @@ export const DIFFICULTY_LABELS: Record<number, string> = {
 
 /**
  * Maximum user level in the current progression system.
+ * Matches bot/services/scoring.py get_rank_title() (10 ranks defined).
  */
-export const MAX_LEVEL = 8;
+export const MAX_LEVEL = 10;
 
 /**
  * Get the rank title for a given level.

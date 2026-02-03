@@ -85,6 +85,9 @@ Sales reps can see their progress, practice scenarios, get deal support, and tra
 | InsForge direct from TMA | No BFF needed, InsForge has REST API + row-level security | — Pending |
 | pnpm workspaces | Industry standard for JS monorepos, better than npm workspaces for this | — Pending |
 | Deployment TBD | Focus on building first, deploy when ready | — Pending |
+| Railway for TMA webapp | Static SPA serving with `serve dist -s`, auto-deploys from remote branch | Confirmed |
+| Inlined shared types for Railway | Railway `root_dir=packages/webapp` can't access `../shared`; types copied to `webapp/src/types/` | Confirmed |
+| Always push after commits | Railway deploys from remote — local-only commits never reach production. GSD executors must push after plan completion | Lesson learned (Phase 2/3) |
 
 ---
-*Last updated: 2026-02-01 after initialization*
+*Last updated: 2026-02-03 after deployment docs update*
