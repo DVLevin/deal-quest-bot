@@ -20,27 +20,27 @@ export function initTelegramSDK(): void {
   // 1. Initialize the SDK (MUST be first)
   init();
 
-  // 2. Mount each component we plan to use
+  // 2. Mount synchronous components
   backButton.mount();
   mainButton.mount();
-  themeParams.mount();
   miniApp.mount();
 
-  // 3. Viewport requires async binding
+  // 3. Mount async components and bind CSS vars after mount completes
+  themeParams.mount().then(() => {
+    themeParams.bindCssVars();
+  });
+
   viewport.mount().then(() => {
     viewport.bindCssVars();
   });
 
-  // 4. Bind theme CSS vars for Telegram color adaptation
-  themeParams.bindCssVars();
-
-  // 5. Configure behaviors
+  // 4. Configure behaviors
   if (swipeBehavior.mount.isAvailable()) {
     swipeBehavior.mount();
     swipeBehavior.disableVertical();
   }
 
-  // 6. Signal that the app is ready
+  // 5. Signal that the app is ready
   miniApp.ready();
 }
 
