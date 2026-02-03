@@ -50,7 +50,7 @@ function AppRoutes() {
           <Route path="/learn/*" element={<Learn />} />
           <Route path="/train/*" element={<Train />} />
           <Route path="/support/*" element={<Support />} />
-          <Route path="/casebook" element={<Casebook />} />
+          <Route path="/casebook/*" element={<Casebook />} />
           <Route path="/leads/*" element={<Leads />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin/*" element={<Admin />} />

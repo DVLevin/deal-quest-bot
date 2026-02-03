@@ -43,4 +43,10 @@ export const queryKeys = {
     sessions: (telegramId: number) => ['support', telegramId, 'sessions'] as const,
     session: (sessionId: number) => ['support', 'session', sessionId] as const,
   },
+  casebook: {
+    all: ['casebook'] as const,
+    list: (filters: Record<string, unknown>) => ['casebook', 'list', filters] as const,
+    entry: (entryId: number) => ['casebook', 'entry', entryId] as const,
+    filterOptions: ['casebook', 'filterOptions'] as const,
+  },
 } as const;
