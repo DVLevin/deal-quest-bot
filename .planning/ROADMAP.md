@@ -49,11 +49,11 @@ Plans:
   2. Dashboard shows the last 4 earned badges, a top-5 leaderboard with the user's position highlighted, and quick-action buttons that navigate to Learn, Train, Support, Casebook, and Leads
   3. Profile page shows avatar, username, rank, level, total XP, member-since date, full stats (total attempts, average score, best score), and paginated attempt history
   4. Profile page displays the user's badge collection with earned count vs total count
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Dashboard page with progress, leaderboard, and navigation
-- [ ] 02-02: Profile page with stats, history, and badge collection
+- [ ] 02-01-PLAN.md -- Shared data infrastructure + Dashboard page with progress, leaderboard, and navigation (Wave 1)
+- [ ] 02-02-PLAN.md -- Profile page with stats, paginated history, and badge collection (Wave 2)
 
 ### Phase 3: Learn & Train
 **Goal**: Users can practice structured learning tracks and random timed scenarios, receive AI-scored feedback, and see their scores -- the core training experience that defines Deal Quest's value
