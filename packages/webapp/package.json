@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@deal-quest/shared": "workspace:*",
+    "@deal-quest/shared": "file:../shared",
     "@insforge/sdk": "latest",
     "@tanstack/react-query": "^5.90.0",
     "@telegram-apps/sdk-react": "^3.3.9",
