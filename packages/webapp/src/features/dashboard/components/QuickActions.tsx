@@ -24,11 +24,11 @@ interface QuickAction {
 }
 
 const actions: QuickAction[] = [
+  { to: '/support', label: 'Support', icon: LifeBuoy },
+  { to: '/leads', label: 'Leads', icon: Users },
   { to: '/learn', label: 'Learn', icon: BookOpen },
   { to: '/train', label: 'Train', icon: Swords },
-  { to: '/support', label: 'Support', icon: LifeBuoy },
   { to: '/casebook', label: 'Casebook', icon: BookMarked },
-  { to: '/leads', label: 'Leads', icon: Users },
 ];
 
 export function QuickActions() {
