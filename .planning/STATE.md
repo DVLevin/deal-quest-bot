@@ -72,8 +72,14 @@ Recent decisions affecting current work:
 - [01-02]: Custom JWT acceptance by InsForge PostgREST needs runtime validation
 - [01-02]: If InsForge doesn't support current_setting('request.jwt.claims'), RLS authenticated policies may need adjustment
 
+## Quick Tasks
+
+| Task | Status | Summary |
+|------|--------|---------|
+| 001-bot-button-audit | Task 1/3 done | 87-trigger test matrix generated, awaiting manual testing (Task 2) |
+
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 01-04-PLAN.md, awaiting human verification checkpoint
+Last session: 2026-02-03
+Stopped at: Completed quick/001-PLAN.md Task 1, awaiting human testing checkpoint (Task 2)
 Resume file: None
