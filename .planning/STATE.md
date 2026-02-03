@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 2 - Dashboard & Profile (in progress)
+**Current focus:** Phase 2 complete -- ready for Phase 3
 
 ## Current Position
 
-Phase: 2 of 7 (Dashboard & Profile)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-03 -- Completed 02-01-PLAN.md (Dashboard data infrastructure & page)
+Phase: 2 of 7 (Dashboard & Profile) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Complete
+Last activity: 2026-02-03 -- Completed Phase 2 (Dashboard & Profile)
 
-Progress: [█████░░░░░░░░░░░░░░] 5/18 (28%)
+Progress: [██████░░░░░░░░░░░░░] 6/18 (33%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 4.6m
-- Total execution time: 23m
+- Total plans completed: 6
+- Average duration: 4.7m
+- Total execution time: 28m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
-| 2. Dashboard & Profile | 1/2 | 5m | 5m |
+| 2. Dashboard & Profile | 2/2 | 10m | 5m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 5m, 4m, 5m
+- Last 5 plans: 3m, 5m, 4m, 5m, 5m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -65,6 +65,10 @@ Recent decisions affecting current work:
 - [02-01]: Leaderboard fetches 10 rows, displays top 5, finds user position; graceful RLS fallback
 - [02-01]: XP progress within current level (total_xp - level threshold), MAX LEVEL at level 8
 - [02-01]: Added @deal-quest/shared workspace dependency to webapp
+- [02-02]: Client-side stats aggregation from last 100 attempts
+- [02-02]: Paginated attempt history using range() with keepPreviousData
+- [02-02]: Badge collection reuses evaluateBadges(), shows earned/locked states
+- [deploy]: Inlined shared types into webapp/src/types/ for Railway root_dir isolation
 
 ### Pending Todos
 
@@ -76,6 +80,7 @@ Recent decisions affecting current work:
 
 - [01-02]: Custom JWT acceptance by InsForge PostgREST needs runtime validation
 - [01-02]: If InsForge doesn't support current_setting('request.jwt.claims'), RLS authenticated policies may need adjustment
+- [deploy]: Railway deployment pending verification -- inlined shared types should fix build
 
 ## Quick Tasks
 
@@ -86,5 +91,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 02-01-PLAN.md (Dashboard data infrastructure & page)
+Stopped at: Phase 2 complete, Phase 3 next
 Resume file: None

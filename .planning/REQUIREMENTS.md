@@ -141,19 +141,19 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
-| FOUND-05 | Phase 1 | Pending |
-| FOUND-06 | Phase 1 | Pending |
-| FOUND-07 | Phase 1 | Pending |
-| FOUND-08 | Phase 1 | Pending |
-| FOUND-09 | Phase 1 | Pending |
-| DASH-01 | Phase 2 | Pending |
-| DASH-02 | Phase 2 | Pending |
-| DASH-03 | Phase 2 | Pending |
-| DASH-04 | Phase 2 | Pending |
+| FOUND-01 | Phase 1 | Complete |
+| FOUND-02 | Phase 1 | Complete |
+| FOUND-03 | Phase 1 | Complete |
+| FOUND-04 | Phase 1 | Complete |
+| FOUND-05 | Phase 1 | Complete |
+| FOUND-06 | Phase 1 | Complete |
+| FOUND-07 | Phase 1 | Complete |
+| FOUND-08 | Phase 1 | Complete |
+| FOUND-09 | Phase 1 | Complete |
+| DASH-01 | Phase 2 | Complete |
+| DASH-02 | Phase 2 | Complete |
+| DASH-03 | Phase 2 | Complete |
+| DASH-04 | Phase 2 | Complete |
 | LEARN-01 | Phase 3 | Pending |
 | LEARN-02 | Phase 3 | Pending |
 | LEARN-03 | Phase 3 | Pending |
@@ -180,10 +180,10 @@
 | LEAD-03 | Phase 5 | Pending |
 | LEAD-04 | Phase 5 | Pending |
 | LEAD-05 | Phase 5 | Pending |
-| PROF-01 | Phase 2 | Pending |
-| PROF-02 | Phase 2 | Pending |
-| PROF-03 | Phase 2 | Pending |
-| PROF-04 | Phase 2 | Pending |
+| PROF-01 | Phase 2 | Complete |
+| PROF-02 | Phase 2 | Complete |
+| PROF-03 | Phase 2 | Complete |
+| PROF-04 | Phase 2 | Complete |
 | PROF-05 | Phase 5 | Pending |
 | GAME-01 | Phase 6 | Pending |
 | GAME-02 | Phase 6 | Pending |

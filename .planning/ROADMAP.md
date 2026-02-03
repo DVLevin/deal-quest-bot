@@ -12,8 +12,8 @@ The Deal Quest TMA delivers a visual, gamified mobile experience for sales train
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Auth** - Monorepo scaffold, Telegram SDK, initData auth, InsForge client, routing shell, design system
-- [ ] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
+- [x] **Phase 1: Foundation & Auth** - Monorepo scaffold, Telegram SDK, initData auth, InsForge client, routing shell, design system
+- [x] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
 - [ ] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
 - [ ] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
 - [ ] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- Shared data infrastructure + Dashboard page with progress, leaderboard, and navigation (Wave 1)
-- [ ] 02-02-PLAN.md -- Profile page with stats, paginated history, and badge collection (Wave 2)
+- [x] 02-02-PLAN.md -- Profile page with stats, paginated history, and badge collection (Wave 2)
 
 ### Phase 3: Learn & Train
 **Goal**: Users can practice structured learning tracks and random timed scenarios, receive AI-scored feedback, and see their scores -- the core training experience that defines Deal Quest's value
@@ -144,7 +144,7 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-02 |
-| 2. Dashboard & Profile | 1/2 | In progress | - |
+| 2. Dashboard & Profile | 2/2 | Complete | 2026-02-03 |
 | 3. Learn & Train | 0/3 | Not started | - |
 | 4. Support & Casebook | 0/2 | Not started | - |
 | 5. Leads | 0/2 | Not started | - |
