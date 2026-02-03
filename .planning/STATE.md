@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 3 of 7 (Learn & Train)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-03 -- Completed 03-01-PLAN.md (Learn mode)
+Last activity: 2026-02-03 -- Completed 03-02-PLAN.md (Train mode)
 
-Progress: [███████░░░░░░░░░░░░] 7/18 (39%)
+Progress: [████████░░░░░░░░░░░] 8/18 (44%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.7m
-- Total execution time: 33m
+- Total plans completed: 8
+- Average duration: 4.9m
+- Total execution time: 39m
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███████░░░░░░░░░░░░] 7/18 (39%)
 |-------|-------|-------|----------|
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
-| 3. Learn & Train | 1/3 | 5m | 5m |
+| 3. Learn & Train | 2/3 | 11m | 5.5m |
 
 **Recent Trend:**
-- Last 5 plans: 5m, 4m, 5m, 5m, 5m
+- Last 5 plans: 4m, 5m, 5m, 5m, 6m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -73,6 +73,10 @@ Recent decisions affecting current work:
 - [03-01]: Static TRACKS constant compiled into bundle (browser cannot access scenarios.json)
 - [03-01]: Deep link to bot for response submission (TMA is display layer)
 - [03-01]: Empty track_progress defaults first level unlocked, rest locked
+- [03-02]: openTelegramLink for bot deep links (native Telegram handling)
+- [03-02]: Advisory-only timer (does NOT block submission on expiry)
+- [03-02]: ABBranching is infrastructure-ready, activates via branchingOptions field
+- [03-02]: Clock-based timing (Date.now + visibilitychange) for background drift immunity
 
 ### Pending Todos
 
@@ -95,5 +99,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 03-01-PLAN.md (Learn mode)
+Stopped at: Completed 03-02-PLAN.md (Train mode)
 Resume file: None
