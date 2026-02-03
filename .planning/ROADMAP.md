@@ -68,7 +68,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Learn mode: track visualization, lessons, and scenario practice with bot deep link (Wave 1)
+- [x] 03-01-PLAN.md -- Learn mode: track visualization, lessons, and scenario practice with bot deep link (Wave 1)
 - [ ] 03-02-PLAN.md -- Train mode: difficulty filter, scenario cards, countdown timer, and A/B branching (Wave 1)
 - [ ] 03-03-PLAN.md -- Scoring and feedback display: animated scores, feedback breakdown, quick actions (Wave 2)
 
@@ -145,7 +145,7 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-02 |
 | 2. Dashboard & Profile | 2/2 | Complete | 2026-02-03 |
-| 3. Learn & Train | 0/3 | Not started | - |
+| 3. Learn & Train | 1/3 | In progress | - |
 | 4. Support & Casebook | 0/2 | Not started | - |
 | 5. Leads | 0/2 | Not started | - |
 | 6. Gamification & Admin | 0/3 | Not started | - |

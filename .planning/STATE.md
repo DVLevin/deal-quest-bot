@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 2 complete -- ready for Phase 3
+**Current focus:** Phase 3 in progress -- Learn & Train
 
 ## Current Position
 
-Phase: 2 of 7 (Dashboard & Profile) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-03 -- Completed Phase 2 (Dashboard & Profile)
+Phase: 3 of 7 (Learn & Train)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-03 -- Completed 03-01-PLAN.md (Learn mode)
 
-Progress: [██████░░░░░░░░░░░░░] 6/18 (33%)
+Progress: [███████░░░░░░░░░░░░] 7/18 (39%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 4.7m
-- Total execution time: 28m
+- Total execution time: 33m
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [██████░░░░░░░░░░░░░] 6/18 (33%)
 |-------|-------|-------|----------|
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
+| 3. Learn & Train | 1/3 | 5m | 5m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 5m, 4m, 5m, 5m
+- Last 5 plans: 5m, 4m, 5m, 5m, 5m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [02-02]: Paginated attempt history using range() with keepPreviousData
 - [02-02]: Badge collection reuses evaluateBadges(), shows earned/locked states
 - [deploy]: Inlined shared types into webapp/src/types/ for Railway root_dir isolation
+- [03-01]: Static TRACKS constant compiled into bundle (browser cannot access scenarios.json)
+- [03-01]: Deep link to bot for response submission (TMA is display layer)
+- [03-01]: Empty track_progress defaults first level unlocked, rest locked
 
 ### Pending Todos
 
@@ -91,5 +95,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Phase 2 complete, Phase 3 next
+Stopped at: Completed 03-01-PLAN.md (Learn mode)
 Resume file: None
