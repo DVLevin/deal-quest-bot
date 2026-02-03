@@ -25,7 +25,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@deal-quest/shared": ["../shared/src/index.ts"]
+      "@deal-quest/shared": ["./src/types/index.ts"]
     }
   },
   "include": ["src"]
