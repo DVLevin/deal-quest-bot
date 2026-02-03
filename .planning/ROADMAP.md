@@ -82,11 +82,11 @@ Plans:
   3. User can browse past support sessions with dates and prospect info
   4. User can browse, search, and filter the casebook by keyword, persona type, scenario type, and industry -- and open any entry to see full details
   5. User can use a casebook entry as a template to start a new support session
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Support mode -- strategy builder input and analysis display
-- [ ] 04-02: Casebook -- browsing, search, filtering, and template flow
+- [ ] 04-01-PLAN.md -- Support mode: strategy builder input CTA, analysis display, session history (Wave 1)
+- [ ] 04-02-PLAN.md -- Casebook: browsable list with search, filter, detail view, and template flow (Wave 2)
 
 ### Phase 5: Leads
 **Goal**: Users can manage their sales lead pipeline with status tracking, notes, and activity history
