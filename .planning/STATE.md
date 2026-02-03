@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 3 complete -- Learn & Train. Next: Phase 4 (Support & Casebook)
+**Current focus:** Phase 4 in progress -- Support mode complete, Casebook next.
 
 ## Current Position
 
-Phase: 3 of 7 (Learn & Train)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-03 -- Completed 03-03-PLAN.md (Scoring & Feedback)
+Phase: 4 of 7 (Support & Casebook)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-03 -- Completed 04-01-PLAN.md (Support mode)
 
-Progress: [█████████░░░░░░░░░░] 9/18 (50%)
+Progress: [██████████░░░░░░░░░] 10/18 (56%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 4.9m
-- Total execution time: 44m
+- Total plans completed: 10
+- Average duration: 4.7m
+- Total execution time: 47m
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [█████████░░░░░░░░░░] 9/18 (50%)
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
 | 3. Learn & Train | 3/3 | 16m | 5.3m |
+| 4. Support & Casebook | 1/2 | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 5m, 5m, 5m, 6m, 5m
-- Trend: stable
+- Last 5 plans: 5m, 5m, 6m, 5m, 3m
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -81,12 +82,16 @@ Recent decisions affecting current work:
 - [03-03]: parseFeedback() with typeof guards on every field (never trust LLM JSONB)
 - [03-03]: refetchOnWindowFocus: true on attempt queries for auto-refresh when returning from bot
 - [03-03]: attempts.latest query key for scenario-specific lookups by mode
+- [04-01]: parseOutputJson with nested typeof guards for defensive LLM JSONB parsing
+- [04-01]: Dual CTA in SupportInput: primary Start Analysis + secondary Send Screenshot with Camera icon
+- [04-01]: Clipboard copy with textarea fallback for older Telegram WebViews
+- [04-01]: refetchOnWindowFocus on support session queries for auto-refresh after bot interaction
 
 ### Pending Todos
 
-- [01-02]: Deploy verify-telegram Edge Function via InsForge MCP/Dashboard
-- [01-02]: Execute RLS migration (migrations/001_enable_rls_and_policies.sql)
-- [01-02]: Set TELEGRAM_BOT_TOKEN and JWT_SECRET as InsForge environment secrets
+- [01-02]: Deploy verify-telegram Edge Function via InsForge MCP/Dashboard -- DONE (active since 2026-02-03)
+- [01-02]: Execute RLS migration (migrations/001_enable_rls_and_policies.sql) -- DONE (43 policies across 11 tables)
+- [01-02]: Set TELEGRAM_BOT_TOKEN and JWT_SECRET as InsForge environment secrets (hardcoded fallbacks in Edge Function currently)
 
 ### Blockers/Concerns
 
@@ -103,5 +108,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Updated deployment docs (CLAUDE.md, INTEGRATIONS.md, ARCHITECTURE.md, PROJECT.md) to prevent recurring push gap
+Stopped at: Completed 04-01-PLAN.md (Support mode). Next: 04-02 (Casebook).
 Resume file: None
