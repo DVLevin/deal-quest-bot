@@ -24,7 +24,8 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@deal-quest/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src"]

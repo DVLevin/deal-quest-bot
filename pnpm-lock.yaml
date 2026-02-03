@@ -16,9 +16,6 @@ importers:
 
   packages/webapp:
     dependencies:
-      '@deal-quest/shared':
-        specifier: file:../shared
-        version: link:../shared
       '@insforge/sdk':
         specifier: latest
         version: 1.1.5
