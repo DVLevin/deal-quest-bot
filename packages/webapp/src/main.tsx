@@ -6,6 +6,10 @@ import App from '@/app/App';
 // Enable mobile debug console (temporarily for production debugging)
 import('eruda').then((m) => m.default.init());
 
+// Build version stamp — check this in console to verify which build is deployed
+declare const __BUILD_TIME__: string;
+console.info(`[BUILD] Deal Quest TMA built at: ${__BUILD_TIME__}`);
+
 // Initialize Telegram SDK with error handling
 try {
   initTelegramSDK();

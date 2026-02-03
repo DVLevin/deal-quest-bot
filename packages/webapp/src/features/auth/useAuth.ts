@@ -70,8 +70,8 @@ export async function authenticateWithTelegram(): Promise<AuthResult> {
   // Uses setAuthToken() on HttpClient -- NOT the "JWT-as-anonKey" pattern.
   const authClient = createAuthenticatedClient(data.jwt);
 
-  // Validation query: confirm the authenticated client can query the database.
-  // This verifies that the JWT is accepted by InsForge's PostgREST layer.
+  // Validation query: confirm the client can reach the database.
+  // Uses anon key (not the Edge Function JWT) so this should always succeed.
   try {
     const { data: testData, error: testError } = await authClient.database
       .from('users')
@@ -80,26 +80,12 @@ export async function authenticateWithTelegram(): Promise<AuthResult> {
       .limit(1);
 
     if (testError) {
-      console.error('[AUTH] Validation query failed:', testError);
-      throw new Error(
-        `Auth validation failed: ${typeof testError === 'object' ? JSON.stringify(testError) : testError}`
-      );
+      console.warn('[AUTH] Validation query failed:', testError);
+    } else {
+      console.info('[AUTH] Authenticated. User row:', testData);
     }
-
-    console.info(
-      '[AUTH] Authenticated successfully. Validation query returned:',
-      testData
-    );
   } catch (validationErr) {
-    // If the validation query fails, the JWT may not be accepted by PostgREST.
-    // Log the error for debugging but don't block auth -- the Edge Function
-    // itself succeeded and the JWT is valid. RLS validation will happen
-    // on actual data queries.
-    console.warn(
-      '[AUTH] Validation query threw:',
-      validationErr,
-      '-- proceeding with auth anyway (Edge Function succeeded)'
-    );
+    console.warn('[AUTH] Validation query threw:', validationErr);
   }
 
   return {

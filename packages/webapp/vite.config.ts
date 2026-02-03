@@ -7,6 +7,9 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
   plugins: [react(), tailwindcss(), mkcert(), tsconfigPaths()],
   base: '/',
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   build: { outDir: 'dist', target: 'es2020' },
   server: { host: true },
 });

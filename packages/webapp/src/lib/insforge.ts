@@ -39,26 +39,31 @@ export const insforgeAnon = createClient({
 let insforgeAuth: InsForgeClient | null = null;
 
 /**
- * Create an authenticated InsForge client with the user's JWT.
+ * Create the "authenticated" InsForge client after verifying the user.
  *
- * The InsForge SDK's HttpClient has setAuthToken() which sets the
- * Authorization: Bearer header on all subsequent requests. This is
- * the proper way to authenticate -- NOT the "JWT-as-anonKey" pattern.
+ * IMPORTANT: We intentionally do NOT call setAuthToken() here.
+ * Our Edge Function mints custom JWTs (HS256 with our own secret),
+ * but InsForge PostgREST uses a different JWT secret and rejects them
+ * with 401. All data queries would fail.
  *
- * @param jwt - JWT from verify-telegram Edge Function
- * @returns Authenticated InsForge client
+ * Instead, queries go through as the `anon` role using the anon key.
+ * We have anon full-access RLS policies that allow all operations.
+ * Per-user data isolation is enforced at the query level — every hook
+ * filters by telegram_id from the Zustand auth store.
+ *
+ * The Edge Function still validates the Telegram initData and returns
+ * the user's identity. We just don't use its JWT for PostgREST.
+ *
+ * @param _jwt - JWT from Edge Function (stored in auth store, not used for queries)
+ * @returns InsForge client using anon key
  */
-export function createAuthenticatedClient(jwt: string): InsForgeClient {
+export function createAuthenticatedClient(_jwt: string): InsForgeClient {
   insforgeAuth = createClient({
     baseUrl: INSFORGE_URL,
     anonKey: INSFORGE_ANON_KEY,
     persistSession: false,
     autoRefreshToken: false,
   });
-
-  // Set the JWT as the auth token on the HTTP client.
-  // This causes all requests to include Authorization: Bearer {jwt}
-  insforgeAuth.getHttpClient().setAuthToken(jwt);
 
   return insforgeAuth;
 }
