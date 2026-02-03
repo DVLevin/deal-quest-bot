@@ -74,3 +74,36 @@ html, body, #root {
 body {
   overscroll-behavior-y: contain;
 }
+
+/* ---------------------------------------------------------------------------
+ * Score counter animation (CSS @property for integer interpolation)
+ * Used by ScoreDisplay to animate the score number from 0 to actual value.
+ * ------------------------------------------------------------------------- */
+
+@property --score-value {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes countUp {
+  from {
+    --score-value: 0;
+  }
+}
+
+@keyframes scoreArc {
+  from {
+    stroke-dasharray: 0 264;
+  }
+}
+
+.score-counter {
+  animation: countUp 1.5s ease-out forwards;
+  counter-set: score var(--score-value);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-counter::after {
+  content: counter(score);
+}
