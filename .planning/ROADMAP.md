@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Auth** - Monorepo scaffold, Telegram SDK, initData auth, InsForge client, routing shell, design system
 - [x] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
-- [ ] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
+- [x] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
 - [ ] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
 - [ ] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
 - [ ] **Phase 6: Gamification & Admin** - Badge wall, animations, streak visuals, and team admin dashboard
@@ -70,7 +70,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md -- Learn mode: track visualization, lessons, and scenario practice with bot deep link (Wave 1)
 - [x] 03-02-PLAN.md -- Train mode: difficulty filter, scenario cards, countdown timer, and A/B branching (Wave 1)
-- [ ] 03-03-PLAN.md -- Scoring and feedback display: animated scores, feedback breakdown, quick actions (Wave 2)
+- [x] 03-03-PLAN.md -- Scoring and feedback display: animated scores, feedback breakdown, quick actions (Wave 2)
 
 ### Phase 4: Support & Casebook
 **Goal**: Users can get AI-powered deal support with strategy analysis and browse/reuse their saved response library

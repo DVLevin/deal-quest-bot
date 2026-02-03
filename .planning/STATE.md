@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 3 in progress -- Learn & Train
+**Current focus:** Phase 3 complete -- Learn & Train
 
 ## Current Position
 
 Phase: 3 of 7 (Learn & Train)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-03 -- Completed 03-02-PLAN.md (Train mode)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-03 -- Completed 03-03-PLAN.md (Scoring & Feedback)
 
-Progress: [████████░░░░░░░░░░░] 8/18 (44%)
+Progress: [█████████░░░░░░░░░░] 9/18 (50%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 4.9m
-- Total execution time: 39m
+- Total execution time: 44m
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [████████░░░░░░░░░░░] 8/18 (44%)
 |-------|-------|-------|----------|
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
-| 3. Learn & Train | 2/3 | 11m | 5.5m |
+| 3. Learn & Train | 3/3 | 16m | 5.3m |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 5m, 5m, 5m, 6m
+- Last 5 plans: 5m, 5m, 5m, 6m, 5m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -77,6 +77,10 @@ Recent decisions affecting current work:
 - [03-02]: Advisory-only timer (does NOT block submission on expiry)
 - [03-02]: ABBranching is infrastructure-ready, activates via branchingOptions field
 - [03-02]: Clock-based timing (Date.now + visibilitychange) for background drift immunity
+- [03-03]: CSS @property --score-value for zero-JS integer counter animation
+- [03-03]: parseFeedback() with typeof guards on every field (never trust LLM JSONB)
+- [03-03]: refetchOnWindowFocus: true on attempt queries for auto-refresh when returning from bot
+- [03-03]: attempts.latest query key for scenario-specific lookups by mode
 
 ### Pending Todos
 
@@ -99,5 +103,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 03-02-PLAN.md (Train mode)
+Stopped at: Completed 03-03-PLAN.md (Scoring & Feedback) -- Phase 3 complete
 Resume file: None
