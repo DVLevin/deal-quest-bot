@@ -32,7 +32,21 @@ interface AuthResult {
  * @throws Error if not running inside Telegram or auth fails
  */
 export async function authenticateWithTelegram(): Promise<AuthResult> {
-  const { initDataRaw } = retrieveLaunchParams();
+  const launchParams = retrieveLaunchParams();
+  console.log('[AUTH] Launch params:', JSON.stringify(launchParams, null, 2));
+  console.log('[AUTH] initDataRaw:', launchParams.initDataRaw);
+  console.log('[AUTH] All keys:', Object.keys(launchParams));
+
+  // Try SDK first, fall back to manual URL extraction
+  let initDataRaw = launchParams.initDataRaw;
+
+  if (!initDataRaw) {
+    // Fallback: extract tgWebAppData from URL hash directly
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    initDataRaw = params.get('tgWebAppData') ?? undefined;
+    console.log('[AUTH] Fallback initDataRaw from URL:', initDataRaw);
+  }
 
   if (!initDataRaw) {
     throw new Error('No initData available. Are you running inside Telegram?');
