@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 1 - Foundation & Auth (complete, pending checkpoint verification)
+**Current focus:** Phase 2 - Dashboard & Profile (in progress)
 
 ## Current Position
 
-Phase: 1 of 7 (Foundation & Auth)
-Plan: 4 of 4 in current phase
-Status: Phase complete (pending human verification checkpoint)
-Last activity: 2026-02-02 -- Completed 01-04-PLAN.md (Routing shell & Telegram integration)
+Phase: 2 of 7 (Dashboard & Profile)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-03 -- Completed 02-01-PLAN.md (Dashboard data infrastructure & page)
 
-Progress: [████░░░░░░░░░░░░░░░] 4/18 (22%)
+Progress: [█████░░░░░░░░░░░░░░] 5/18 (28%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 4.5m
-- Total execution time: 18m
+- Total plans completed: 5
+- Average duration: 4.6m
+- Total execution time: 23m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation & Auth | 4/4 | 18m | 4.5m |
+| 2. Dashboard & Profile | 1/2 | 5m | 5m |
 
 **Recent Trend:**
-- Last 5 plans: 6m, 3m, 5m, 4m
+- Last 5 plans: 3m, 5m, 4m, 5m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -60,6 +61,10 @@ Recent decisions affecting current work:
 - [01-04]: miniApp.isActive signal over raw WebApp events for session resilience
 - [01-04]: Wildcard route suffixes (/*) on pages with future sub-routes
 - [01-04]: SecondaryButton position default 'left' for A/B scenario branching
+- [02-01]: Client-side badge evaluation with static definitions (no badges table until Phase 6)
+- [02-01]: Leaderboard fetches 10 rows, displays top 5, finds user position; graceful RLS fallback
+- [02-01]: XP progress within current level (total_xp - level threshold), MAX LEVEL at level 8
+- [02-01]: Added @deal-quest/shared workspace dependency to webapp
 
 ### Pending Todos
 
@@ -81,5 +86,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed quick/001-PLAN.md Task 1, awaiting human testing checkpoint (Task 2)
+Stopped at: Completed 02-01-PLAN.md (Dashboard data infrastructure & page)
 Resume file: None

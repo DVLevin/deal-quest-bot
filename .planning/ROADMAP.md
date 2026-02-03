@@ -36,9 +36,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Monorepo scaffold + Telegram SDK + shared types package (Wave 1)
-- [ ] 01-02-PLAN.md -- Auth flow: Edge Function, InsForge client, JWT, RLS policies (Wave 2)
-- [ ] 01-03-PLAN.md -- Design system: Tailwind v4 tokens, base UI components, NavBar, AppLayout (Wave 2)
-- [ ] 01-04-PLAN.md -- Routing shell, Telegram button hooks, session resilience, integration (Wave 3)
+- [x] 01-02-PLAN.md -- Auth flow: Edge Function, InsForge client, JWT, RLS policies (Wave 2)
+- [x] 01-03-PLAN.md -- Design system: Tailwind v4 tokens, base UI components, NavBar, AppLayout (Wave 2)
+- [x] 01-04-PLAN.md -- Routing shell, Telegram button hooks, session resilience, integration (Wave 3)
 
 ### Phase 2: Dashboard & Profile
 **Goal**: Users see their training progress at a glance on a dashboard and can view their full profile -- proving the complete data pipeline from InsForge through API hooks to rendered UI
@@ -52,7 +52,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Shared data infrastructure + Dashboard page with progress, leaderboard, and navigation (Wave 1)
+- [x] 02-01-PLAN.md -- Shared data infrastructure + Dashboard page with progress, leaderboard, and navigation (Wave 1)
 - [ ] 02-02-PLAN.md -- Profile page with stats, paginated history, and badge collection (Wave 2)
 
 ### Phase 3: Learn & Train
@@ -143,8 +143,8 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 1/4 | In progress | - |
-| 2. Dashboard & Profile | 0/2 | Not started | - |
+| 1. Foundation & Auth | 4/4 | Complete | 2026-02-02 |
+| 2. Dashboard & Profile | 1/2 | In progress | - |
 | 3. Learn & Train | 0/3 | Not started | - |
 | 4. Support & Casebook | 0/2 | Not started | - |
 | 5. Leads | 0/2 | Not started | - |
