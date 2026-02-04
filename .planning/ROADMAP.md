@@ -171,7 +171,11 @@ Plans:
   2. Learn page displays per-track summary (levels completed, avg score, best score) at the top of each track
   3. Dashboard highlights weak areas (tracks/difficulties with below-average scores) with a "Practice this" button
   4. Train mode shows remaining unseen scenarios count and displays a nudge when the pool is running low
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
+- [ ] 09-02-PLAN.md — Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
 
 ### Phase 10: Error Handling & UX
 **Goal**: The app handles errors gracefully everywhere — users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
