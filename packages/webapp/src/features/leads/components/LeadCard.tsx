@@ -43,7 +43,9 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
       {/* Lead info */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-text">
-          {lead.prospect_name ?? 'Unknown Prospect'}
+          {lead.prospect_first_name && lead.prospect_last_name
+            ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
+            : lead.prospect_name ?? 'Unknown Prospect'}
         </p>
         {(lead.prospect_company || lead.prospect_title) && (
           <p className="truncate text-xs text-text-secondary">

@@ -41,6 +41,10 @@ STATUS_ORDER = list(STATUS_LABELS.keys())
 
 def _lead_display_name(lead) -> str:
     """Consistent display name for a lead."""
+    if lead.prospect_first_name and lead.prospect_last_name:
+        return f"{lead.prospect_first_name} {lead.prospect_last_name}"
+    if lead.prospect_first_name:
+        return lead.prospect_first_name
     return lead.prospect_name or f"Prospect #{lead.id}"
 
 
@@ -159,6 +163,7 @@ def _format_lead_detail(lead) -> str:
     name = _lead_display_name(lead)
     title = lead.prospect_title or ""
     company = lead.prospect_company or ""
+    geography = lead.prospect_geography or ""
     status_label = STATUS_LABELS.get(lead.status, lead.status)
     photo_line = "📸 Photo saved\n" if lead.photo_url else ""
     date = (lead.created_at or "")[:10]
@@ -168,6 +173,8 @@ def _format_lead_detail(lead) -> str:
         text += f"{_sanitize(title)}\n"
     if company:
         text += f"🏢 {_sanitize(company)}\n"
+    if geography:
+        text += f"🌍 {_sanitize(geography)}\n"
     text += (
         f"Status: {status_label}\n"
         f"Date: {date}\n"
@@ -944,20 +951,27 @@ async def on_lead_edit_start(
     await state.set_state(LeadEngagementState.editing_lead)
     await state.update_data(active_lead_id=lead_id)
 
+    current_first = lead.prospect_first_name or "(not set)"
+    current_last = lead.prospect_last_name or "(not set)"
     current_name = lead.prospect_name or "(not set)"
     current_company = lead.prospect_company or "(not set)"
     current_title = lead.prospect_title or "(not set)"
+    current_geo = lead.prospect_geography or "(not set)"
 
     await callback.message.edit_text(  # type: ignore[union-attr]
         f"✏️ *Edit Lead Info*\n\n"
         f"Current:\n"
-        f"  Name: {_sanitize(current_name)}\n"
+        f"  First Name: {_sanitize(current_first)}\n"
+        f"  Last Name: {_sanitize(current_last)}\n"
         f"  Company: {_sanitize(current_company)}\n"
-        f"  Title: {_sanitize(current_title)}\n\n"
+        f"  Title: {_sanitize(current_title)}\n"
+        f"  Geography: {_sanitize(current_geo)}\n\n"
         f"Send updates in this format (one or more lines):\n"
-        f"`Name: John Smith`\n"
+        f"`First Name: John`\n"
+        f"`Last Name: Smith`\n"
         f"`Company: Acme Corp`\n"
-        f"`Title: VP of Sales`\n\n"
+        f"`Title: VP of Sales`\n"
+        f"`Geography: London, UK`\n\n"
         f"_Send /cancel to go back._",
         parse_mode="Markdown",
     )
@@ -1002,22 +1016,41 @@ async def on_lead_edit_text(
         if not value:
             continue
 
-        if key == "name":
+        if key in ("first name", "firstname", "first"):
+            updates["prospect_first_name"] = value
+        elif key in ("last name", "lastname", "last", "family name", "surname"):
+            updates["prospect_last_name"] = value
+        elif key == "name":
             updates["prospect_name"] = value
         elif key == "company":
             updates["prospect_company"] = value
         elif key == "title":
             updates["prospect_title"] = value
+        elif key in ("geography", "geo", "location", "region", "country", "city"):
+            updates["prospect_geography"] = value
 
     if not updates:
         await message.answer(
             "No valid fields found. Use format:\n"
-            "`Name: John Smith`\n"
+            "`First Name: John`\n"
+            "`Last Name: Smith`\n"
             "`Company: Acme Corp`\n"
-            "`Title: VP of Sales`",
+            "`Title: VP of Sales`\n"
+            "`Geography: London, UK`",
             parse_mode="Markdown",
         )
         return
+
+    # Recalculate composite prospect_name if structured name fields were updated
+    if "prospect_first_name" in updates or "prospect_last_name" in updates:
+        lead = await lead_repo.get_by_id(lead_id)
+        if lead:
+            fn = updates.get("prospect_first_name", lead.prospect_first_name or "")
+            ln = updates.get("prospect_last_name", lead.prospect_last_name or "")
+            if fn and ln:
+                updates["prospect_name"] = f"{fn} {ln}"
+            elif fn:
+                updates["prospect_name"] = fn
 
     await lead_repo.update_lead(lead_id, **updates)
 

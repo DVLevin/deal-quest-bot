@@ -261,13 +261,20 @@ export function LeadDetail() {
         )}
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-text">
-            {lead.prospect_name ?? 'Unknown Prospect'}
+            {lead.prospect_first_name && lead.prospect_last_name
+              ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
+              : lead.prospect_name ?? 'Unknown Prospect'}
           </h2>
           {(lead.prospect_title || lead.prospect_company) && (
             <p className="text-sm text-text-secondary">
               {[lead.prospect_title, lead.prospect_company]
                 .filter(Boolean)
                 .join(' @ ')}
+            </p>
+          )}
+          {lead.prospect_geography && (
+            <p className="text-xs text-text-hint">
+              {lead.prospect_geography}
             </p>
           )}
           <div className="mt-1 flex flex-wrap gap-2">
