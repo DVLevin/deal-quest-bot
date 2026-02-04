@@ -187,7 +187,13 @@ Plans:
   3. Failed mutations (status update, note save) show a toast notification with error message and retry
   4. Bot handlers (support, learn, train) use a shared validation utility with consistent error messages
   5. Pages with no data (no leads, no casebook entries, no attempts) show designed empty states with guidance
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Core UI components: ErrorBoundary, ErrorCard, Toast system, EmptyState + wire into App.tsx (Wave 1)
+- [ ] 10-02-PLAN.md — ErrorCard integration: replace 18 inline error states with standardized ErrorCard (Wave 2)
+- [ ] 10-03-PLAN.md — Toast mutation feedback + empty state upgrades for leads, attempts, support (Wave 2)
+- [ ] 10-04-PLAN.md — Bot validation utility: shared validate_user_input() in support/learn/train handlers (Wave 1)
 
 ### Phase 11: Performance & Reliability
 **Goal**: Production-grade reliability — debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
@@ -228,5 +234,5 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 |-------|----------------|--------|-----------|
 | 8. Lead Management | 2/2 | Complete | 2026-02-04 |
 | 9. Training Experience | 2/2 | Complete | 2026-02-04 |
-| 10. Error Handling & UX | 0/? | Not started | — |
+| 10. Error Handling & UX | 0/4 | Not started | — |
 | 11. Performance & Reliability | 0/? | Not started | — |
