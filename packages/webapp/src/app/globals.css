@@ -107,3 +107,30 @@ body {
 .score-counter::after {
   content: counter(score);
 }
+
+/* ---------------------------------------------------------------------------
+ * XP gain counter animation (reuses @property integer interpolation pattern)
+ * Used by XPGainAnimation to animate "+X XP" count from 0 to earned value.
+ * ------------------------------------------------------------------------- */
+
+@property --xp-value {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes xpCountUp {
+  from {
+    --xp-value: 0;
+  }
+}
+
+.xp-counter {
+  animation: xpCountUp 1s ease-out forwards;
+  counter-set: xp var(--xp-value);
+  font-variant-numeric: tabular-nums;
+}
+
+.xp-counter::after {
+  content: "+" counter(xp) " XP";
+}
