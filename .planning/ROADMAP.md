@@ -114,12 +114,12 @@ Plans:
   3. Completing a scenario shows an animated XP counter, and the streak tracker displays flame icon with current streak days and bonus XP indicators
   4. Admin users see a team dashboard with total users, XP, active count, performance charts, member leaderboard, weak area identification, and recent activity feed
   5. Non-admin users cannot access admin pages (access control enforced)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Badge wall and rarity system
-- [ ] 06-02: Level-up, XP, and streak animations
-- [ ] 06-03: Admin dashboard with team analytics and access control
+- [ ] 06-01-PLAN.md — Badge wall and rarity system (Wave 1)
+- [ ] 06-02-PLAN.md — Level-up, XP, and streak animations (Wave 1)
+- [ ] 06-03-PLAN.md — Admin dashboard with team analytics and access control (Wave 1)
 
 ### Phase 7: Bot Integration
 **Goal**: The existing bot offers smooth transitions into the TMA, letting users jump from chat commands directly into rich app experiences
