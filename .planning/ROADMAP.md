@@ -129,11 +129,11 @@ Plans:
   1. Bot commands (/stats, /learn, /train, /support, /leads) display an "Open in App" inline button alongside the existing text response
   2. Tapping an "Open in App" button deep-links to the correct TMA page (e.g., /stats opens Dashboard, /learn opens Learn page)
   3. The TMA is accessible via the menu button in BotFather (direct app access without any command)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 07-01: Inline buttons and deep links in bot commands
-- [ ] 07-02: BotFather menu button and deep link routing
+- [ ] 07-01-PLAN.md — Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
+- [ ] 07-02-PLAN.md — TMA deep link routing hook for startParam fallback (Wave 1)
 
 ## Progress
 
