@@ -24,7 +24,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { Card, Badge, Skeleton } from '@/shared/ui';
+import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useLead } from '../hooks/useLead';
@@ -187,7 +187,7 @@ export function LeadDetail() {
   const numericId = Number(leadIdParam);
   const telegramId = useAuthStore((s) => s.telegramId);
 
-  const { data: lead, isLoading } = useLead(
+  const { data: lead, isLoading, isError, refetch } = useLead(
     Number.isNaN(numericId) ? 0 : numericId,
   );
   const mutation = useUpdateLeadStatus();
@@ -245,6 +245,10 @@ export function LeadDetail() {
         <Skeleton height={120} />
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorCard message="Unable to load lead details" onRetry={refetch} />;
   }
 
   if (!lead) {

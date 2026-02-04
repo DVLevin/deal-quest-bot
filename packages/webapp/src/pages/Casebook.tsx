@@ -42,7 +42,7 @@ function CasebookHome() {
 
   // Data hooks
   const { data: filterOptions } = useCasebookFilterOptions();
-  const { data: entries, isLoading } = useCasebook({
+  const { data: entries, isLoading, isError, refetch } = useCasebook({
     keyword: debouncedSearch,
     personaType: selectedPersonaType,
     scenarioType: selectedScenarioType,
@@ -81,6 +81,8 @@ function CasebookHome() {
       <CasebookList
         entries={entries ?? []}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         onEntryClick={(id) => navigate(`/casebook/${id}`)}
         hasActiveFilters={hasActiveFilters}
       />
