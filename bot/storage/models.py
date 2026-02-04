@@ -84,8 +84,11 @@ class LeadRegistryModel(BaseModel):
     user_id: int | None = None
     telegram_id: int
     prospect_name: str | None = None
+    prospect_first_name: str | None = None
+    prospect_last_name: str | None = None
     prospect_title: str | None = None
     prospect_company: str | None = None
+    prospect_geography: str | None = None
     photo_url: str | None = None
     photo_key: str | None = None
     prospect_analysis: str | None = None

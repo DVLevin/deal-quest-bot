@@ -109,8 +109,11 @@ export interface LeadRegistryRow {
   user_id: number | null;
   telegram_id: number;
   prospect_name: string | null;
+  prospect_first_name: string | null;
+  prospect_last_name: string | null;
   prospect_title: string | null;
   prospect_company: string | null;
+  prospect_geography: string | null;
   photo_url: string | null;
   photo_key: string | null;
   prospect_analysis: string | null;
