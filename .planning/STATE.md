@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, 2 phases remaining.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress.
 
 ## Previous Milestone (v1.0)
 
@@ -16,19 +16,19 @@ Total execution time: 74m
 ## Current Position
 
 Milestone: v1.1 — Quick & Medium Wins
-Phase: 9 of 8-11 — COMPLETE (Training Experience)
-Plans completed: 22/22 total (2/2 in Phase 9)
-Status: Phase 9 verified and complete (4/4 must-haves passed)
-Last activity: 2026-02-04 -- Phase 9 executed, verified
+Phase: 10 of 8-11 — IN PROGRESS (Error Handling & UX)
+Plans completed: 23/26 total (1/4 in Phase 10)
+Status: Executing Phase 10 Wave 1
+Last activity: 2026-02-04 -- Completed 10-01-PLAN.md
 
-Progress: [█████████░░░░░░░░░░] 9/19 v1.1 requirements (47%)
+Progress: [██████████░░░░░░░░░] 10/19 v1.1 requirements (53%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
-- Average duration: 3.8m
-- Total execution time: 84m
+- Total plans completed: 23
+- Average duration: 3.7m
+- Total execution time: 86m
 
 **By Phase:**
 
@@ -43,9 +43,10 @@ Progress: [█████████░░░░░░░░░░] 9/19 v1.1 
 | 7. Bot Integration | 2/2 | 8m | 4m |
 | 8. Lead Management | 2/2 | 5m | 2.5m |
 | 9. Training Experience | 2/2 | 5m | 2.5m |
+| 10. Error Handling & UX | 1/4 | 2m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 2m, 3m, 3m, 2m
+- Last 5 plans: 2m, 3m, 3m, 2m, 2m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -147,6 +148,11 @@ Recent decisions affecting current work:
 - [09-02]: WeakAreasCard returns null for new users (no empty card clutter)
 - [09-02]: Practice CTA routes contextually: /train for difficulty, /learn for track-level weak areas
 - [09-02]: Max 3 weak areas displayed on dashboard to avoid overwhelming
+- [10-01]: ErrorBoundary uses React class component (functional components cannot be error boundaries in React 18)
+- [10-01]: Toast store uses Zustand standalone store (not React Context) -- no provider wrapper needed
+- [10-01]: ErrorBoundary outermost in App.tsx; ToastContainer inside QueryProvider above AppRouter
+- [10-01]: Max 3 visible toasts with 4-second auto-dismiss and oldest-first eviction
+- [10-01]: ErrorCard compact variant: boolean prop switches between inline row and card block display
 
 ### Pending Todos
 
@@ -176,6 +182,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Phase 9 Training Experience — executed, verified, complete
+Stopped at: Completed 10-01-PLAN.md (Error Handling Foundation)
 Resume file: None
-Next action: Plan next phase (10 or 11 — both independent)
+Next action: Execute 10-02-PLAN.md (integrate error/empty states into pages)
