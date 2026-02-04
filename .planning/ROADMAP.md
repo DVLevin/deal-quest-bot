@@ -144,7 +144,7 @@ Plans:
 - [x] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
 - [x] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
 - [x] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
-- [ ] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
+- [x] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
 
 ### Phase 8: Lead Management Enhancements
 **Goal**: Lead pipeline becomes more actionable — stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
@@ -208,8 +208,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
-- [ ] 11-02-PLAN.md — Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
+- [x] 11-01-PLAN.md — TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
+- [x] 11-02-PLAN.md — Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
 
 ## Progress
 
@@ -239,4 +239,4 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 | 8. Lead Management | 2/2 | Complete | 2026-02-04 |
 | 9. Training Experience | 2/2 | Complete | 2026-02-04 |
 | 10. Error Handling & UX | 4/4 | Complete | 2026-02-04 |
-| 11. Performance & Reliability | 0/2 | Not started | — |
+| 11. Performance & Reliability | 2/2 | Complete | 2026-02-05 |
