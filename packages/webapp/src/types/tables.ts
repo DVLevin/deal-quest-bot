@@ -129,6 +129,7 @@ export interface LeadRegistryRow {
   last_contacted: string | null;
   next_followup: string | null;
   followup_count: number;
+  lead_source: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

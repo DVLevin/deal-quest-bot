@@ -104,6 +104,7 @@ class LeadRegistryModel(BaseModel):
     last_contacted: str | None = None
     next_followup: str | None = None
     followup_count: int = 0
+    lead_source: str = "support_analysis"
     created_at: str | None = None
     updated_at: str | None = None
 

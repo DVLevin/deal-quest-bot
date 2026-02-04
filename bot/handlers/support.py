@@ -307,6 +307,7 @@ async def _run_support_pipeline(
                         draft_response=_dict_to_text(draft_obj),
                         input_type=input_type,
                         original_context=user_input[:2000],
+                        lead_source="support_analysis",
                     )
                 )
                 saved_lead_id = saved_lead.id

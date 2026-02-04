@@ -34,6 +34,9 @@ export type LLMProvider = 'openrouter' | 'anthropic';
 /** lead_registry.input_type */
 export type InputType = 'text' | 'photo' | 'screenshot';
 
+/** lead_registry.lead_source */
+export type LeadSource = 'support_analysis' | 'manual' | 'import';
+
 /** generated_scenarios.source_type */
 export type ScenarioSourceType = 'hybrid' | 'casebook' | 'generated';
 
