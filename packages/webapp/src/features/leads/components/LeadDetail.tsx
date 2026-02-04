@@ -23,6 +23,7 @@ import {
   User,
   Copy,
   Check,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, Badge, Skeleton } from '@/shared/ui';
 import { useAuthStore } from '@/features/auth/store';
@@ -39,8 +40,11 @@ import {
   parseEngagementPlan,
   LEAD_STATUS_CONFIG,
   formatLeadDate,
+  getLeadStaleDays,
+  STALE_THRESHOLD_DAYS,
+  LEAD_SOURCE_CONFIG,
 } from '../types';
-import type { LeadStatus } from '@/types/enums';
+import type { LeadStatus, LeadSource } from '@/types/enums';
 import type { SupportAnalysis } from '@/features/support/types';
 
 // ---------------------------------------------------------------------------
@@ -243,6 +247,11 @@ export function LeadDetail() {
   const tactics = parseLeadTactics(lead.engagement_tactics);
   const draft = parseLeadDraft(lead.draft_response);
   const engagementPlan = parseEngagementPlan(lead.engagement_plan);
+  const staleDays = getLeadStaleDays(lead.updated_at ?? null, lead.created_at ?? null);
+  const isStale = staleDays >= STALE_THRESHOLD_DAYS;
+  const sourceConfig = lead.lead_source
+    ? LEAD_SOURCE_CONFIG[lead.lead_source as LeadSource]
+    : null;
 
   return (
     <div className="space-y-4">
@@ -283,9 +292,20 @@ export function LeadDetail() {
                 {statusConfig.label}
               </Badge>
             )}
+            {sourceConfig && (
+              <Badge variant={sourceConfig.variant} size="sm">
+                {sourceConfig.label}
+              </Badge>
+            )}
             <Badge variant="default" size="sm">
               {lead.input_type}
             </Badge>
+            {isStale && (
+              <Badge variant="warning" size="sm">
+                <AlertTriangle className="mr-1 inline h-3 w-3" />
+                Stale {staleDays}d
+              </Badge>
+            )}
           </div>
           <p className="mt-1 text-xs text-text-hint">
             {formatLeadDate(lead.created_at)}

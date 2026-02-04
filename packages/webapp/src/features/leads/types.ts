@@ -9,9 +9,10 @@
  * engagement_plan is JSONB and comes pre-parsed from PostgREST.
  */
 
-import type { LeadStatus } from '@/types/enums';
+import type { LeadStatus, LeadSource } from '@/types/enums';
 import type { EngagementPlanStep } from '@/types/tables';
 import type { SupportAnalysis } from '@/features/support/types';
+import type { BadgeProps } from '@/shared/ui/Badge';
 
 // ---------------------------------------------------------------------------
 // Status configuration (matches bot/handlers/leads.py STATUS_LABELS exactly)
@@ -172,3 +173,36 @@ export function formatLeadDate(isoString: string | null): string {
     return '';
   }
 }
+
+// ---------------------------------------------------------------------------
+// Stale lead helpers (LEAD-V11-01)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calculate days since last lead activity.
+ * Uses updated_at as primary (set on every status change, note, update).
+ * Falls back to created_at only if updated_at is null.
+ */
+export function getLeadStaleDays(updatedAt: string | null, createdAt: string | null): number {
+  const dateStr = updatedAt ?? createdAt;
+  if (!dateStr) return 0;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 0;
+    return Math.floor((Date.now() - date.getTime()) / 86400000);
+  } catch {
+    return 0;
+  }
+}
+
+export const STALE_THRESHOLD_DAYS = 7;
+
+// ---------------------------------------------------------------------------
+// Lead source configuration (LEAD-V11-02)
+// ---------------------------------------------------------------------------
+
+export const LEAD_SOURCE_CONFIG: Record<LeadSource, { label: string; variant: NonNullable<BadgeProps['variant']> }> = {
+  support_analysis: { label: 'AI Analysis', variant: 'info' },
+  manual: { label: 'Manual', variant: 'default' },
+  import: { label: 'Import', variant: 'brand' },
+};

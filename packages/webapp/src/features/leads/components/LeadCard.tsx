@@ -7,9 +7,9 @@
 
 import { User } from 'lucide-react';
 import { Card, Badge } from '@/shared/ui';
-import { LEAD_STATUS_CONFIG, formatLeadDate } from '../types';
+import { LEAD_STATUS_CONFIG, formatLeadDate, getLeadStaleDays, STALE_THRESHOLD_DAYS, LEAD_SOURCE_CONFIG } from '../types';
 import type { LeadListItem } from '../hooks/useLeads';
-import type { LeadStatus } from '@/types/enums';
+import type { LeadStatus, LeadSource } from '@/types/enums';
 
 interface LeadCardProps {
   lead: LeadListItem;
@@ -18,6 +18,11 @@ interface LeadCardProps {
 
 export function LeadCard({ lead, onClick }: LeadCardProps) {
   const statusConfig = LEAD_STATUS_CONFIG[lead.status as LeadStatus];
+  const staleDays = getLeadStaleDays(lead.updated_at ?? null, lead.created_at ?? null);
+  const isStale = staleDays >= STALE_THRESHOLD_DAYS;
+  const sourceConfig = lead.lead_source
+    ? LEAD_SOURCE_CONFIG[lead.lead_source as LeadSource]
+    : null;
 
   return (
     <Card
@@ -59,12 +64,24 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         </p>
       </div>
 
-      {/* Status badge */}
-      {statusConfig && (
-        <Badge variant={statusConfig.variant} size="sm" className="shrink-0">
-          {statusConfig.label}
-        </Badge>
-      )}
+      {/* Stale + Source + Status badges */}
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {isStale && (
+          <Badge variant="warning" size="sm">
+            {staleDays}d ago
+          </Badge>
+        )}
+        {sourceConfig && (
+          <Badge variant={sourceConfig.variant} size="sm">
+            {sourceConfig.label}
+          </Badge>
+        )}
+        {statusConfig && (
+          <Badge variant={statusConfig.variant} size="sm">
+            {statusConfig.label}
+          </Badge>
+        )}
+      </div>
     </Card>
   );
 }
