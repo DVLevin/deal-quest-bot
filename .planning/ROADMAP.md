@@ -159,7 +159,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [x] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
 - [ ] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
@@ -222,7 +222,7 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Lead Management | 0/2 | Not started | — |
+| 8. Lead Management | 1/2 | In progress | — |
 | 9. Training Experience | 0/? | Not started | — |
 | 10. Error Handling & UX | 0/? | Not started | — |
 | 11. Performance & Reliability | 0/? | Not started | — |

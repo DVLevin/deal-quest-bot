@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Setting up requirements and roadmap.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Executing Phase 8 Lead Management Enhancements.
 
 ## Previous Milestone (v1.0)
 
@@ -16,18 +16,19 @@ Total execution time: 74m
 ## Current Position
 
 Milestone: v1.1 — Quick & Medium Wins
-Phase: 8-11 (4 phases, all independent)
-Status: Phase 8 planned (2 plans), ready to execute
-Last activity: 2026-02-04 -- Phase 8 researched and planned (08-01, 08-02)
+Phase: 8 of 8-11 (Lead Management Enhancements)
+Plan: 1 of 2 in Phase 8 complete
+Status: In progress
+Last activity: 2026-02-04 -- Completed 08-01-PLAN.md (lead_source field + stale/source badges)
 
-Progress: [                   ] 0/19 (0%)
+Progress: [█                  ] 1/2 Phase 8 (50%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 4.1m
-- Total execution time: 74m
+- Total execution time: 77m
 
 **By Phase:**
 
@@ -40,9 +41,10 @@ Progress: [                   ] 0/19 (0%)
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 | 7. Bot Integration | 2/2 | 8m | 4m |
+| 8. Lead Management | 1/2 | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 4m, 4m, 4m
+- Last 5 plans: 3m, 4m, 4m, 4m, 3m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -126,6 +128,10 @@ Recent decisions affecting current work:
 - [07-02]: tgWebAppStartParam property name (SDK v3 uses raw Telegram query param names, not camelCase)
 - [07-02]: WebAppInfo URL path routing takes priority over startParam (location.pathname check)
 - [07-02]: replace: true on deep link navigate to prevent root in browser history
+- [08-01]: lead_source column uses TEXT DEFAULT 'support_analysis' for automatic backfill of existing rows
+- [08-01]: lead_source in LeadRegistryRow TypeScript type uses string | null matching DB column convention
+- [08-01]: Stale threshold set to 7 days, uses updated_at with created_at fallback
+- [08-01]: useLeads limit increased from 30 to 100 to prepare for Plan 02 client-side search
 
 ### Pending Todos
 
@@ -143,6 +149,7 @@ Recent decisions affecting current work:
 ### Pending Todos (quick tasks)
 
 - [quick-002]: Run migration `migrations/002_lead_person_company_fields.sql` on InsForge database
+- [08-01]: Run migration `migrations/003_lead_source_field.sql` on InsForge database
 
 ## Quick Tasks
 
@@ -153,7 +160,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-04
-Stopped at: Phase 8 planned with 2 plans (08-01: data foundation + stale/source badges, 08-02: search/filter + company grouping)
+Last session: 2026-02-04T18:53:25Z
+Stopped at: Completed 08-01-PLAN.md (lead_source field + stale/source badges)
 Resume file: None
-Next action: Execute Phase 8 with /gsd:execute-phase 8
+Next action: Execute 08-02-PLAN.md (search/filter + company grouping)
