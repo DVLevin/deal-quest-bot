@@ -253,11 +253,11 @@
 | TRAIN-V11-02 | Phase 9 | Complete |
 | TRAIN-V11-03 | Phase 9 | Complete |
 | TRAIN-V11-04 | Phase 9 | Complete |
-| UX-V11-01 | Phase 10 | Pending |
-| UX-V11-02 | Phase 10 | Pending |
-| UX-V11-03 | Phase 10 | Pending |
-| UX-V11-04 | Phase 10 | Pending |
-| UX-V11-05 | Phase 10 | Pending |
+| UX-V11-01 | Phase 10 | Complete |
+| UX-V11-02 | Phase 10 | Complete |
+| UX-V11-03 | Phase 10 | Complete |
+| UX-V11-04 | Phase 10 | Complete |
+| UX-V11-05 | Phase 10 | Complete |
 | PERF-V11-01 | Phase 11 | Pending |
 | PERF-V11-02 | Phase 11 | Pending |
 | PERF-V11-03 | Phase 11 | Pending |
