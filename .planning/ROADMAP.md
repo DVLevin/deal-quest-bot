@@ -141,7 +141,7 @@ Plans:
 
 ### v1.1 Phases
 
-- [ ] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
+- [x] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
 - [ ] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
 - [ ] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
 - [ ] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
@@ -160,7 +160,7 @@ Plans:
 
 Plans:
 - [x] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
-- [ ] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
+- [x] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
 **Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
@@ -222,7 +222,7 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Lead Management | 1/2 | In progress | — |
+| 8. Lead Management | 2/2 | Complete | 2026-02-04 |
 | 9. Training Experience | 0/? | Not started | — |
 | 10. Error Handling & UX | 0/? | Not started | — |
 | 11. Performance & Reliability | 0/? | Not started | — |

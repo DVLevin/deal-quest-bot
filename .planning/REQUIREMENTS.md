@@ -211,11 +211,11 @@
 
 ### Lead Management
 
-- [ ] **LEAD-V11-01**: Stale lead indicator — visual badge/color on leads not updated in 7+ days, with "days since last activity" on LeadCard
-- [ ] **LEAD-V11-02**: Lead source tracking — `lead_source` field (support_analysis, manual, import) populated on creation, displayed in LeadCard and LeadDetail
-- [ ] **LEAD-V11-03**: Company grouping — group leads by `prospect_company` in list view with collapsible company headers and contact count
-- [ ] **LEAD-V11-04**: Complete LeadRegistryRow type — add missing fields (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context) to TypeScript types matching Python model
-- [ ] **LEAD-V11-05**: Lead search and filter — search by name/company, filter by status in TMA lead list view
+- [x] **LEAD-V11-01**: Stale lead indicator — visual badge/color on leads not updated in 7+ days, with "days since last activity" on LeadCard
+- [x] **LEAD-V11-02**: Lead source tracking — `lead_source` field (support_analysis, manual, import) populated on creation, displayed in LeadCard and LeadDetail
+- [x] **LEAD-V11-03**: Company grouping — group leads by `prospect_company` in list view with collapsible company headers and contact count
+- [x] **LEAD-V11-04**: Complete LeadRegistryRow type — add missing fields (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context) to TypeScript types matching Python model
+- [x] **LEAD-V11-05**: Lead search and filter — search by name/company, filter by status in TMA lead list view
 
 ### Training Experience
 
@@ -244,11 +244,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEAD-V11-01 | Phase 8 | Pending |
-| LEAD-V11-02 | Phase 8 | Pending |
-| LEAD-V11-03 | Phase 8 | Pending |
-| LEAD-V11-04 | Phase 8 | Pending |
-| LEAD-V11-05 | Phase 8 | Pending |
+| LEAD-V11-01 | Phase 8 | Complete |
+| LEAD-V11-02 | Phase 8 | Complete |
+| LEAD-V11-03 | Phase 8 | Complete |
+| LEAD-V11-04 | Phase 8 | Complete |
+| LEAD-V11-05 | Phase 8 | Complete |
 | TRAIN-V11-01 | Phase 9 | Pending |
 | TRAIN-V11-02 | Phase 9 | Pending |
 | TRAIN-V11-03 | Phase 9 | Pending |
