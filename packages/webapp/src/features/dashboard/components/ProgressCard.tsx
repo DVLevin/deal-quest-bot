@@ -6,7 +6,7 @@
  */
 
 import { Link } from 'react-router';
-import { Card, Skeleton, ProgressBar, Avatar } from '@/shared/ui';
+import { Card, Skeleton, ProgressBar, Avatar, ErrorCard } from '@/shared/ui';
 import { StreakIndicator } from '@/features/gamification/components/StreakIndicator';
 import { useUserProgress } from '../hooks/useUserProgress';
 import { useAuthStore } from '@/features/auth/store';
@@ -18,7 +18,7 @@ import {
 } from '@deal-quest/shared';
 
 export function ProgressCard() {
-  const { data: user, isLoading, isError } = useUserProgress();
+  const { data: user, isLoading, isError, refetch } = useUserProgress();
   const photoUrl = useAuthStore((s) => s.photoUrl);
 
   if (isLoading) {
@@ -40,11 +40,7 @@ export function ProgressCard() {
   }
 
   if (isError || !user) {
-    return (
-      <Card>
-        <p className="text-sm text-text-hint">Unable to load progress</p>
-      </Card>
-    );
+    return <ErrorCard message="Unable to load progress" onRetry={refetch} />;
   }
 
   const rankTitle = getRankTitle(user.current_level);

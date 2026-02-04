@@ -16,7 +16,7 @@ export function useLeadActivities(leadId: number) {
     queryFn: async () => {
       const { data, error } = await getInsforge()
         .database.from('lead_activity_log')
-        .select('*')
+        .select('id, lead_id, telegram_id, activity_type, content, ai_response, created_at')
         .eq('lead_id', leadId)
         .order('created_at', { ascending: false })
         .limit(50);

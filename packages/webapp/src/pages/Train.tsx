@@ -16,11 +16,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Button, Skeleton } from '@/shared/ui';
 import { DifficultyFilter } from '@/features/train/components/DifficultyFilter';
+import { DifficultyRecommendation } from '@/features/train/components/DifficultyRecommendation';
+import { ScenarioVariety } from '@/features/train/components/ScenarioVariety';
 import { ScenarioCard } from '@/features/train/components/ScenarioCard';
 import { TimerInput } from '@/features/train/components/TimerInput';
 import { ABBranching } from '@/features/train/components/ABBranching';
 import { ScoreResults } from '@/features/train/components/ScoreResults';
 import { useScenarioPool } from '@/features/train/hooks/useScenarioPool';
+import { useTrainingStats } from '@/features/train/hooks/useTrainingStats';
 import type { TrainScenario } from '@/features/train/data/scenarios';
 
 type Step = 'filter' | 'scenario' | 'results';
@@ -33,6 +36,8 @@ export default function Train() {
   const [currentScenario, setCurrentScenario] = useState<TrainScenario | null>(
     null,
   );
+
+  const stats = useTrainingStats();
 
   const { data: pool, isLoading } = useScenarioPool(
     selectedDifficulty ?? undefined,
@@ -176,6 +181,12 @@ export default function Train() {
         Select a difficulty level and practice random sales scenarios.
       </p>
 
+      <DifficultyRecommendation
+        recommendedDifficulty={stats.recommendedDifficulty}
+        avgScoreByDifficulty={stats.avgScoreByDifficulty}
+        onSelectDifficulty={(d) => setSelectedDifficulty(d)}
+      />
+
       <DifficultyFilter
         selected={selectedDifficulty}
         onSelect={setSelectedDifficulty}
@@ -188,9 +199,11 @@ export default function Train() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-text-hint">
-            {poolSize} scenario{poolSize !== 1 ? 's' : ''} available
-          </p>
+          <ScenarioVariety
+            unseenCount={stats.unseenCount}
+            totalPoolSize={stats.totalPoolSize}
+            isRunningLow={stats.isRunningLow}
+          />
 
           <Button
             variant="primary"

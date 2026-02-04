@@ -75,5 +75,6 @@ export function useUserStats() {
     scenariosCompleted: query.data?.scenariosCompleted ?? 0,
     isLoading: query.isLoading,
     isError: query.isError,
+    refetch: query.refetch,
   };
 }

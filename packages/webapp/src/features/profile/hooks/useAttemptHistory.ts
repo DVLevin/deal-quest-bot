@@ -62,6 +62,7 @@ export function useAttemptHistory(page: number) {
     hasMore: query.data?.hasMore ?? false,
     isLoading: query.isLoading,
     isError: query.isError,
+    refetch: query.refetch,
   };
 }
 

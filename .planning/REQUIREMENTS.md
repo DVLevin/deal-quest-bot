@@ -219,10 +219,10 @@
 
 ### Training Experience
 
-- [ ] **TRAIN-V11-01**: Difficulty recommendation — show suggested difficulty on Train page based on user's average score per difficulty level (computed client-side from recent attempts)
-- [ ] **TRAIN-V11-02**: Track completion stats — display per-track progress summary (levels completed, average score, best score) on Learn page header
-- [ ] **TRAIN-V11-03**: Weak area identification — highlight tracks/difficulties where user scores below average, with "Practice this" CTA on Dashboard
-- [ ] **TRAIN-V11-04**: Scenario variety indicator — show "X scenarios remaining" count in Train mode, encourage variety when pool runs low
+- [x] **TRAIN-V11-01**: Difficulty recommendation — show suggested difficulty on Train page based on user's average score per difficulty level (computed client-side from recent attempts)
+- [x] **TRAIN-V11-02**: Track completion stats — display per-track progress summary (levels completed, average score, best score) on Learn page header
+- [x] **TRAIN-V11-03**: Weak area identification — highlight tracks/difficulties where user scores below average, with "Practice this" CTA on Dashboard
+- [x] **TRAIN-V11-04**: Scenario variety indicator — show "X scenarios remaining" count in Train mode, encourage variety when pool runs low
 
 ### Error Handling & UX
 
@@ -244,25 +244,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEAD-V11-01 | Phase 8 | Pending |
-| LEAD-V11-02 | Phase 8 | Pending |
-| LEAD-V11-03 | Phase 8 | Pending |
-| LEAD-V11-04 | Phase 8 | Pending |
-| LEAD-V11-05 | Phase 8 | Pending |
-| TRAIN-V11-01 | Phase 9 | Pending |
-| TRAIN-V11-02 | Phase 9 | Pending |
-| TRAIN-V11-03 | Phase 9 | Pending |
-| TRAIN-V11-04 | Phase 9 | Pending |
-| UX-V11-01 | Phase 10 | Pending |
-| UX-V11-02 | Phase 10 | Pending |
-| UX-V11-03 | Phase 10 | Pending |
-| UX-V11-04 | Phase 10 | Pending |
-| UX-V11-05 | Phase 10 | Pending |
-| PERF-V11-01 | Phase 11 | Pending |
-| PERF-V11-02 | Phase 11 | Pending |
-| PERF-V11-03 | Phase 11 | Pending |
-| PERF-V11-04 | Phase 11 | Pending |
-| PERF-V11-05 | Phase 11 | Pending |
+| LEAD-V11-01 | Phase 8 | Complete |
+| LEAD-V11-02 | Phase 8 | Complete |
+| LEAD-V11-03 | Phase 8 | Complete |
+| LEAD-V11-04 | Phase 8 | Complete |
+| LEAD-V11-05 | Phase 8 | Complete |
+| TRAIN-V11-01 | Phase 9 | Complete |
+| TRAIN-V11-02 | Phase 9 | Complete |
+| TRAIN-V11-03 | Phase 9 | Complete |
+| TRAIN-V11-04 | Phase 9 | Complete |
+| UX-V11-01 | Phase 10 | Complete |
+| UX-V11-02 | Phase 10 | Complete |
+| UX-V11-03 | Phase 10 | Complete |
+| UX-V11-04 | Phase 10 | Complete |
+| UX-V11-05 | Phase 10 | Complete |
+| PERF-V11-01 | Phase 11 | Complete |
+| PERF-V11-02 | Phase 11 | Complete |
+| PERF-V11-03 | Phase 11 | Complete |
+| PERF-V11-04 | Phase 11 | Complete |
+| PERF-V11-05 | Phase 11 | Complete |
 
 **v1.1 Coverage:**
 - v1.1 requirements: 19 total
@@ -271,4 +271,4 @@
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-04 after v1.1 milestone requirements*
+*Last updated: 2026-02-05 after Phase 11 completion (v1.1 milestone complete)*

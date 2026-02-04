@@ -39,6 +39,7 @@ from bot.storage.repositories import (
 )
 from bot.utils import _sanitize, format_training_feedback
 from bot.utils_tma import add_open_in_app_row
+from bot.utils_validation import validate_user_input
 
 logger = logging.getLogger(__name__)
 
@@ -452,18 +453,28 @@ async def on_learn_answer(
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_response = message.text or ""
 
-    # Cancel escape hatch
-    if user_response.strip().lower() == "/cancel":
-        await state.clear()
-        await message.answer(
-            "Scenario cancelled. No penalty applied.\n"
-            "Use /learn to pick another level."
-        )
+    result = validate_user_input(user_response, context="learn")
+    if not result.is_valid:
+        if result.is_command:
+            if result.suggested_command == "/cancel":
+                await state.clear()
+                await message.answer("Learning session cancelled. Use /learn to start again.")
+                return
+            await state.clear()
+            if result.suggested_command and result.suggested_command != "unknown":
+                await message.answer(
+                    f"Looks like you meant {result.suggested_command}. "
+                    f"Learning session cancelled. Try the command again."
+                )
+            else:
+                await message.answer(
+                    "That looks like a command. Learning session cancelled. "
+                    "Try your command again."
+                )
+            return
+        await message.answer(result.error_message)
         return
-
-    if not user_response.strip():
-        await message.answer("Please type your response to the scenario.")
-        return
+    user_response = result.cleaned_input
 
     status_msg = await message.answer("🔄 Evaluating your response...")
 

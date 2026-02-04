@@ -6,7 +6,7 @@
  */
 
 import { Target, BarChart3, Trophy, CheckCircle } from 'lucide-react';
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useUserStats } from '../hooks/useUserStats';
 import { cn } from '@/shared/lib/cn';
 import type { LucideIcon } from 'lucide-react';
@@ -28,7 +28,7 @@ function StatItem({ icon: Icon, value, label }: StatItemProps) {
 }
 
 export function StatsOverview() {
-  const { totalAttempts, averageScore, bestScore, scenariosCompleted, isLoading } =
+  const { totalAttempts, averageScore, bestScore, scenariosCompleted, isLoading, isError, refetch } =
     useUserStats();
 
   return (
@@ -45,6 +45,8 @@ export function StatsOverview() {
             </div>
           ))}
         </div>
+      ) : isError ? (
+        <ErrorCard message="Unable to load stats" onRetry={refetch} compact />
       ) : (
         <div className={cn('grid grid-cols-2 gap-4', 'sm:grid-cols-4')}>
           <StatItem icon={Target} value={String(totalAttempts)} label="Total Attempts" />

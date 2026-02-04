@@ -9,13 +9,15 @@
 import { useCallback } from 'react';
 import { openTelegramLink } from '@telegram-apps/sdk-react';
 import { BookOpen, Sparkles, ArrowRight } from 'lucide-react';
-import { Skeleton, Button } from '@/shared/ui';
+import { Skeleton, Button, ErrorCard } from '@/shared/ui';
 import { CasebookCard } from './CasebookCard';
 import type { CasebookRow } from '@/types/tables';
 
 interface CasebookListProps {
   entries: CasebookRow[];
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onEntryClick: (id: number) => void;
   hasActiveFilters?: boolean;
 }
@@ -82,6 +84,8 @@ function CasebookEmptyState() {
 export function CasebookList({
   entries,
   isLoading,
+  isError = false,
+  onRetry,
   onEntryClick,
   hasActiveFilters = false,
 }: CasebookListProps) {
@@ -93,6 +97,10 @@ export function CasebookList({
         <Skeleton height={88} />
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorCard message="Unable to load casebook" onRetry={onRetry} />;
   }
 
   if (entries.length === 0) {

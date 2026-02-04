@@ -28,6 +28,7 @@ from bot.services.knowledge import KnowledgeService
 from bot.services.scenario_generator import ScenarioGeneratorService
 from bot.services.transcription import TranscriptionService
 from bot.storage.insforge_client import InsForgeClient
+from bot.task_utils import create_background_task
 from bot.storage.repositories import (
     AttemptRepo,
     CasebookRepo,
@@ -177,8 +178,9 @@ async def main() -> None:
 
     # Start followup scheduler in background
     if engagement_service:
-        asyncio.create_task(
-            start_followup_scheduler(bot, lead_repo, activity_repo)
+        create_background_task(
+            start_followup_scheduler(bot, lead_repo, activity_repo),
+            name="followup_scheduler",
         )
         logger.info("Followup scheduler started")
 
@@ -193,7 +195,7 @@ async def main() -> None:
                     logger.error("Scenario generation loop error: %s", e)
                 await asyncio.sleep(6 * 60 * 60)  # Every 6 hours
 
-        asyncio.create_task(_scenario_generation_loop())
+        create_background_task(_scenario_generation_loop(), name="scenario_generation_loop")
         logger.info("Scenario generation loop started (every 6 hours)")
 
     try:

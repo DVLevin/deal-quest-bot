@@ -58,6 +58,9 @@ export const queryKeys = {
   settings: {
     user: (telegramId: number) => ['settings', telegramId] as const,
   },
+  training: {
+    stats: (telegramId: number) => ['training', telegramId, 'stats'] as const,
+  },
   admin: {
     all: ['admin'] as const,
     teamStats: ['admin', 'teamStats'] as const,

@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Setting up requirements and roadmap.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. All phases complete (8-11). Milestone ready for audit.
 
 ## Previous Milestone (v1.0)
 
@@ -15,19 +15,20 @@ Total execution time: 74m
 
 ## Current Position
 
-Milestone: v1.1 — Quick & Medium Wins
-Phase: 8-11 (4 phases, all independent)
-Status: Phase 8 planned (2 plans), ready to execute
-Last activity: 2026-02-04 -- Phase 8 researched and planned (08-01, 08-02)
+Milestone: v1.1 — Quick & Medium Wins — COMPLETE
+Phase: 11 of 8-11 — COMPLETE (Performance & Reliability)
+Plans completed: 28/28 total (2/2 in Phase 11)
+Status: Phase 11 verified and complete (5/5 must-haves passed). Milestone v1.1 complete.
+Last activity: 2026-02-05 -- Phase 11 executed, verified
 
-Progress: [                   ] 0/19 (0%)
+Progress: [████████████████████] 19/19 v1.1 requirements (100%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 4.1m
-- Total execution time: 74m
+- Total plans completed: 28
+- Average duration: 3.6m
+- Total execution time: 102m
 
 **By Phase:**
 
@@ -40,9 +41,13 @@ Progress: [                   ] 0/19 (0%)
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 | 7. Bot Integration | 2/2 | 8m | 4m |
+| 8. Lead Management | 2/2 | 5m | 2.5m |
+| 9. Training Experience | 2/2 | 5m | 2.5m |
+| 10. Error Handling & UX | 4/4 | 14m | 3.5m |
+| 11. Performance & Reliability | 2/2 | 4m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 4m, 4m, 4m
+- Last 5 plans: 2m, 5m, 5m, 0m, 4m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -126,6 +131,40 @@ Recent decisions affecting current work:
 - [07-02]: tgWebAppStartParam property name (SDK v3 uses raw Telegram query param names, not camelCase)
 - [07-02]: WebAppInfo URL path routing takes priority over startParam (location.pathname check)
 - [07-02]: replace: true on deep link navigate to prevent root in browser history
+- [08-01]: lead_source column uses TEXT DEFAULT 'support_analysis' for automatic backfill of existing rows
+- [08-01]: lead_source in LeadRegistryRow TypeScript type uses string | null matching DB column convention
+- [08-01]: Stale threshold set to 7 days, uses updated_at with created_at fallback
+- [08-01]: useLeads limit increased from 30 to 100 to prepare for Plan 02 client-side search
+- [08-02]: Reused SearchBar from casebook (controlled component with external debounce)
+- [08-02]: Filter chips built inline (not CasebookFilters) for domain-specific lead status filtering
+- [08-02]: Client-side filtering with useMemo -- no PostgREST query changes needed with 100-row limit
+- [08-02]: Company groups sorted by contact count descending
+- [09-01]: Client-side difficulty join via Map<string, number> (no DB migration for attempts table)
+- [09-01]: Threshold constants: MIN_ATTEMPTS=3, PROMOTE=70, DEMOTE=40 (easily tunable)
+- [09-01]: DifficultyRecommendation returns null when insufficient data (clean UI for new users)
+- [09-01]: ScenarioVariety replaces plain pool count with unseen/total + low-pool nudge
+- [09-01]: useScenarioPool(undefined) reused for full-pool difficulty map (TanStack Query dedup)
+- [09-02]: TrackStats is pure presentational (receives LevelWithProgress[] props, no internal hooks)
+- [09-02]: WeakAreasCard threshold at 50 with minimum 2 attempts to filter noise
+- [09-02]: WeakAreasCard returns null for new users (no empty card clutter)
+- [09-02]: Practice CTA routes contextually: /train for difficulty, /learn for track-level weak areas
+- [09-02]: Max 3 weak areas displayed on dashboard to avoid overwhelming
+- [10-01]: ErrorBoundary uses React class component (functional components cannot be error boundaries in React 18)
+- [10-01]: Toast store uses Zustand standalone store (not React Context) -- no provider wrapper needed
+- [10-01]: ErrorBoundary outermost in App.tsx; ToastContainer inside QueryProvider above AppRouter
+- [10-01]: Max 3 visible toasts with 4-second auto-dismiss and oldest-first eviction
+- [10-01]: ErrorCard compact variant: boolean prop switches between inline row and card block display
+- [10-03]: Component-level callbacks on mutation.mutate() run in addition to hook-level onMutate/onError/onSettled
+- [10-03]: Retry action on status update and note save, not on settings (user can re-select)
+- [10-03]: Captured vars object before mutate call to prevent stale closure in retry onClick
+- [10-03]: Both SupportHome and SessionHistory empty states upgraded (SessionHistory was very bare)
+- [10-02]: ErrorCard compact inside Card wrappers, full mode for standalone error sections
+- [10-02]: Custom hooks (useUserBadges, useAttemptHistory, useUserStats) must expose refetch in return
+- [10-02]: CasebookList uses props-based isError/onRetry forwarding since parent owns the query
+- [10-02]: Admin card components preserve section header above ErrorCard compact for context
+- [10-04]: Shared validate_user_input() in bot/utils_validation.py for all text handlers
+- [10-04]: learn/train handlers gain fuzzy command detection (previously only literal /cancel)
+- [10-04]: Max length 4000 first-pass truncation; storage 2000-char limit remains as hard limit
 
 ### Pending Todos
 
@@ -143,6 +182,7 @@ Recent decisions affecting current work:
 ### Pending Todos (quick tasks)
 
 - [quick-002]: Run migration `migrations/002_lead_person_company_fields.sql` on InsForge database
+- [08-01]: Run migration `migrations/003_lead_source_field.sql` on InsForge database
 
 ## Quick Tasks
 
@@ -153,7 +193,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-04
-Stopped at: Phase 8 planned with 2 plans (08-01: data foundation + stale/source badges, 08-02: search/filter + company grouping)
+Last session: 2026-02-05
+Stopped at: Phase 11 Performance & Reliability — executed, verified, complete. Milestone v1.1 complete.
 Resume file: None
-Next action: Execute Phase 8 with /gsd:execute-phase 8
+Next action: Audit milestone v1.1 (/gsd:audit-milestone)

@@ -5,7 +5,7 @@
  * score, and relative time (e.g., "2h ago").
  */
 
-import { Card, Badge, Skeleton } from '@/shared/ui';
+import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
 import { useRecentActivity } from '@/features/admin/hooks/useRecentActivity';
 import type { BadgeProps } from '@/shared/ui';
 
@@ -44,7 +44,7 @@ function getModeVariant(mode: string): BadgeProps['variant'] {
 }
 
 export function ActivityFeed() {
-  const { data: items, isLoading, isError } = useRecentActivity();
+  const { data: items, isLoading, isError, refetch } = useRecentActivity();
 
   if (isLoading) {
     return (
@@ -63,7 +63,7 @@ export function ActivityFeed() {
     return (
       <Card>
         <h3 className="mb-3 text-sm font-semibold text-text">Recent Activity</h3>
-        <p className="text-sm text-text-hint">Unable to load recent activity</p>
+        <ErrorCard message="Unable to load recent activity" onRetry={refetch} compact />
       </Card>
     );
   }

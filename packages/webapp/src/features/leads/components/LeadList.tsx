@@ -6,7 +6,7 @@
  */
 
 import { Users } from 'lucide-react';
-import { Skeleton } from '@/shared/ui';
+import { Skeleton, ErrorCard, EmptyState } from '@/shared/ui';
 import { useLeads } from '../hooks/useLeads';
 import { LeadCard } from './LeadCard';
 
@@ -15,7 +15,7 @@ interface LeadListProps {
 }
 
 export function LeadList({ onSelectLead }: LeadListProps) {
-  const { data: leads, isLoading } = useLeads();
+  const { data: leads, isLoading, isError, refetch } = useLeads();
 
   if (isLoading) {
     return (
@@ -28,17 +28,23 @@ export function LeadList({ onSelectLead }: LeadListProps) {
     );
   }
 
+  if (isError) {
+    return <ErrorCard message="Unable to load leads" onRetry={refetch} />;
+  }
+
   if (!leads || leads.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-card bg-surface-secondary/30 p-8 text-center">
-        <Users className="h-8 w-8 text-text-hint" />
-        <p className="text-sm font-medium text-text-secondary">
-          No leads yet
-        </p>
-        <p className="text-xs text-text-hint">
-          Analyze prospects in the bot to build your pipeline.
-        </p>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="No leads yet"
+        description="Analyze prospects in the bot to build your sales pipeline."
+        action={{
+          label: 'Open Bot',
+          onClick: () => {
+            window.open('https://t.me/DealQuestBot?start=support', '_blank');
+          },
+        }}
+      />
     );
   }
 

@@ -8,11 +8,11 @@
  */
 
 import { Users, Zap, Activity } from 'lucide-react';
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useTeamStats } from '@/features/admin/hooks/useTeamStats';
 
 export function TeamOverview() {
-  const { data, isLoading, isError } = useTeamStats();
+  const { data, isLoading, isError, refetch } = useTeamStats();
 
   if (isLoading) {
     return (
@@ -27,11 +27,7 @@ export function TeamOverview() {
   }
 
   if (isError || !data) {
-    return (
-      <Card>
-        <p className="text-sm text-text-hint">Unable to load team stats</p>
-      </Card>
-    );
+    return <ErrorCard message="Unable to load team stats" onRetry={refetch} />;
   }
 
   const stats = [

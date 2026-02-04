@@ -5,12 +5,12 @@
  * and average score. Top 3 members get accent-colored rank numbers.
  */
 
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 import { useTeamLeaderboard } from '@/features/admin/hooks/useTeamLeaderboard';
 
 export function MemberLeaderboard() {
-  const { data: entries, isLoading, isError } = useTeamLeaderboard();
+  const { data: entries, isLoading, isError, refetch } = useTeamLeaderboard();
 
   if (isLoading) {
     return (
@@ -29,7 +29,7 @@ export function MemberLeaderboard() {
     return (
       <Card>
         <h3 className="mb-3 text-sm font-semibold text-text">Team Leaderboard</h3>
-        <p className="text-sm text-text-hint">Unable to load leaderboard</p>
+        <ErrorCard message="Unable to load leaderboard" onRetry={refetch} compact />
       </Card>
     );
   }

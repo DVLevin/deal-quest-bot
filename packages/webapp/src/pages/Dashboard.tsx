@@ -12,6 +12,7 @@ import { ProgressCard } from '@/features/dashboard/components/ProgressCard';
 import { BadgePreview } from '@/features/dashboard/components/BadgePreview';
 import { LeaderboardWidget } from '@/features/dashboard/components/LeaderboardWidget';
 import { QuickActions } from '@/features/dashboard/components/QuickActions';
+import { WeakAreasCard } from '@/features/dashboard/components/WeakAreasCard';
 import { useLevelUpDetection } from '@/features/gamification/hooks/useLevelUpDetection';
 import { LevelUpOverlay } from '@/features/gamification/components/LevelUpOverlay';
 
@@ -30,6 +31,7 @@ export default function Dashboard() {
       <div className="space-y-4 px-4 pt-4">
         <ProgressCard />
         <QuickActions />
+        <WeakAreasCard />
         <BadgePreview />
         <LeaderboardWidget />
       </div>

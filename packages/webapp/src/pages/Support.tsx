@@ -10,8 +10,8 @@
  */
 
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router';
-import { Zap } from 'lucide-react';
-import { Skeleton } from '@/shared/ui';
+import { Zap, MessageSquare } from 'lucide-react';
+import { Skeleton, EmptyState } from '@/shared/ui';
 import { SupportInput } from '@/features/support/components/SupportInput';
 import { AnalysisDisplay } from '@/features/support/components/AnalysisDisplay';
 import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
@@ -50,15 +50,17 @@ function SupportHome() {
         )}
 
         {!isLoading && (!sessions || sessions.length === 0) && (
-          <div className="flex flex-col items-center gap-2 rounded-card bg-surface-secondary/30 p-6 text-center">
-            <p className="text-sm font-medium text-text-secondary">
-              No sessions yet — you're starting fresh!
-            </p>
-            <p className="text-xs text-text-hint">
-              Analyze a deal above and your session history will build up here.
-              Text, screenshots, voice messages — whatever works for you.
-            </p>
-          </div>
+          <EmptyState
+            icon={MessageSquare}
+            title="No sessions yet"
+            description="Analyze a prospect in the bot to get AI-powered deal strategy and insights."
+            action={{
+              label: 'Open Bot',
+              onClick: () => {
+                window.open('https://t.me/DealQuestBot?start=support', '_blank');
+              },
+            }}
+          />
         )}
 
         {!isLoading && sessions && sessions.length > 0 && (
@@ -171,11 +173,17 @@ function SessionHistory() {
       )}
 
       {!isLoading && (!sessions || sessions.length === 0) && (
-        <div className="rounded-card bg-surface-secondary/30 p-6 text-center">
-          <p className="text-sm text-text-hint">
-            No support sessions yet.
-          </p>
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No support sessions yet"
+          description="Analyze a prospect in the bot to get AI-powered deal strategy and insights."
+          action={{
+            label: 'Open Bot',
+            onClick: () => {
+              window.open('https://t.me/DealQuestBot?start=support', '_blank');
+            },
+          }}
+        />
       )}
 
       {!isLoading && sessions && sessions.length > 0 && (

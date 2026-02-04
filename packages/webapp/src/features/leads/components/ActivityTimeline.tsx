@@ -18,7 +18,7 @@ import {
   Send,
   Clock,
 } from 'lucide-react';
-import { Skeleton } from '@/shared/ui';
+import { Skeleton, ErrorCard } from '@/shared/ui';
 import { useLeadActivities } from '../hooks/useLeadActivities';
 import { formatLeadDate } from '../types';
 import type { LeadActivityRow } from '@/types/tables';
@@ -77,7 +77,7 @@ function getActivityStyle(activityType: string): ActivityStyle {
 // ---------------------------------------------------------------------------
 
 export function ActivityTimeline({ leadId }: { leadId: number }) {
-  const { data: activities, isLoading } = useLeadActivities(leadId);
+  const { data: activities, isLoading, isError, refetch } = useLeadActivities(leadId);
 
   if (isLoading) {
     return (
@@ -93,6 +93,10 @@ export function ActivityTimeline({ leadId }: { leadId: number }) {
         ))}
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorCard message="Unable to load activity" onRetry={refetch} compact />;
   }
 
   if (!activities || activities.length === 0) {

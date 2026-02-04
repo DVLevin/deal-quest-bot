@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { Card } from '@/shared/ui';
+import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useAddLeadNote } from '../hooks/useAddLeadNote';
 
@@ -19,23 +20,26 @@ interface LeadNotesProps {
 export function LeadNotes({ leadId, currentNote }: LeadNotesProps) {
   const telegramId = useAuthStore((s) => s.telegramId);
   const mutation = useAddLeadNote();
+  const { toast } = useToast();
   const [noteText, setNoteText] = useState('');
 
   const handleSubmit = () => {
     if (!noteText.trim() || !telegramId) return;
 
-    mutation.mutate(
-      {
-        leadId,
-        telegramId,
-        note: noteText.trim(),
+    const vars = { leadId, telegramId, note: noteText.trim() };
+    mutation.mutate(vars, {
+      onSuccess: () => {
+        setNoteText('');
+        toast({ type: 'success', message: 'Note saved' });
       },
-      {
-        onSuccess: () => {
-          setNoteText('');
-        },
+      onError: () => {
+        toast({
+          type: 'error',
+          message: 'Failed to save note',
+          action: { label: 'Retry', onClick: () => mutation.mutate(vars) },
+        });
       },
-    );
+    });
   };
 
   return (

@@ -8,7 +8,7 @@
  * the current user, shows an empty state.
  */
 
-import { Card, Skeleton, Badge, Avatar } from '@/shared/ui';
+import { Card, Skeleton, Badge, Avatar, ErrorCard } from '@/shared/ui';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useAuthStore } from '@/features/auth/store';
 import { cn } from '@/shared/lib/cn';
@@ -59,7 +59,7 @@ function LeaderboardRow({
 }
 
 export function LeaderboardWidget() {
-  const { data, isLoading, isError } = useLeaderboard();
+  const { data, isLoading, isError, refetch } = useLeaderboard();
   const telegramId = useAuthStore((s) => s.telegramId);
   const photoUrl = useAuthStore((s) => s.photoUrl);
 
@@ -81,7 +81,7 @@ export function LeaderboardWidget() {
           ))}
         </div>
       ) : isError ? (
-        <p className="text-sm text-text-hint">Unable to load leaderboard</p>
+        <ErrorCard message="Unable to load leaderboard" onRetry={refetch} compact />
       ) : !data || data.top5.length === 0 ? (
         <p className="text-sm text-text-hint">
           Complete your first scenario to join the leaderboard!

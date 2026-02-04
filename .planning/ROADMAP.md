@@ -141,10 +141,10 @@ Plans:
 
 ### v1.1 Phases
 
-- [ ] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
-- [ ] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
-- [ ] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
-- [ ] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
+- [x] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
+- [x] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
+- [x] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
+- [x] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
 
 ### Phase 8: Lead Management Enhancements
 **Goal**: Lead pipeline becomes more actionable — stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
@@ -159,8 +159,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
-- [ ] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
+- [x] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [x] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
 **Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
@@ -171,7 +171,11 @@ Plans:
   2. Learn page displays per-track summary (levels completed, avg score, best score) at the top of each track
   3. Dashboard highlights weak areas (tracks/difficulties with below-average scores) with a "Practice this" button
   4. Train mode shows remaining unseen scenarios count and displays a nudge when the pool is running low
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 09-01-PLAN.md — useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
+- [x] 09-02-PLAN.md — Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
 
 ### Phase 10: Error Handling & UX
 **Goal**: The app handles errors gracefully everywhere — users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
@@ -183,7 +187,13 @@ Plans:
   3. Failed mutations (status update, note save) show a toast notification with error message and retry
   4. Bot handlers (support, learn, train) use a shared validation utility with consistent error messages
   5. Pages with no data (no leads, no casebook entries, no attempts) show designed empty states with guidance
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [x] 10-01-PLAN.md — Core UI components: ErrorBoundary, ErrorCard, Toast system, EmptyState + wire into App.tsx (Wave 1)
+- [x] 10-02-PLAN.md — ErrorCard integration: replace 18 inline error states with standardized ErrorCard (Wave 2)
+- [x] 10-03-PLAN.md — Toast mutation feedback + empty state upgrades for leads, attempts, support (Wave 2)
+- [x] 10-04-PLAN.md — Bot validation utility: shared validate_user_input() in support/learn/train handlers (Wave 1)
 
 ### Phase 11: Performance & Reliability
 **Goal**: Production-grade reliability — debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
@@ -195,7 +205,11 @@ Plans:
   3. InsForge PostgREST calls retry up to 3 times with exponential backoff on transient failures (429, 500, 502, 503)
   4. Background tasks (followup scheduler, scenario generator, memory agent) have error callbacks and task references preventing garbage collection
   5. TMA queries for lead detail and attempts use explicit column selection instead of `select('*')`
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 11-01-PLAN.md — TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
+- [x] 11-02-PLAN.md — Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
 
 ## Progress
 
@@ -222,7 +236,7 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Lead Management | 0/2 | Not started | — |
-| 9. Training Experience | 0/? | Not started | — |
-| 10. Error Handling & UX | 0/? | Not started | — |
-| 11. Performance & Reliability | 0/? | Not started | — |
+| 8. Lead Management | 2/2 | Complete | 2026-02-04 |
+| 9. Training Experience | 2/2 | Complete | 2026-02-04 |
+| 10. Error Handling & UX | 4/4 | Complete | 2026-02-04 |
+| 11. Performance & Reliability | 2/2 | Complete | 2026-02-05 |

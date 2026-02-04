@@ -6,14 +6,14 @@
  */
 
 import { Flame } from 'lucide-react';
-import { Skeleton, Avatar } from '@/shared/ui';
+import { Skeleton, Avatar, ErrorCard } from '@/shared/ui';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuthStore } from '@/features/auth/store';
 import { getRankTitle, XP_PER_LEVEL, MAX_LEVEL } from '@deal-quest/shared';
 import { Badge } from '@/shared/ui';
 
 export function ProfileHeader() {
-  const { data: user, isLoading, isError } = useUserProfile();
+  const { data: user, isLoading, isError, refetch } = useUserProfile();
   const photoUrl = useAuthStore((s) => s.photoUrl);
 
   if (isLoading) {
@@ -28,11 +28,7 @@ export function ProfileHeader() {
   }
 
   if (isError || !user) {
-    return (
-      <div className="py-6 text-center">
-        <p className="text-sm text-text-hint">Unable to load profile</p>
-      </div>
-    );
+    return <ErrorCard message="Unable to load profile" onRetry={refetch} />;
   }
 
   const rankTitle = getRankTitle(user.current_level);
