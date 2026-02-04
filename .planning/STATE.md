@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 7 in progress (Bot Integration). Plan 1 of 2 done.
+**Current focus:** Phase 7 complete (Bot Integration). All 2 plans done. All phases complete.
 
 ## Current Position
 
 Phase: 7 of 7 (Bot Integration)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-04 -- Completed 07-01-PLAN.md (TMA bot integration -- Open in App buttons)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-04 -- Completed 07-02-PLAN.md (Deep link routing via startParam)
 
-Progress: [█████████████████░░] 17/18 (94%)
+Progress: [███████████████████] 18/18 (100%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 4.1m
-- Total execution time: 70m
+- Total execution time: 74m
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [█████████████████░░] 17/18 (94%
 | 4. Support & Casebook | 2/2 | 6m | 3m |
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
-| 7. Bot Integration | 1/2 | 4m | 4m |
+| 7. Bot Integration | 2/2 | 8m | 4m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 3m, 4m, 4m
+- Last 5 plans: 3m, 3m, 4m, 4m, 4m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -117,6 +117,9 @@ Recent decisions affecting current work:
 - [07-01]: Empty tma_url string as graceful skip (no validation, no error)
 - [07-01]: Open in App always appended as LAST row, never replaces existing buttons
 - [07-01]: setup_menu_button called before polling, after auth middleware
+- [07-02]: tgWebAppStartParam property name (SDK v3 uses raw Telegram query param names, not camelCase)
+- [07-02]: WebAppInfo URL path routing takes priority over startParam (location.pathname check)
+- [07-02]: replace: true on deep link navigate to prevent root in browser history
 
 ### Pending Todos
 
@@ -140,5 +143,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 07-01-PLAN.md (TMA bot integration -- Open in App buttons). Phase 7 plan 1/2 done.
+Stopped at: Completed 07-02-PLAN.md (Deep link routing via startParam). Phase 7 complete (2/2 plans done). All 18 plans across 7 phases complete.
 Resume file: None
