@@ -98,11 +98,11 @@ Plans:
   3. User can update lead status through the pipeline stages (Analyzed, Reached Out, Meeting, In Progress, Closed) and add context/notes
   4. User can view a lead's activity log showing a timeline of status changes and actions
   5. User can manage settings for LLM provider/model selection and API key configuration from the Profile page
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: Lead pipeline -- list view, detail view, and status management
-- [ ] 05-02: Lead activity and notes, plus Profile settings
+- [ ] 05-01-PLAN.md — Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
+- [ ] 05-02-PLAN.md — Lead activity timeline, notes, and Profile settings panel (Wave 2)
 
 ### Phase 6: Gamification & Admin
 **Goal**: The app rewards engagement with visual celebrations and badge mechanics, and admins can monitor team performance
