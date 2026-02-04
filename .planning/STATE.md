@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress (2/4).
 
 ## Previous Milestone (v1.0)
 
@@ -17,18 +17,18 @@ Total execution time: 74m
 
 Milestone: v1.1 — Quick & Medium Wins
 Phase: 10 of 8-11 — IN PROGRESS (Error Handling & UX)
-Plans completed: 23/26 total (1/4 in Phase 10)
+Plans completed: 24/26 total (2/4 in Phase 10)
 Status: Executing Phase 10 Wave 1
-Last activity: 2026-02-04 -- Completed 10-01-PLAN.md
+Last activity: 2026-02-04 -- Completed 10-04-PLAN.md
 
-Progress: [██████████░░░░░░░░░] 10/19 v1.1 requirements (53%)
+Progress: [███████████░░░░░░░░] 11/19 v1.1 requirements (58%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 3.7m
-- Total execution time: 86m
+- Total execution time: 88m
 
 **By Phase:**
 
@@ -43,10 +43,10 @@ Progress: [██████████░░░░░░░░░] 10/19 v1.1
 | 7. Bot Integration | 2/2 | 8m | 4m |
 | 8. Lead Management | 2/2 | 5m | 2.5m |
 | 9. Training Experience | 2/2 | 5m | 2.5m |
-| 10. Error Handling & UX | 1/4 | 2m | 2m |
+| 10. Error Handling & UX | 2/4 | 4m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 3m, 3m, 2m, 2m
+- Last 5 plans: 3m, 3m, 2m, 2m, 2m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -153,6 +153,9 @@ Recent decisions affecting current work:
 - [10-01]: ErrorBoundary outermost in App.tsx; ToastContainer inside QueryProvider above AppRouter
 - [10-01]: Max 3 visible toasts with 4-second auto-dismiss and oldest-first eviction
 - [10-01]: ErrorCard compact variant: boolean prop switches between inline row and card block display
+- [10-04]: Shared validate_user_input() in bot/utils_validation.py for all text handlers
+- [10-04]: learn/train handlers gain fuzzy command detection (previously only literal /cancel)
+- [10-04]: Max length 4000 first-pass truncation; storage 2000-char limit remains as hard limit
 
 ### Pending Todos
 
@@ -182,6 +185,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 10-01-PLAN.md (Error Handling Foundation)
+Stopped at: Completed 10-04-PLAN.md (Shared Input Validation)
 Resume file: None
-Next action: Execute 10-02-PLAN.md (integrate error/empty states into pages)
+Next action: Execute remaining Phase 10 plans (10-02, 10-03)
