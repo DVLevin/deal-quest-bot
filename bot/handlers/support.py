@@ -207,17 +207,49 @@ async def _run_support_pipeline(
                     return obj
                 return _json.dumps(obj, indent=2, ensure_ascii=False)
 
-            # Extract prospect name/title/company from full output
-            prospect_name = _extract_prospect_name_from_output(output_data, user_input)
+            # Extract structured prospect info (new format)
+            prospect_info = output_data.get("prospect_info", {})
+            if not isinstance(prospect_info, dict):
+                prospect_info = {}
+
+            prospect_first_name = prospect_info.get("first_name") or None
+            prospect_last_name = prospect_info.get("last_name") or None
+            prospect_geography = prospect_info.get("geography") or None
+
+            # Clean up "Unknown" values
+            _unknown_values = ("unknown", "n/a", "not specified", "not mentioned")
+            if prospect_first_name and prospect_first_name.strip().lower() in _unknown_values:
+                prospect_first_name = None
+            if prospect_last_name and prospect_last_name.strip().lower() in _unknown_values:
+                prospect_last_name = None
+            if prospect_geography and prospect_geography.strip().lower() in _unknown_values:
+                prospect_geography = None
+
+            # Compose prospect_name from structured first/last name if available
+            prospect_name: str | None = None
+            if prospect_first_name and prospect_last_name:
+                prospect_name = f"{prospect_first_name} {prospect_last_name}"
+            elif prospect_first_name:
+                prospect_name = prospect_first_name
+            # Fall back to existing extraction if prospect_info didn't have name
+            if not prospect_name:
+                prospect_name = _extract_prospect_name_from_output(output_data, user_input)
+
             prospect_title = (
                 _extract_field(analysis_obj, "seniority")
                 or _extract_field(analysis_obj, "title")
                 or _extract_field(analysis_obj, "role")
             )
-            prospect_company = (
-                _extract_prospect_company_from_output(output_data)
-                or _extract_field(analysis_obj, "company")
-            )
+
+            # Prefer structured company from prospect_info
+            prospect_company_from_info = prospect_info.get("company") or None
+            if prospect_company_from_info and prospect_company_from_info.strip().lower() not in _unknown_values:
+                prospect_company = prospect_company_from_info
+            else:
+                prospect_company = (
+                    _extract_prospect_company_from_output(output_data)
+                    or _extract_field(analysis_obj, "company")
+                )
 
             # Dedup: check if a similar lead already exists for this user
             existing_lead = await lead_repo.find_duplicate(tg_id, prospect_name, prospect_company)
@@ -239,6 +271,12 @@ async def _run_support_pipeline(
                     merge_updates["prospect_title"] = prospect_title
                 if prospect_company and not existing_lead.prospect_company:
                     merge_updates["prospect_company"] = prospect_company
+                if prospect_first_name and not existing_lead.prospect_first_name:
+                    merge_updates["prospect_first_name"] = prospect_first_name
+                if prospect_last_name and not existing_lead.prospect_last_name:
+                    merge_updates["prospect_last_name"] = prospect_last_name
+                if prospect_geography and not existing_lead.prospect_geography:
+                    merge_updates["prospect_geography"] = prospect_geography
                 # Update photo if new one provided
                 if photo_url:
                     merge_updates["photo_url"] = photo_url
@@ -256,8 +294,11 @@ async def _run_support_pipeline(
                         user_id=user.id,
                         telegram_id=tg_id,
                         prospect_name=prospect_name,
+                        prospect_first_name=prospect_first_name,
+                        prospect_last_name=prospect_last_name,
                         prospect_title=prospect_title,
                         prospect_company=prospect_company,
+                        prospect_geography=prospect_geography,
                         photo_url=photo_url,
                         photo_key=photo_key,
                         prospect_analysis=_dict_to_text(analysis_obj),
@@ -283,6 +324,7 @@ async def _run_support_pipeline(
                         openrouter_api_key=shared_openrouter_key,
                         prospect_name=prospect_name,
                         prospect_company=prospect_company,
+                        prospect_geography=prospect_geography,
                         original_context=user_input[:300],
                     )
                 )
@@ -369,7 +411,8 @@ async def _background_enrich_lead(
     openrouter_api_key: str,
     prospect_name: str | None,
     prospect_company: str | None,
-    original_context: str | None,
+    prospect_geography: str | None = None,
+    original_context: str | None = None,
 ) -> None:
     """Background task: web research + engagement plan generation for a new lead."""
     try:
@@ -379,6 +422,8 @@ async def _background_enrich_lead(
             research_query_parts.append(prospect_name)
         if prospect_company:
             research_query_parts.append(prospect_company)
+        if prospect_geography:
+            research_query_parts.append(prospect_geography)
 
         # If no name/company, try to build query from stored analysis
         if not research_query_parts:
