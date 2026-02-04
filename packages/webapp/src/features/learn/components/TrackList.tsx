@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import { Skeleton } from '@/shared/ui';
 import { useTrackProgress } from '../hooks/useTrackProgress';
 import { LevelCard } from './LevelCard';
+import { TrackStats } from './TrackStats';
 import { TRACKS } from '../data/tracks';
 
 export function TrackList() {
@@ -55,6 +56,8 @@ export function TrackList() {
         <h1 className="text-xl font-bold text-text">{track.name}</h1>
         <p className="mt-1 text-sm text-text-hint">{track.description}</p>
       </div>
+
+      {levels && <TrackStats levels={levels} />}
 
       <div className="space-y-3">
         {levels?.map((level) => (
