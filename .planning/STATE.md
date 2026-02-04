@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 6 in progress (Gamification & Admin). Badge wall and animations complete, admin dashboard next.
+**Current focus:** Phase 6 complete (Gamification & Admin). All 3 plans done. Next: Phase 7 (Launch).
 
 ## Current Position
 
 Phase: 6 of 7 (Gamification & Admin)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-04 -- Completed 06-02-PLAN.md (Level-up, XP, and streak animations)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-04 -- Completed 06-03-PLAN.md (Admin dashboard with team analytics)
 
-Progress: [███████████████░░░░] 15/18 (83%)
+Progress: [████████████████░░░] 16/18 (89%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 4.1m
-- Total execution time: 62m
+- Total execution time: 66m
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [███████████████░░░░] 15/18 (83%
 | 3. Learn & Train | 3/3 | 16m | 5.3m |
 | 4. Support & Casebook | 2/2 | 6m | 3m |
 | 5. Leads & Settings | 2/2 | 6m | 3m |
-| 6. Gamification & Admin | 2/3 | 6m | 3m |
+| 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 3m, 3m, 3m
+- Last 5 plans: 3m, 3m, 3m, 3m, 4m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -109,6 +109,10 @@ Recent decisions affecting current work:
 - [06-02]: sessionStorage guard prevents level-up re-triggers on page reload
 - [06-02]: CSS @property --xp-value reuses existing integer interpolation pattern from ScoreDisplay
 - [06-02]: LevelUpOverlay auto-dismisses after 5 seconds with manual dismiss option
+- [06-03]: Client-side admin access control via VITE_ADMIN_USERNAMES env var (v1 security limitation)
+- [06-03]: SVG micro-charts for admin dashboard (no charting library dependency)
+- [06-03]: 5-minute staleTime and .limit() on all admin queries
+- [06-03]: AdminGuard reuses existing user query key for TanStack Query deduplication
 
 ### Pending Todos
 
@@ -131,5 +135,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 06-02-PLAN.md (Level-up, XP, and streak animations). Phase 6 plan 2 of 3 done.
+Stopped at: Completed 06-03-PLAN.md (Admin dashboard with team analytics). Phase 6 complete (3/3 plans done).
 Resume file: None
