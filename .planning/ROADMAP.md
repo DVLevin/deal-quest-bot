@@ -156,7 +156,11 @@ Plans:
   3. Lead list can be grouped by company with collapsible headers showing contact count
   4. LeadRegistryRow TypeScript type includes all fields from the Python LeadRegistryModel (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context)
   5. Users can search leads by name/company and filter by status from the lead list page
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [ ] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
 **Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
@@ -218,7 +222,7 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Lead Management | 0/? | Not started | — |
+| 8. Lead Management | 0/2 | Not started | — |
 | 9. Training Experience | 0/? | Not started | — |
 | 10. Error Handling & UX | 0/? | Not started | — |
 | 11. Performance & Reliability | 0/? | Not started | — |
