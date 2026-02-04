@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 6 complete (Gamification & Admin). All 3 plans done. Next: Phase 7 (Launch).
+**Current focus:** Phase 7 in progress (Bot Integration). Plan 1 of 2 done.
 
 ## Current Position
 
-Phase: 6 of 7 (Gamification & Admin)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-04 -- Completed 06-03-PLAN.md (Admin dashboard with team analytics)
+Phase: 7 of 7 (Bot Integration)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-04 -- Completed 07-01-PLAN.md (TMA bot integration -- Open in App buttons)
 
-Progress: [████████████████░░░] 16/18 (89%)
+Progress: [█████████████████░░] 17/18 (94%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: 4.1m
-- Total execution time: 66m
+- Total execution time: 70m
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: [████████████████░░░] 16/18 (89%
 | 4. Support & Casebook | 2/2 | 6m | 3m |
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
+| 7. Bot Integration | 1/2 | 4m | 4m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 3m, 3m, 4m
+- Last 5 plans: 3m, 3m, 3m, 4m, 4m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -113,12 +114,16 @@ Recent decisions affecting current work:
 - [06-03]: SVG micro-charts for admin dashboard (no charting library dependency)
 - [06-03]: 5-minute staleTime and .limit() on all admin queries
 - [06-03]: AdminGuard reuses existing user query key for TanStack Query deduplication
+- [07-01]: Empty tma_url string as graceful skip (no validation, no error)
+- [07-01]: Open in App always appended as LAST row, never replaces existing buttons
+- [07-01]: setup_menu_button called before polling, after auth middleware
 
 ### Pending Todos
 
 - [01-02]: Deploy verify-telegram Edge Function via InsForge MCP/Dashboard -- DONE (active since 2026-02-03)
 - [01-02]: Execute RLS migration (migrations/001_enable_rls_and_policies.sql) -- DONE (43 policies across 11 tables)
 - [01-02]: Set TELEGRAM_BOT_TOKEN and JWT_SECRET as InsForge environment secrets (hardcoded fallbacks in Edge Function currently)
+- [07-01]: Set TMA_URL env var in Railway to enable Open in App buttons
 
 ### Blockers/Concerns
 
@@ -135,5 +140,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 06-03-PLAN.md (Admin dashboard with team analytics). Phase 6 complete (3/3 plans done).
+Stopped at: Completed 07-01-PLAN.md (TMA bot integration -- Open in App buttons). Phase 7 plan 1/2 done.
 Resume file: None
