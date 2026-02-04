@@ -11,6 +11,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { AppLayout } from '@/shared/layouts/AppLayout';
 import { Skeleton } from '@/shared/ui';
 import { useBackButton } from '@/shared/hooks/useBackButton';
+import { useDeepLink } from '@/shared/hooks/useDeepLink';
 import { AdminGuard } from '@/features/admin/components/AdminGuard';
 
 // Lazy-loaded page chunks
@@ -42,6 +43,7 @@ function PageSkeleton() {
  */
 function AppRoutes() {
   useBackButton();
+  useDeepLink();
 
   return (
     <AppLayout>
