@@ -32,6 +32,7 @@ from bot.services.llm_router import create_provider, web_research_call
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
 from bot.tracing import TraceContext
+from bot.task_utils import create_background_task
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadRegistryModel, SupportSessionModel
@@ -317,7 +318,7 @@ async def _run_support_pipeline(
             # Skip if merging into a lead that already has research
             needs_enrichment = not is_merge or not existing_lead or not existing_lead.web_research
             if engagement_service and saved_lead_id and shared_openrouter_key and needs_enrichment:
-                asyncio.create_task(
+                create_background_task(
                     _background_enrich_lead(
                         lead_id=saved_lead_id,
                         lead_repo=lead_repo,
@@ -327,7 +328,8 @@ async def _run_support_pipeline(
                         prospect_company=prospect_company,
                         prospect_geography=prospect_geography,
                         original_context=user_input[:300],
-                    )
+                    ),
+                    name=f"enrich_lead_{saved_lead_id}",
                 )
         except Exception as e:
             logger.error("Failed to save lead registry: %s", e)

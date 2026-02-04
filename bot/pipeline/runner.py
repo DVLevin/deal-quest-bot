@@ -8,6 +8,7 @@ from typing import Any
 
 from bot.agents.base import AgentInput, AgentOutput, BaseAgent
 from bot.agents.registry import AgentRegistry
+from bot.task_utils import create_background_task
 from bot.pipeline.config_loader import PipelineConfig, StepConfig
 from bot.pipeline.context import PipelineContext
 
@@ -103,7 +104,7 @@ class PipelineRunner:
             except Exception as e:
                 logger.error("Background agent %s failed: %s", step.agent, e)
 
-        asyncio.create_task(_bg_task())
+        create_background_task(_bg_task(), name=f"bg_agent_{step.agent}")
 
     def _build_input(self, step: StepConfig, ctx: PipelineContext) -> AgentInput:
         """Build agent input from step config and pipeline context."""
