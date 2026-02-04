@@ -141,8 +141,8 @@ Plans:
 
 ### v1.1 Phases
 
-- [ ] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
-- [ ] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
+- [x] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
+- [x] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
 - [ ] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
 - [ ] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
 
@@ -159,8 +159,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
-- [ ] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
+- [x] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [x] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
 **Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
@@ -171,7 +171,11 @@ Plans:
   2. Learn page displays per-track summary (levels completed, avg score, best score) at the top of each track
   3. Dashboard highlights weak areas (tracks/difficulties with below-average scores) with a "Practice this" button
   4. Train mode shows remaining unseen scenarios count and displays a nudge when the pool is running low
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 09-01-PLAN.md — useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
+- [x] 09-02-PLAN.md — Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
 
 ### Phase 10: Error Handling & UX
 **Goal**: The app handles errors gracefully everywhere — users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
@@ -222,7 +226,7 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Lead Management | 0/2 | Not started | — |
-| 9. Training Experience | 0/? | Not started | — |
+| 8. Lead Management | 2/2 | Complete | 2026-02-04 |
+| 9. Training Experience | 2/2 | Complete | 2026-02-04 |
 | 10. Error Handling & UX | 0/? | Not started | — |
 | 11. Performance & Reliability | 0/? | Not started | — |
