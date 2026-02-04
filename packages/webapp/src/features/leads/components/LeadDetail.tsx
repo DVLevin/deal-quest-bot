@@ -25,6 +25,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Card, Badge, Skeleton } from '@/shared/ui';
+import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
@@ -190,6 +191,7 @@ export function LeadDetail() {
     Number.isNaN(numericId) ? 0 : numericId,
   );
   const mutation = useUpdateLeadStatus();
+  const { toast } = useToast();
 
   const [copied, setCopied] = useState(false);
 
@@ -207,14 +209,26 @@ export function LeadDetail() {
   const handleStatusChange = useCallback(
     (newStatus: LeadStatus) => {
       if (!lead || !telegramId) return;
-      mutation.mutate({
+      const vars = {
         leadId: lead.id,
         newStatus,
         oldStatus: lead.status,
         telegramId,
+      };
+      mutation.mutate(vars, {
+        onSuccess: () => {
+          toast({ type: 'success', message: 'Status updated' });
+        },
+        onError: () => {
+          toast({
+            type: 'error',
+            message: 'Failed to update status',
+            action: { label: 'Retry', onClick: () => mutation.mutate(vars) },
+          });
+        },
       });
     },
-    [lead, telegramId, mutation],
+    [lead, telegramId, mutation, toast],
   );
 
   if (Number.isNaN(numericId)) {

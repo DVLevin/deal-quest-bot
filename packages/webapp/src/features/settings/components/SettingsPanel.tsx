@@ -13,6 +13,7 @@
 import { Settings, Zap, Sparkles, KeyRound } from 'lucide-react';
 import { openTelegramLink } from '@telegram-apps/sdk-react';
 import { Card, Skeleton } from '@/shared/ui';
+import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { useUpdateSettings } from '../hooks/useUpdateSettings';
@@ -36,17 +37,38 @@ export function SettingsPanel() {
   const telegramId = useAuthStore((s) => s.telegramId);
   const { data: settings, isLoading } = useUserSettings();
   const updateSettings = useUpdateSettings();
+  const { toast } = useToast();
 
   const botUsername = import.meta.env.VITE_BOT_USERNAME ?? 'DealQuestBot';
 
   const handleProviderChange = (provider: string) => {
     if (!telegramId || provider === settings?.provider) return;
-    updateSettings.mutate({ telegramId, provider });
+    updateSettings.mutate(
+      { telegramId, provider },
+      {
+        onSuccess: () => {
+          toast({ type: 'success', message: 'Settings saved' });
+        },
+        onError: () => {
+          toast({ type: 'error', message: 'Failed to save settings' });
+        },
+      },
+    );
   };
 
   const handleModelChange = (model: string) => {
     if (!telegramId || model === settings?.openrouterModel) return;
-    updateSettings.mutate({ telegramId, openrouterModel: model });
+    updateSettings.mutate(
+      { telegramId, openrouterModel: model },
+      {
+        onSuccess: () => {
+          toast({ type: 'success', message: 'Settings saved' });
+        },
+        onError: () => {
+          toast({ type: 'error', message: 'Failed to save settings' });
+        },
+      },
+    );
   };
 
   const handleManageApiKey = () => {
