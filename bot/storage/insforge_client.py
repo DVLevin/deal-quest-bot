@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -16,6 +17,11 @@ _POSTGREST_OPS = (
     "like.", "ilike.", "is.", "in.", "cs.", "cd.",
     "not.", "or.", "and.",
 )
+
+# Retry configuration for transient failures
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503}
+MAX_RETRIES = 3
+BASE_DELAY = 0.5  # seconds
 
 
 class InsForgeClient:
@@ -43,6 +49,33 @@ class InsForgeClient:
                 timeout=30.0,
             )
         return self._client
+
+    async def _request_with_retry(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Execute HTTP request with exponential backoff on transient failures."""
+        last_error: httpx.HTTPStatusError | None = None
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                resp = await getattr(client, method)(*args, **kwargs)
+                resp.raise_for_status()
+                return resp
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code not in RETRYABLE_STATUS_CODES:
+                    raise
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    delay = BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "InsForge %s retryable error %d (attempt %d/%d), retrying in %.1fs",
+                        method.upper(), e.response.status_code, attempt + 1, MAX_RETRIES + 1, delay,
+                    )
+                    await asyncio.sleep(delay)
+        raise last_error  # type: ignore[misc]
 
     async def close(self) -> None:
         if self._client and not self._client.is_closed:
@@ -83,8 +116,7 @@ class InsForgeClient:
             headers["Accept"] = "application/vnd.pgrst.object+json"
 
         try:
-            resp = await client.get(f"/{table}", params=params, headers=headers)
-            resp.raise_for_status()
+            resp = await self._request_with_retry(client, "get", f"/{table}", params=params, headers=headers)
             return resp.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 406 and single:
@@ -101,7 +133,8 @@ class InsForgeClient:
         """Insert a record into a table."""
         client = await self._get_client()
         try:
-            resp = await client.post(
+            resp = await self._request_with_retry(
+                client, "post",
                 f"/{table}",
                 json=[data],
                 headers={
@@ -109,7 +142,6 @@ class InsForgeClient:
                     "Prefer": "return=representation",
                 },
             )
-            resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
         except httpx.HTTPStatusError as e:
@@ -136,7 +168,8 @@ class InsForgeClient:
                 params[key] = f"eq.{value}"
 
         try:
-            resp = await client.patch(
+            resp = await self._request_with_retry(
+                client, "patch",
                 f"/{table}",
                 params=params,
                 json=data,
@@ -145,7 +178,6 @@ class InsForgeClient:
                     "Prefer": "return=representation",
                 },
             )
-            resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
         except httpx.HTTPStatusError as e:
@@ -166,12 +198,12 @@ class InsForgeClient:
             "Prefer": "return=representation,resolution=merge-duplicates",
         }
         try:
-            resp = await client.post(
+            resp = await self._request_with_retry(
+                client, "post",
                 f"/{table}",
                 json=[data],
                 headers=headers,
             )
-            resp.raise_for_status()
             result = resp.json()
             return result[0] if isinstance(result, list) and result else result
         except httpx.HTTPStatusError as e:
@@ -193,8 +225,7 @@ class InsForgeClient:
                 params[key] = f"eq.{value}"
 
         try:
-            resp = await client.delete(f"/{table}", params=params)
-            resp.raise_for_status()
+            await self._request_with_retry(client, "delete", f"/{table}", params=params)
         except Exception as e:
             logger.error("InsForge delete error on %s: %s", table, e)
             raise
