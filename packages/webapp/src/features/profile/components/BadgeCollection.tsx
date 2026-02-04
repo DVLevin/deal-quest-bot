@@ -15,7 +15,7 @@ import {
   Gem,
   type LucideIcon,
 } from 'lucide-react';
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useUserBadges } from '../hooks/useUserBadges';
 import { cn } from '@/shared/lib/cn';
 import type { BadgeDefinition, EarnedBadge } from '@/shared/data/badges';
@@ -86,7 +86,7 @@ function LockedBadgeItem({ badge }: { badge: BadgeDefinition }) {
 }
 
 export function BadgeCollection() {
-  const { allBadges, earned, earnedCount, totalCount, isLoading, isError } =
+  const { allBadges, earned, earnedCount, totalCount, isLoading, isError, refetch } =
     useUserBadges();
 
   return (
@@ -108,9 +108,7 @@ export function BadgeCollection() {
           ))}
         </div>
       ) : isError ? (
-        <p className="py-4 text-center text-sm text-text-hint">
-          Unable to load badges
-        </p>
+        <ErrorCard message="Unable to load badges" onRetry={refetch} compact />
       ) : earnedCount === 0 ? (
         <div className="py-4 text-center">
           <p className="text-sm text-text-hint">

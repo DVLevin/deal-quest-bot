@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { Card, Badge, Button, Skeleton } from '@/shared/ui';
+import { Card, Badge, Button, Skeleton, ErrorCard } from '@/shared/ui';
 import { useAttemptHistory, PAGE_SIZE, type AttemptHistoryItem } from '../hooks/useAttemptHistory';
 import { cn } from '@/shared/lib/cn';
 
@@ -57,7 +57,7 @@ function AttemptRow({ attempt }: { attempt: AttemptHistoryItem }) {
 
 export function AttemptHistory() {
   const [page, setPage] = useState(0);
-  const { attempts, total, hasMore, isLoading, isError } = useAttemptHistory(page);
+  const { attempts, total, hasMore, isLoading, isError, refetch } = useAttemptHistory(page);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -86,9 +86,7 @@ export function AttemptHistory() {
           ))}
         </div>
       ) : isError ? (
-        <p className="py-4 text-center text-sm text-text-hint">
-          Unable to load attempt history
-        </p>
+        <ErrorCard message="Unable to load attempt history" onRetry={refetch} compact />
       ) : attempts.length === 0 && page === 0 ? (
         <p className="py-4 text-center text-sm text-text-hint">
           No attempts yet -- start training to see your history!

@@ -16,7 +16,7 @@ import {
   Gem,
   type LucideIcon,
 } from 'lucide-react';
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useRecentBadges } from '../hooks/useRecentBadges';
 import { cn } from '@/shared/lib/cn';
 import type { EarnedBadge } from '@/shared/data/badges';
@@ -68,7 +68,7 @@ function BadgeItem({ badge }: { badge: EarnedBadge }) {
 }
 
 export function BadgePreview() {
-  const { data, isLoading, isError } = useRecentBadges();
+  const { data, isLoading, isError, refetch } = useRecentBadges();
 
   return (
     <Card>
@@ -89,7 +89,7 @@ export function BadgePreview() {
           ))}
         </div>
       ) : isError ? (
-        <p className="text-sm text-text-hint">Unable to load badges</p>
+        <ErrorCard message="Unable to load badges" onRetry={refetch} compact />
       ) : !data || data.earned.length === 0 ? (
         <p className="text-sm text-text-hint">
           No badges earned yet -- start training!

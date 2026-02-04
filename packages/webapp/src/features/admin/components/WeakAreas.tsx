@@ -5,7 +5,7 @@
  * (red < 40, warning < 60, success >= 60) and attempt counts.
  */
 
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 import { useWeakAreas } from '@/features/admin/hooks/useWeakAreas';
 
@@ -24,7 +24,7 @@ function getScoreColor(score: number): string {
 }
 
 export function WeakAreas() {
-  const { data: areas, isLoading, isError } = useWeakAreas();
+  const { data: areas, isLoading, isError, refetch } = useWeakAreas();
 
   if (isLoading) {
     return (
@@ -43,7 +43,7 @@ export function WeakAreas() {
     return (
       <Card>
         <h3 className="mb-3 text-sm font-semibold text-text">Areas to Improve</h3>
-        <p className="text-sm text-text-hint">Unable to load weak areas</p>
+        <ErrorCard message="Unable to load weak areas" onRetry={refetch} compact />
       </Card>
     );
   }

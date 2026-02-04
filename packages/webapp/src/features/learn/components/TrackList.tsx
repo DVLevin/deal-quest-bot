@@ -8,7 +8,7 @@
  */
 
 import { useNavigate } from 'react-router';
-import { Skeleton } from '@/shared/ui';
+import { Skeleton, ErrorCard } from '@/shared/ui';
 import { useTrackProgress } from '../hooks/useTrackProgress';
 import { LevelCard } from './LevelCard';
 import { TrackStats } from './TrackStats';
@@ -37,15 +37,7 @@ export function TrackList() {
     return (
       <div className="space-y-4 px-4 pt-4">
         <h1 className="text-xl font-bold text-text">{track.name}</h1>
-        <div className="rounded-card bg-error/10 p-4 text-center">
-          <p className="text-sm text-error">Failed to load progress</p>
-          <button
-            className="mt-2 text-sm font-medium text-accent min-h-[44px] px-4"
-            onClick={() => refetch()}
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorCard message="Failed to load progress" onRetry={refetch} />
       </div>
     );
   }

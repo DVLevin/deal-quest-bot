@@ -9,12 +9,12 @@
  * as Dashboard's BadgePreview, so TanStack Query deduplicates the request).
  */
 
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useUserBadges } from '@/features/profile/hooks/useUserBadges';
 import { BadgeCard } from './BadgeCard';
 
 export function BadgeWall() {
-  const { allBadges, earned, earnedCount, totalCount, isLoading, isError } =
+  const { allBadges, earned, earnedCount, totalCount, isLoading, isError, refetch } =
     useUserBadges();
 
   return (
@@ -36,9 +36,7 @@ export function BadgeWall() {
           ))}
         </div>
       ) : isError ? (
-        <p className="py-4 text-center text-sm text-text-hint">
-          Unable to load badges
-        </p>
+        <ErrorCard message="Unable to load badges" onRetry={refetch} compact />
       ) : earnedCount === 0 ? (
         <div className="py-2 text-center">
           <p className="mb-4 text-sm text-text-hint">

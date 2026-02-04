@@ -75,5 +75,6 @@ export function useUserBadges() {
     totalCount: query.data?.totalCount ?? BADGE_DEFINITIONS.length,
     isLoading: query.isLoading,
     isError: query.isError,
+    refetch: query.refetch,
   };
 }
