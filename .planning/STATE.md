@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Setting up requirements and roadmap.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phase 9 in progress.
 
 ## Previous Milestone (v1.0)
 
@@ -16,18 +16,19 @@ Total execution time: 74m
 ## Current Position
 
 Milestone: v1.1 — Quick & Medium Wins
-Phase: 8-11 (4 phases, all independent)
-Status: Phase 8 planned (2 plans), ready to execute
-Last activity: 2026-02-04 -- Phase 8 researched and planned (08-01, 08-02)
+Phase: 9 of 8-11 (Training Experience)
+Plans completed: 21/21 total (1/1 in Phase 9 so far)
+Status: Phase 9 Plan 1 complete
+Last activity: 2026-02-04 -- Completed 09-01-PLAN.md (useTrainingStats hook + difficulty recommendation + scenario variety)
 
-Progress: [                   ] 0/19 (0%)
+Progress: [███░░░░░░░░░░░░░░░░] 6/19 v1.1 requirements (32%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 4.1m
-- Total execution time: 74m
+- Total plans completed: 21
+- Average duration: 3.9m
+- Total execution time: 82m
 
 **By Phase:**
 
@@ -40,9 +41,11 @@ Progress: [                   ] 0/19 (0%)
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 | 7. Bot Integration | 2/2 | 8m | 4m |
+| 8. Lead Management | 2/2 | 5m | 2.5m |
+| 9. Training Experience | 1/? | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 4m, 4m, 4m
+- Last 5 plans: 4m, 3m, 2m, 3m, 3m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -126,6 +129,19 @@ Recent decisions affecting current work:
 - [07-02]: tgWebAppStartParam property name (SDK v3 uses raw Telegram query param names, not camelCase)
 - [07-02]: WebAppInfo URL path routing takes priority over startParam (location.pathname check)
 - [07-02]: replace: true on deep link navigate to prevent root in browser history
+- [08-01]: lead_source column uses TEXT DEFAULT 'support_analysis' for automatic backfill of existing rows
+- [08-01]: lead_source in LeadRegistryRow TypeScript type uses string | null matching DB column convention
+- [08-01]: Stale threshold set to 7 days, uses updated_at with created_at fallback
+- [08-01]: useLeads limit increased from 30 to 100 to prepare for Plan 02 client-side search
+- [08-02]: Reused SearchBar from casebook (controlled component with external debounce)
+- [08-02]: Filter chips built inline (not CasebookFilters) for domain-specific lead status filtering
+- [08-02]: Client-side filtering with useMemo -- no PostgREST query changes needed with 100-row limit
+- [08-02]: Company groups sorted by contact count descending
+- [09-01]: Client-side difficulty join via Map<string, number> (no DB migration for attempts table)
+- [09-01]: Threshold constants: MIN_ATTEMPTS=3, PROMOTE=70, DEMOTE=40 (easily tunable)
+- [09-01]: DifficultyRecommendation returns null when insufficient data (clean UI for new users)
+- [09-01]: ScenarioVariety replaces plain pool count with unseen/total + low-pool nudge
+- [09-01]: useScenarioPool(undefined) reused for full-pool difficulty map (TanStack Query dedup)
 
 ### Pending Todos
 
@@ -143,6 +159,7 @@ Recent decisions affecting current work:
 ### Pending Todos (quick tasks)
 
 - [quick-002]: Run migration `migrations/002_lead_person_company_fields.sql` on InsForge database
+- [08-01]: Run migration `migrations/003_lead_source_field.sql` on InsForge database
 
 ## Quick Tasks
 
@@ -154,6 +171,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Phase 8 planned with 2 plans (08-01: data foundation + stale/source badges, 08-02: search/filter + company grouping)
+Stopped at: Completed 09-01-PLAN.md (Training Experience - difficulty recommendation + scenario variety)
 Resume file: None
-Next action: Execute Phase 8 with /gsd:execute-phase 8
+Next action: Continue Phase 9 (remaining plans) or execute other independent phases (10, 11)
