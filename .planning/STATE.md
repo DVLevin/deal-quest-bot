@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Executing Phase 8 Lead Management Enhancements.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phase 8 Lead Management Enhancements complete.
 
 ## Previous Milestone (v1.0)
 
@@ -17,18 +17,18 @@ Total execution time: 74m
 
 Milestone: v1.1 — Quick & Medium Wins
 Phase: 8 of 8-11 (Lead Management Enhancements)
-Plan: 1 of 2 in Phase 8 complete
-Status: In progress
-Last activity: 2026-02-04 -- Completed 08-01-PLAN.md (lead_source field + stale/source badges)
+Plan: 2 of 2 in Phase 8 complete
+Status: Phase complete
+Last activity: 2026-02-04 -- Completed 08-02-PLAN.md (search/filter + company grouping)
 
-Progress: [█                  ] 1/2 Phase 8 (50%)
+Progress: [██████████████████] 2/2 Phase 8 (100%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: 4.1m
-- Total execution time: 77m
+- Total plans completed: 20
+- Average duration: 4.0m
+- Total execution time: 79m
 
 **By Phase:**
 
@@ -41,10 +41,10 @@ Progress: [█                  ] 1/2 Phase 8 (50%)
 | 5. Leads & Settings | 2/2 | 6m | 3m |
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 | 7. Bot Integration | 2/2 | 8m | 4m |
-| 8. Lead Management | 1/2 | 3m | 3m |
+| 8. Lead Management | 2/2 | 5m | 2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 4m, 4m, 4m, 3m
+- Last 5 plans: 4m, 4m, 4m, 3m, 2m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -132,6 +132,10 @@ Recent decisions affecting current work:
 - [08-01]: lead_source in LeadRegistryRow TypeScript type uses string | null matching DB column convention
 - [08-01]: Stale threshold set to 7 days, uses updated_at with created_at fallback
 - [08-01]: useLeads limit increased from 30 to 100 to prepare for Plan 02 client-side search
+- [08-02]: Reused SearchBar from casebook (controlled component with external debounce)
+- [08-02]: Filter chips built inline (not CasebookFilters) for domain-specific lead status filtering
+- [08-02]: Client-side filtering with useMemo -- no PostgREST query changes needed with 100-row limit
+- [08-02]: Company groups sorted by contact count descending
 
 ### Pending Todos
 
@@ -160,7 +164,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-04T18:53:25Z
-Stopped at: Completed 08-01-PLAN.md (lead_source field + stale/source badges)
+Last session: 2026-02-04T18:59:23Z
+Stopped at: Completed 08-02-PLAN.md (search/filter + company grouping) -- Phase 8 complete
 Resume file: None
-Next action: Execute 08-02-PLAN.md (search/filter + company grouping)
+Next action: Begin Phase 9 per milestone v1.1 roadmap
