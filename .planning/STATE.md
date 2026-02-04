@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress (2/4).
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress (3/4).
 
 ## Previous Milestone (v1.0)
 
@@ -17,18 +17,18 @@ Total execution time: 74m
 
 Milestone: v1.1 — Quick & Medium Wins
 Phase: 10 of 8-11 — IN PROGRESS (Error Handling & UX)
-Plans completed: 24/26 total (2/4 in Phase 10)
-Status: Executing Phase 10 Wave 1
-Last activity: 2026-02-04 -- Completed 10-04-PLAN.md
+Plans completed: 25/26 total (3/4 in Phase 10)
+Status: Executing Phase 10 Wave 2
+Last activity: 2026-02-04 -- Completed 10-03-PLAN.md
 
-Progress: [███████████░░░░░░░░] 11/19 v1.1 requirements (58%)
+Progress: [████████████░░░░░░░] 12/19 v1.1 requirements (63%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
+- Total plans completed: 25
 - Average duration: 3.7m
-- Total execution time: 88m
+- Total execution time: 93m
 
 **By Phase:**
 
@@ -43,10 +43,10 @@ Progress: [███████████░░░░░░░░] 11/19 v1.1
 | 7. Bot Integration | 2/2 | 8m | 4m |
 | 8. Lead Management | 2/2 | 5m | 2.5m |
 | 9. Training Experience | 2/2 | 5m | 2.5m |
-| 10. Error Handling & UX | 2/4 | 4m | 2m |
+| 10. Error Handling & UX | 3/4 | 9m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 2m, 2m, 2m
+- Last 5 plans: 3m, 2m, 2m, 2m, 5m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -153,6 +153,10 @@ Recent decisions affecting current work:
 - [10-01]: ErrorBoundary outermost in App.tsx; ToastContainer inside QueryProvider above AppRouter
 - [10-01]: Max 3 visible toasts with 4-second auto-dismiss and oldest-first eviction
 - [10-01]: ErrorCard compact variant: boolean prop switches between inline row and card block display
+- [10-03]: Component-level callbacks on mutation.mutate() run in addition to hook-level onMutate/onError/onSettled
+- [10-03]: Retry action on status update and note save, not on settings (user can re-select)
+- [10-03]: Captured vars object before mutate call to prevent stale closure in retry onClick
+- [10-03]: Both SupportHome and SessionHistory empty states upgraded (SessionHistory was very bare)
 - [10-04]: Shared validate_user_input() in bot/utils_validation.py for all text handlers
 - [10-04]: learn/train handlers gain fuzzy command detection (previously only literal /cancel)
 - [10-04]: Max length 4000 first-pass truncation; storage 2000-char limit remains as hard limit
@@ -185,6 +189,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 10-04-PLAN.md (Shared Input Validation)
+Stopped at: Completed 10-03-PLAN.md (Mutation Feedback & Empty States)
 Resume file: None
-Next action: Execute remaining Phase 10 plans (10-02, 10-03)
+Next action: Execute remaining Phase 10 plan (10-02)
