@@ -135,7 +135,67 @@ Plans:
 - [x] 07-01-PLAN.md — Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
 - [x] 07-02-PLAN.md — TMA deep link routing hook for startParam fallback (Wave 1)
 
+---
+
+## Milestone: v1.1 — Quick & Medium Wins
+
+### v1.1 Phases
+
+- [ ] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
+- [ ] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
+- [ ] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
+- [ ] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
+
+### Phase 8: Lead Management Enhancements
+**Goal**: Lead pipeline becomes more actionable — stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: LEAD-V11-01, LEAD-V11-02, LEAD-V11-03, LEAD-V11-04, LEAD-V11-05
+**Success Criteria** (what must be TRUE):
+  1. Leads not updated in 7+ days show a stale indicator badge with "X days ago" in both list and detail views
+  2. Each lead displays its source (support analysis, manual, import) and source is auto-set on creation
+  3. Lead list can be grouped by company with collapsible headers showing contact count
+  4. LeadRegistryRow TypeScript type includes all fields from the Python LeadRegistryModel (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context)
+  5. Users can search leads by name/company and filter by status from the lead list page
+**Plans**: TBD
+
+### Phase 9: Training Experience
+**Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: TRAIN-V11-01, TRAIN-V11-02, TRAIN-V11-03, TRAIN-V11-04
+**Success Criteria** (what must be TRUE):
+  1. Train page shows a recommended difficulty level based on user's average scores per difficulty
+  2. Learn page displays per-track summary (levels completed, avg score, best score) at the top of each track
+  3. Dashboard highlights weak areas (tracks/difficulties with below-average scores) with a "Practice this" button
+  4. Train mode shows remaining unseen scenarios count and displays a nudge when the pool is running low
+**Plans**: TBD
+
+### Phase 10: Error Handling & UX
+**Goal**: The app handles errors gracefully everywhere — users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: UX-V11-01, UX-V11-02, UX-V11-03, UX-V11-04, UX-V11-05
+**Success Criteria** (what must be TRUE):
+  1. Unhandled React errors show a user-friendly fallback page with a retry button instead of a white screen
+  2. All TMA data-fetching components use a standardized ErrorCard component for error states
+  3. Failed mutations (status update, note save) show a toast notification with error message and retry
+  4. Bot handlers (support, learn, train) use a shared validation utility with consistent error messages
+  5. Pages with no data (no leads, no casebook entries, no attempts) show designed empty states with guidance
+**Plans**: TBD
+
+### Phase 11: Performance & Reliability
+**Goal**: Production-grade reliability — debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: PERF-V11-01, PERF-V11-02, PERF-V11-03, PERF-V11-04, PERF-V11-05
+**Success Criteria** (what must be TRUE):
+  1. Eruda debug console only loads in development mode (not in production builds)
+  2. Playbook and company KB are loaded once at bot startup and reused across all pipeline calls
+  3. InsForge PostgREST calls retry up to 3 times with exponential backoff on transient failures (429, 500, 502, 503)
+  4. Background tasks (followup scheduler, scenario generator, memory agent) have error callbacks and task references preventing garbage collection
+  5. TMA queries for lead detail and attempts use explicit column selection instead of `select('*')`
+**Plans**: TBD
+
 ## Progress
+
+### v1.0 Progress (Complete)
 
 **Execution Order:**
 Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
@@ -150,3 +210,15 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 5. Leads | 2/2 | Complete | 2026-02-04 |
 | 6. Gamification & Admin | 3/3 | Complete | 2026-02-04 |
 | 7. Bot Integration | 2/2 | Complete | 2026-02-04 |
+
+### v1.1 Progress
+
+**Execution Order:**
+Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any order or in parallel.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 8. Lead Management | 0/? | Not started | — |
+| 9. Training Experience | 0/? | Not started | — |
+| 10. Error Handling & UX | 0/? | Not started | — |
+| 11. Performance & Reliability | 0/? | Not started | — |

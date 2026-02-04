@@ -206,5 +206,69 @@
 - Unmapped: 0
 
 ---
+
+## v1.1 Requirements — Quick & Medium Wins
+
+### Lead Management
+
+- [ ] **LEAD-V11-01**: Stale lead indicator — visual badge/color on leads not updated in 7+ days, with "days since last activity" on LeadCard
+- [ ] **LEAD-V11-02**: Lead source tracking — `lead_source` field (support_analysis, manual, import) populated on creation, displayed in LeadCard and LeadDetail
+- [ ] **LEAD-V11-03**: Company grouping — group leads by `prospect_company` in list view with collapsible company headers and contact count
+- [ ] **LEAD-V11-04**: Complete LeadRegistryRow type — add missing fields (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context) to TypeScript types matching Python model
+- [ ] **LEAD-V11-05**: Lead search and filter — search by name/company, filter by status in TMA lead list view
+
+### Training Experience
+
+- [ ] **TRAIN-V11-01**: Difficulty recommendation — show suggested difficulty on Train page based on user's average score per difficulty level (computed client-side from recent attempts)
+- [ ] **TRAIN-V11-02**: Track completion stats — display per-track progress summary (levels completed, average score, best score) on Learn page header
+- [ ] **TRAIN-V11-03**: Weak area identification — highlight tracks/difficulties where user scores below average, with "Practice this" CTA on Dashboard
+- [ ] **TRAIN-V11-04**: Scenario variety indicator — show "X scenarios remaining" count in Train mode, encourage variety when pool runs low
+
+### Error Handling & UX
+
+- [ ] **UX-V11-01**: Global error boundary — React error boundary wrapping the app with user-friendly fallback UI and retry button
+- [ ] **UX-V11-02**: Query error consistency — standardize error state rendering across all TMA components (reusable ErrorCard component with icon, message, retry action)
+- [ ] **UX-V11-03**: Mutation error feedback — show toast/snackbar notifications on failed mutations (status update, note save) with retry option
+- [ ] **UX-V11-04**: Bot input validation — shared `_validate_user_input()` utility across support/learn/train handlers with consistent error messages and length/content checks
+- [ ] **UX-V11-05**: Empty state improvements — designed empty states with illustrations/icons for leads (no leads yet), casebook (no entries), and training (no attempts)
+
+### Performance & Reliability
+
+- [ ] **PERF-V11-01**: Remove eruda from production — gate eruda import behind `import.meta.env.DEV` check to eliminate debug console from production bundle
+- [ ] **PERF-V11-02**: Knowledge base caching — cache playbook + company KB as module-level variables at bot startup instead of re-reading from disk on every pipeline call
+- [ ] **PERF-V11-03**: InsForge client retry — add retry with exponential backoff on InsForge HTTP client (currently no retry on PostgREST calls)
+- [ ] **PERF-V11-04**: Background task error handling — wrap `asyncio.create_task()` calls in main.py with error callbacks that log failures, add task references to prevent GC
+- [ ] **PERF-V11-05**: TMA query optimization — add explicit column selection to TMA queries that currently use `select('*')` (lead detail, attempt queries)
+
+## v1.1 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LEAD-V11-01 | Phase 8 | Pending |
+| LEAD-V11-02 | Phase 8 | Pending |
+| LEAD-V11-03 | Phase 8 | Pending |
+| LEAD-V11-04 | Phase 8 | Pending |
+| LEAD-V11-05 | Phase 8 | Pending |
+| TRAIN-V11-01 | Phase 9 | Pending |
+| TRAIN-V11-02 | Phase 9 | Pending |
+| TRAIN-V11-03 | Phase 9 | Pending |
+| TRAIN-V11-04 | Phase 9 | Pending |
+| UX-V11-01 | Phase 10 | Pending |
+| UX-V11-02 | Phase 10 | Pending |
+| UX-V11-03 | Phase 10 | Pending |
+| UX-V11-04 | Phase 10 | Pending |
+| UX-V11-05 | Phase 10 | Pending |
+| PERF-V11-01 | Phase 11 | Pending |
+| PERF-V11-02 | Phase 11 | Pending |
+| PERF-V11-03 | Phase 11 | Pending |
+| PERF-V11-04 | Phase 11 | Pending |
+| PERF-V11-05 | Phase 11 | Pending |
+
+**v1.1 Coverage:**
+- v1.1 requirements: 19 total
+- Mapped to phases: 19
+- Unmapped: 0
+
+---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after roadmap creation*
+*Last updated: 2026-02-04 after v1.1 milestone requirements*

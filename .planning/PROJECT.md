@@ -89,5 +89,17 @@ Sales reps can see their progress, practice scenarios, get deal support, and tra
 | Inlined shared types for Railway | Railway `root_dir=packages/webapp` can't access `../shared`; types copied to `webapp/src/types/` | Confirmed |
 | Always push after commits | Railway deploys from remote — local-only commits never reach production. GSD executors must push after plan completion | Lesson learned (Phase 2/3) |
 
+## Current Milestone: v1.1 — Quick & Medium Wins
+
+**Goal:** Improve the existing v1.0 app with targeted enhancements across lead management, training experience, error handling & UX, and performance & reliability.
+
+**Focus Areas:**
+1. **Lead management** — Stale lead indicators, lead source tracking, complete LeadRegistryModel (missing fields), company grouping
+2. **Training experience** — Dynamic difficulty suggestions, scenario pool improvements, training analytics
+3. **Error handling & UX** — Better error messages with categorization/recovery hints, input validation consistency, retry mechanisms
+4. **Performance & reliability** — Cache playbook/KB at startup, background job reliability, LLM provider compatibility, retry with backoff
+
+**Scope:** Quick wins and medium-effort improvements only. No large architectural rewrites.
+
 ---
-*Last updated: 2026-02-03 after deployment docs update*
+*Last updated: 2026-02-04 after v1.1 milestone creation*
