@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
 - [x] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
 - [x] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
-- [ ] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
+- [x] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
 - [ ] **Phase 6: Gamification & Admin** - Badge wall, animations, streak visuals, and team admin dashboard
 - [ ] **Phase 7: Bot Integration** - Wire TMA into existing bot with inline buttons and deep links
 
@@ -101,8 +101,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
-- [ ] 05-02-PLAN.md — Lead activity timeline, notes, and Profile settings panel (Wave 2)
+- [x] 05-01-PLAN.md — Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
+- [x] 05-02-PLAN.md — Lead activity timeline, notes, and Profile settings panel (Wave 2)
 
 ### Phase 6: Gamification & Admin
 **Goal**: The app rewards engagement with visual celebrations and badge mechanics, and admins can monitor team performance
@@ -147,6 +147,6 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 2. Dashboard & Profile | 2/2 | Complete | 2026-02-03 |
 | 3. Learn & Train | 3/3 | Complete | 2026-02-03 |
 | 4. Support & Casebook | 2/2 | Complete | 2026-02-03 |
-| 5. Leads | 0/2 | Not started | - |
+| 5. Leads | 2/2 | Complete | 2026-02-04 |
 | 6. Gamification & Admin | 0/3 | Not started | - |
 | 7. Bot Integration | 0/2 | Not started | - |
