@@ -43,6 +43,7 @@ from bot.storage.repositories import (
 )
 from bot.utils import format_support_response
 from bot.utils_tma import add_open_in_app_row
+from bot.utils_validation import validate_user_input
 
 logger = logging.getLogger(__name__)
 
@@ -733,52 +734,6 @@ async def on_support_voice(
     )
 
 
-KNOWN_COMMANDS = {
-    "/start", "/support", "/learn", "/train", "/stats",
-    "/settings", "/leads", "/admin", "/help", "/cancel",
-}
-
-
-def _check_mistyped_command(text: str) -> str | None:
-    """If text looks like a mistyped command, suggest the correct one."""
-    text = text.strip().lower()
-    if not text.startswith("/"):
-        return None
-
-    # Exact match — it's a real command, clear state and let them re-send
-    if text in KNOWN_COMMANDS:
-        return text
-
-    # Fuzzy match: find closest command
-    word = text.split()[0]  # just the first word
-    best_match = None
-    best_dist = 999
-    for cmd in KNOWN_COMMANDS:
-        dist = _edit_distance(word, cmd)
-        if dist < best_dist:
-            best_dist = dist
-            best_match = cmd
-
-    if best_dist <= 2 and best_match:
-        return best_match
-    return "unknown"
-
-
-def _edit_distance(a: str, b: str) -> int:
-    """Simple Levenshtein distance."""
-    if len(a) < len(b):
-        return _edit_distance(b, a)
-    if len(b) == 0:
-        return len(a)
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a):
-        curr = [i + 1]
-        for j, cb in enumerate(b):
-            curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (ca != cb)))
-        prev = curr
-    return prev[len(b)]
-
-
 @router.message(SupportState.waiting_input)
 async def on_support_input(
     message: Message,
@@ -798,44 +753,29 @@ async def on_support_input(
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_input = message.text or ""
 
-    if not user_input.strip():
-        await message.answer("Please describe your prospect or send a screenshot.")
+    result = validate_user_input(user_input, context="support", min_length=10)
+    if not result.is_valid:
+        if result.is_command:
+            if result.suggested_command == "/cancel":
+                await state.clear()
+                await message.answer("Support session cancelled.")
+                return
+            if result.suggested_command and result.suggested_command != "unknown":
+                await state.clear()
+                await message.answer(
+                    f"Looks like you meant {result.suggested_command}. "
+                    f"I've cancelled the support session. Try the command again."
+                )
+            else:
+                await state.clear()
+                await message.answer(
+                    "That looks like a command. I've cancelled the support session. "
+                    "Try your command again."
+                )
+            return
+        await message.answer(result.error_message)
         return
-
-    # Guard: catch commands and typos before sending to LLM
-    if user_input.strip().startswith("/"):
-        suggestion = _check_mistyped_command(user_input)
-        await state.clear()
-        if suggestion and suggestion != "unknown" and suggestion in KNOWN_COMMANDS:
-            await message.answer(
-                f"Looks like you meant *{suggestion}*? "
-                f"I've exited support mode — just send the command again.",
-                parse_mode="Markdown",
-            )
-        else:
-            await message.answer(
-                "That doesn't look like a prospect description.\n\n"
-                "I've exited support mode. Available commands:\n"
-                "💼 /support — Deal strategy advice\n"
-                "📋 /leads — Your prospect pipeline\n"
-                "🎓 /learn — Training\n"
-                "🎲 /train — Practice\n"
-                "📊 /stats — Progress\n"
-                "⚙️ /settings — Setup",
-            )
-        return
-
-    # Guard: very short input that's probably not a real prospect description
-    if len(user_input.strip()) < 10:
-        await message.answer(
-            "That's quite short. Please provide more context about your prospect:\n"
-            "- Their role, company, and situation\n"
-            "- Or send a LinkedIn screenshot 📸\n"
-            "- Or a voice message 🎙️\n\n"
-            "_Type /cancel to exit support mode._",
-            parse_mode="Markdown",
-        )
-        return
+    user_input = result.cleaned_input
 
     status_msg = await message.answer("🔄 Analyzing your prospect...")
 
