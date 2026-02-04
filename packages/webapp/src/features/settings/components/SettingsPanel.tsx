@@ -12,7 +12,7 @@
 
 import { Settings, Zap, Sparkles, KeyRound } from 'lucide-react';
 import { openTelegramLink } from '@telegram-apps/sdk-react';
-import { Card, Skeleton } from '@/shared/ui';
+import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useUserSettings } from '../hooks/useUserSettings';
@@ -35,7 +35,7 @@ const OPENROUTER_MODELS = [
 
 export function SettingsPanel() {
   const telegramId = useAuthStore((s) => s.telegramId);
-  const { data: settings, isLoading } = useUserSettings();
+  const { data: settings, isLoading, isError, refetch } = useUserSettings();
   const updateSettings = useUpdateSettings();
   const { toast } = useToast();
 
@@ -92,6 +92,8 @@ export function SettingsPanel() {
           <Skeleton height={120} />
           <Skeleton height={48} />
         </div>
+      ) : isError ? (
+        <ErrorCard message="Unable to load settings" onRetry={refetch} compact />
       ) : (
         <div className="space-y-5">
           {/* Provider selector */}
