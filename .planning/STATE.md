@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phase 9 in progress.
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phase 9 complete.
 
 ## Previous Milestone (v1.0)
 
@@ -16,19 +16,19 @@ Total execution time: 74m
 ## Current Position
 
 Milestone: v1.1 — Quick & Medium Wins
-Phase: 9 of 8-11 (Training Experience)
-Plans completed: 21/21 total (1/1 in Phase 9 so far)
-Status: Phase 9 Plan 1 complete
-Last activity: 2026-02-04 -- Completed 09-01-PLAN.md (useTrainingStats hook + difficulty recommendation + scenario variety)
+Phase: 9 of 8-11 (Training Experience) -- COMPLETE
+Plans completed: 22/22 total (2/2 in Phase 9)
+Status: Phase 9 complete
+Last activity: 2026-02-04 -- Completed 09-02-PLAN.md (track stats + weak area identification)
 
-Progress: [███░░░░░░░░░░░░░░░░] 6/19 v1.1 requirements (32%)
+Progress: [████████░░░░░░░░░░░] 10/19 v1.1 requirements (53%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 3.9m
-- Total execution time: 82m
+- Total plans completed: 22
+- Average duration: 3.8m
+- Total execution time: 84m
 
 **By Phase:**
 
@@ -42,10 +42,10 @@ Progress: [███░░░░░░░░░░░░░░░░] 6/19 v1.1 
 | 6. Gamification & Admin | 3/3 | 10m | 3.3m |
 | 7. Bot Integration | 2/2 | 8m | 4m |
 | 8. Lead Management | 2/2 | 5m | 2.5m |
-| 9. Training Experience | 1/? | 3m | 3m |
+| 9. Training Experience | 2/2 | 5m | 2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 3m, 2m, 3m, 3m
+- Last 5 plans: 3m, 2m, 3m, 3m, 2m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -142,6 +142,11 @@ Recent decisions affecting current work:
 - [09-01]: DifficultyRecommendation returns null when insufficient data (clean UI for new users)
 - [09-01]: ScenarioVariety replaces plain pool count with unseen/total + low-pool nudge
 - [09-01]: useScenarioPool(undefined) reused for full-pool difficulty map (TanStack Query dedup)
+- [09-02]: TrackStats is pure presentational (receives LevelWithProgress[] props, no internal hooks)
+- [09-02]: WeakAreasCard threshold at 50 with minimum 2 attempts to filter noise
+- [09-02]: WeakAreasCard returns null for new users (no empty card clutter)
+- [09-02]: Practice CTA routes contextually: /train for difficulty, /learn for track-level weak areas
+- [09-02]: Max 3 weak areas displayed on dashboard to avoid overwhelming
 
 ### Pending Todos
 
@@ -171,6 +176,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 09-01-PLAN.md (Training Experience - difficulty recommendation + scenario variety)
+Stopped at: Completed 09-02-PLAN.md (Phase 9 complete -- track stats + weak area identification)
 Resume file: None
-Next action: Continue Phase 9 (remaining plans) or execute other independent phases (10, 11)
+Next action: Execute Phase 10 (Error Handling & UX) or Phase 11 (Performance & Reliability)
