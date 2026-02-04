@@ -50,9 +50,13 @@ function SupportHome() {
         )}
 
         {!isLoading && (!sessions || sessions.length === 0) && (
-          <div className="rounded-card bg-surface-secondary/30 p-6 text-center">
-            <p className="text-sm text-text-hint">
-              No support sessions yet. Start your first analysis!
+          <div className="flex flex-col items-center gap-2 rounded-card bg-surface-secondary/30 p-6 text-center">
+            <p className="text-sm font-medium text-text-secondary">
+              No sessions yet — you're starting fresh!
+            </p>
+            <p className="text-xs text-text-hint">
+              Analyze a deal above and your session history will build up here.
+              Text, screenshots, voice messages — whatever works for you.
             </p>
           </div>
         )}

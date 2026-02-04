@@ -286,6 +286,40 @@ async def _run_support_pipeline(
         except Exception as e:
             logger.error("Failed to save lead registry: %s", e)
 
+        # Auto-save to casebook for team knowledge base
+        try:
+            persona = (
+                _extract_field(analysis_obj, "persona")
+                or _extract_field(analysis_obj, "buyer_type")
+                or _extract_field(analysis_obj, "role")
+                or "general"
+            )
+            industry = (
+                _extract_field(analysis_obj, "industry")
+                or _extract_field(analysis_obj, "sector")
+            )
+            seniority = (
+                _extract_field(analysis_obj, "seniority")
+                or _extract_field(analysis_obj, "level")
+            )
+            await casebook_service.maybe_save(
+                persona_type=persona,
+                scenario_type="deal_support",
+                industry=industry,
+                seniority=seniority,
+                analysis=_dict_to_text(analysis_obj),
+                strategy=_dict_to_text(strategy_obj),
+                tactics=_dict_to_text(tactics_obj),
+                draft=_dict_to_text(draft_obj),
+                playbook_refs="",
+                quality_score=0.8,
+                accepted_first_draft=True,
+                user_feedback="",
+                telegram_id=tg_id,
+            )
+        except Exception as e:
+            logger.error("Failed to save casebook entry: %s", e)
+
         # Format and send response
         response_text = format_support_response(output_data)
         if saved_lead_id and is_merge:

@@ -10,6 +10,7 @@
 
 import { useEffect, useCallback, useMemo } from 'react';
 import { openTelegramLink } from '@telegram-apps/sdk-react';
+import { Mic } from 'lucide-react';
 import { Card } from '@/shared/ui';
 import { useMainButton } from '@/shared/hooks/useMainButton';
 import { useCountdown } from '../hooks/useCountdown';
@@ -100,6 +101,14 @@ export function TimerInput({
         placeholder="Draft your response here (optional -- practice happens in the bot)"
         aria-label="Response draft"
       />
+
+      {/* Voice hint */}
+      <div className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2">
+        <Mic className="h-3.5 w-3.5 shrink-0 text-brand-700" />
+        <p className="text-xs text-brand-700">
+          Prefer talking? Send a voice message in the bot — we'll transcribe and score it!
+        </p>
+      </div>
     </Card>
   );
 }

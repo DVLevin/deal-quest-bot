@@ -18,10 +18,12 @@ function LeaderboardRow({
   user,
   position,
   isCurrentUser,
+  photoUrl,
 }: {
   user: UserRow;
   position: number;
   isCurrentUser: boolean;
+  photoUrl?: string | null;
 }) {
   return (
     <div
@@ -36,6 +38,7 @@ function LeaderboardRow({
       <Avatar
         firstName={user.first_name}
         username={user.username}
+        photoUrl={photoUrl}
         size="sm"
       />
       <div className="min-w-0 flex-1">
@@ -58,6 +61,7 @@ function LeaderboardRow({
 export function LeaderboardWidget() {
   const { data, isLoading, isError } = useLeaderboard();
   const telegramId = useAuthStore((s) => s.telegramId);
+  const photoUrl = useAuthStore((s) => s.photoUrl);
 
   return (
     <Card>
@@ -96,6 +100,7 @@ export function LeaderboardWidget() {
               user={user}
               position={i + 1}
               isCurrentUser={user.telegram_id === telegramId}
+              photoUrl={user.telegram_id === telegramId ? photoUrl : undefined}
             />
           ))}
           {data.myPosition != null && data.myPosition > 5 && data.myEntry && (
@@ -109,6 +114,7 @@ export function LeaderboardWidget() {
                 user={data.myEntry}
                 position={data.myPosition}
                 isCurrentUser
+                photoUrl={photoUrl}
               />
             </>
           )}

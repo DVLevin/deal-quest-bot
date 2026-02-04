@@ -16,6 +16,7 @@ interface AuthResult {
     telegram_id: number;
     username: string | null;
     first_name: string | null;
+    photo_url: string | null;
   };
 }
 

@@ -9,6 +9,7 @@ import { Link } from 'react-router';
 import { Flame } from 'lucide-react';
 import { Card, Skeleton, ProgressBar, Avatar } from '@/shared/ui';
 import { useUserProgress } from '../hooks/useUserProgress';
+import { useAuthStore } from '@/features/auth/store';
 import {
   getRankTitle,
   getXPForNextLevel,
@@ -18,6 +19,7 @@ import {
 
 export function ProgressCard() {
   const { data: user, isLoading, isError } = useUserProgress();
+  const photoUrl = useAuthStore((s) => s.photoUrl);
 
   if (isLoading) {
     return (
@@ -63,6 +65,7 @@ export function ProgressCard() {
           <Avatar
             firstName={user.first_name}
             username={user.username}
+            photoUrl={photoUrl}
           />
         </Link>
         <div className="min-w-0 flex-1">

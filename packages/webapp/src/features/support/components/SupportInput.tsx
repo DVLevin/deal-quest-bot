@@ -1,14 +1,17 @@
 /**
  * Support input CTA with bot deep links.
  *
- * Primary CTA: "Start Analysis in Bot" for text-based deal analysis.
- * Secondary CTA: "Send Screenshot for Analysis" for photo-based analysis.
- * Both use openTelegramLink for native Telegram deep linking.
+ * Three CTAs for different input modes:
+ * - Text: Start text-based deal analysis
+ * - Screenshot: Send photo for visual analysis
+ * - Voice: Record a voice message in the bot
+ *
+ * All use openTelegramLink for native Telegram deep linking.
  */
 
 import { useCallback } from 'react';
 import { openTelegramLink } from '@telegram-apps/sdk-react';
-import { MessageSquare, ArrowRight, Camera } from 'lucide-react';
+import { MessageSquare, ArrowRight, Camera, Mic } from 'lucide-react';
 import { Card, Button } from '@/shared/ui';
 
 export function SupportInput() {
@@ -25,6 +28,15 @@ export function SupportInput() {
 
   const handleSendScreenshot = useCallback(() => {
     const url = `https://t.me/${botUsername}?start=support_photo`;
+    if (openTelegramLink.isAvailable()) {
+      openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  }, [botUsername]);
+
+  const handleVoice = useCallback(() => {
+    const url = `https://t.me/${botUsername}?start=support`;
     if (openTelegramLink.isAvailable()) {
       openTelegramLink(url);
     } else {
@@ -62,24 +74,36 @@ export function SupportInput() {
         <ArrowRight className="h-4 w-4" />
       </Button>
 
-      {/* Secondary CTA: Screenshot analysis */}
-      <button
-        onClick={handleSendScreenshot}
-        className="flex w-full items-center gap-3 rounded-button border border-surface-secondary bg-surface-secondary/40 p-3 text-left transition-colors hover:bg-surface-secondary/70 active:scale-[0.98]"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
-          <Camera className="h-5 w-5 text-accent" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-text">
-            Send Screenshot for Analysis
-          </p>
-          <p className="text-xs text-text-hint">
-            Send a screenshot of a conversation, profile, or post for AI visual analysis
-          </p>
-        </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-text-hint" />
-      </button>
+      {/* Secondary CTAs row */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Screenshot analysis */}
+        <button
+          onClick={handleSendScreenshot}
+          className="flex items-center gap-2 rounded-button border border-surface-secondary bg-surface-secondary/40 p-3 text-left transition-colors hover:bg-surface-secondary/70 active:scale-[0.98]"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10">
+            <Camera className="h-4 w-4 text-accent" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-text">Screenshot</p>
+            <p className="text-[10px] text-text-hint">Send a photo</p>
+          </div>
+        </button>
+
+        {/* Voice analysis */}
+        <button
+          onClick={handleVoice}
+          className="flex items-center gap-2 rounded-button border border-surface-secondary bg-surface-secondary/40 p-3 text-left transition-colors hover:bg-surface-secondary/70 active:scale-[0.98]"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
+            <Mic className="h-4 w-4 text-brand-700" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-text">Voice</p>
+            <p className="text-[10px] text-text-hint">Record in bot</p>
+          </div>
+        </button>
+      </div>
     </Card>
   );
 }

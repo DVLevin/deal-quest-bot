@@ -9,7 +9,7 @@
 
 import { useCallback } from 'react';
 import { openLink } from '@telegram-apps/sdk-react';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, Mic } from 'lucide-react';
 import { Card, Badge } from '@/shared/ui';
 import { DIFFICULTY_LABELS } from '@deal-quest/shared';
 import { useMainButton } from '@/shared/hooks/useMainButton';
@@ -104,6 +104,14 @@ export function ScenarioPractice({ scenario, levelId }: ScenarioPracticeProps) {
       <div className="rounded-card border border-surface-secondary bg-surface-secondary/30 p-4">
         <p className="text-sm leading-relaxed text-text-secondary italic">
           &ldquo;{scenario.situation}&rdquo;
+        </p>
+      </div>
+
+      {/* Voice hint */}
+      <div className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2">
+        <Mic className="h-3.5 w-3.5 shrink-0 text-brand-700" />
+        <p className="text-xs text-brand-700">
+          Tip: You can respond with a voice message in the bot too!
         </p>
       </div>
     </div>

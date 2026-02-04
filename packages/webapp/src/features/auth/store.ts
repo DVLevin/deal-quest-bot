@@ -15,6 +15,8 @@ interface AuthState {
   telegramId: number | null;
   /** InsForge database user ID */
   userId: number | null;
+  /** Telegram profile photo URL */
+  photoUrl: string | null;
   /** Whether the user is authenticated */
   isAuthenticated: boolean;
   /** Whether authentication is in progress */
@@ -23,7 +25,7 @@ interface AuthState {
   error: string | null;
 
   /** Set auth state after successful authentication */
-  setAuth: (jwt: string, telegramId: number, userId: number) => void;
+  setAuth: (jwt: string, telegramId: number, userId: number, photoUrl?: string | null) => void;
   /** Update loading state */
   setLoading: (loading: boolean) => void;
   /** Set error state */
@@ -36,15 +38,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   jwt: null,
   telegramId: null,
   userId: null,
+  photoUrl: null,
   isAuthenticated: false,
   isLoading: true, // Start as loading -- auth runs on mount
   error: null,
 
-  setAuth: (jwt, telegramId, userId) =>
+  setAuth: (jwt, telegramId, userId, photoUrl) =>
     set({
       jwt,
       telegramId,
       userId,
+      photoUrl: photoUrl ?? null,
       isAuthenticated: true,
       isLoading: false,
       error: null,
@@ -59,6 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       jwt: null,
       telegramId: null,
       userId: null,
+      photoUrl: null,
       isAuthenticated: false,
       isLoading: false,
     }),

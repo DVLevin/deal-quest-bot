@@ -8,11 +8,13 @@
 import { Flame } from 'lucide-react';
 import { Skeleton, Avatar } from '@/shared/ui';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useAuthStore } from '@/features/auth/store';
 import { getRankTitle, XP_PER_LEVEL, MAX_LEVEL } from '@deal-quest/shared';
 import { Badge } from '@/shared/ui';
 
 export function ProfileHeader() {
   const { data: user, isLoading, isError } = useUserProfile();
+  const photoUrl = useAuthStore((s) => s.photoUrl);
 
   if (isLoading) {
     return (
@@ -53,6 +55,7 @@ export function ProfileHeader() {
       <Avatar
         firstName={user.first_name}
         username={user.username}
+        photoUrl={photoUrl}
         size="lg"
       />
 

@@ -190,6 +190,7 @@ module.exports = async function (request: Request) {
           telegram_id: telegramId,
           username: userData.username || null,
           first_name: userData.first_name || null,
+          photo_url: userData.photo_url || null,
         },
       },
       200
