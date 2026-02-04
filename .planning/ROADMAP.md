@@ -205,7 +205,11 @@ Plans:
   3. InsForge PostgREST calls retry up to 3 times with exponential backoff on transient failures (429, 500, 502, 503)
   4. Background tasks (followup scheduler, scenario generator, memory agent) have error callbacks and task references preventing garbage collection
   5. TMA queries for lead detail and attempts use explicit column selection instead of `select('*')`
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
+- [ ] 11-02-PLAN.md — Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
 
 ## Progress
 
@@ -235,4 +239,4 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 | 8. Lead Management | 2/2 | Complete | 2026-02-04 |
 | 9. Training Experience | 2/2 | Complete | 2026-02-04 |
 | 10. Error Handling & UX | 4/4 | Complete | 2026-02-04 |
-| 11. Performance & Reliability | 0/? | Not started | — |
+| 11. Performance & Reliability | 0/2 | Not started | — |
