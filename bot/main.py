@@ -43,6 +43,7 @@ from bot.storage.repositories import (
 )
 from bot.tracing import init_collector
 from bot.tracing.collector import get_collector
+from bot.utils_tma import setup_menu_button
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,9 @@ async def main() -> None:
     else:
         logger.warning("No ALLOWED_USERNAMES set — bot is open to everyone!")
 
+    # Set up TMA menu button
+    await setup_menu_button(bot, cfg.tma_url)
+
     # Inject dependencies via workflow_data
     dp.workflow_data.update(
         {
@@ -154,6 +158,7 @@ async def main() -> None:
             "engagement_service": engagement_service,
             "analytics_service": analytics_service,
             "admin_usernames": cfg.admin_list,
+            "tma_url": cfg.tma_url,
         }
     )
 
