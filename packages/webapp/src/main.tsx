@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { initTelegramSDK } from '@/lib/telegram';
 import App from '@/app/App';
 
-// Enable mobile debug console (temporarily for production debugging)
-import('eruda').then((m) => m.default.init());
+// Development-only debug console
+if (import.meta.env.DEV) {
+  import('eruda').then((m) => m.default.init());
+}
 
 // Build version stamp — check this in console to verify which build is deployed
 declare const __BUILD_TIME__: string;
