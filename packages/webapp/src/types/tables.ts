@@ -96,10 +96,12 @@ export interface ScenarioSeenRow {
 // lead_registry
 // ---------------------------------------------------------------------------
 export interface EngagementPlanStep {
-  step: string;
-  action: string;
-  timing?: string;
-  [key: string]: unknown;
+  step_id: number;
+  description: string;
+  timing: string;
+  status: 'pending' | 'done';
+  suggested_text?: string;
+  completed_at?: string | null;
 }
 
 export interface LeadRegistryRow {
