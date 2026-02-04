@@ -11,6 +11,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { AppLayout } from '@/shared/layouts/AppLayout';
 import { Skeleton } from '@/shared/ui';
 import { useBackButton } from '@/shared/hooks/useBackButton';
+import { AdminGuard } from '@/features/admin/components/AdminGuard';
 
 // Lazy-loaded page chunks
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -53,7 +54,7 @@ function AppRoutes() {
           <Route path="/casebook/*" element={<Casebook />} />
           <Route path="/leads/*" element={<Leads />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/admin/*" element={<Admin />} />
+          <Route path="/admin/*" element={<AdminGuard><Admin /></AdminGuard>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
