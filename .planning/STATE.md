@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 4 complete. Ready for Phase 5 (Leads & Settings).
+**Current focus:** Phase 5 in progress (Leads & Settings). Plan 1 (Lead pipeline) complete. Next: Plan 2 (Settings).
 
 ## Current Position
 
-Phase: 4 of 7 (Support & Casebook)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-03 -- Completed 04-02-PLAN.md (Casebook browser)
+Phase: 5 of 7 (Leads & Profile Settings)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-04 -- Completed 05-01-PLAN.md (Lead pipeline list/detail/status)
 
-Progress: [███████████░░░░░░░░] 11/18 (61%)
+Progress: [████████████░░░░░░░] 12/18 (67%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 4.5m
-- Total execution time: 50m
+- Total plans completed: 12
+- Average duration: 4.4m
+- Total execution time: 53m
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [███████████░░░░░░░░] 11/18 (61%
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
 | 3. Learn & Train | 3/3 | 16m | 5.3m |
 | 4. Support & Casebook | 2/2 | 6m | 3m |
+| 5. Leads & Settings | 1/2 | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 5m, 6m, 5m, 3m, 3m
-- Trend: improving
+- Last 5 plans: 6m, 5m, 3m, 3m, 3m
+- Trend: stable (fast)
 
 *Updated after each plan completion*
 
@@ -90,6 +91,12 @@ Recent decisions affecting current work:
 - [04-02]: useCasebookFilterOptions with 5min staleTime for filter chip values
 - [04-02]: Search debouncing in parent via useDebouncedValue, SearchBar is pure controlled component
 - [04-02]: escapeIlike utility for PostgREST ilike special character safety
+- [05-01]: LeadStatus fixed to 6 values matching bot (meeting_booked, closed_won, closed_lost)
+- [05-01]: EngagementPlanStep fixed to step_id/description/timing/status matching bot data model
+- [05-01]: First TMA mutation pattern: useMutation with onMutate optimistic update, onError rollback, onSettled invalidation
+- [05-01]: Status changes write activity_log entries (status_change type) for TMA-initiated changes
+- [05-01]: Lead TEXT fields (strategy, tactics, draft) treated as plain text, only prospect_analysis needs JSON.parse
+- [05-01]: Engagement plan displayed read-only (step toggling deferred to bot)
 
 ### Pending Todos
 
@@ -111,6 +118,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Completed 04-02-PLAN.md (Casebook browser). Phase 4 complete. Next: Phase 5 (Leads & Settings).
+Last session: 2026-02-04
+Stopped at: Completed 05-01-PLAN.md (Lead pipeline). Next: 05-02-PLAN.md (Settings panel).
 Resume file: None
