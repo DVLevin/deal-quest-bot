@@ -6,8 +6,8 @@
  */
 
 import { Link } from 'react-router';
-import { Flame } from 'lucide-react';
 import { Card, Skeleton, ProgressBar, Avatar } from '@/shared/ui';
+import { StreakIndicator } from '@/features/gamification/components/StreakIndicator';
 import { useUserProgress } from '../hooks/useUserProgress';
 import { useAuthStore } from '@/features/auth/store';
 import {
@@ -96,13 +96,8 @@ export function ProgressCard() {
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5">
-        <Flame className="h-4 w-4 text-warning" />
-        <span className="text-sm text-text-secondary">
-          {user.streak_days > 0
-            ? `${user.streak_days} day streak`
-            : 'No streak'}
-        </span>
+      <div className="mt-3">
+        <StreakIndicator streakDays={user.streak_days} />
       </div>
     </Card>
   );

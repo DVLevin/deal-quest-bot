@@ -12,6 +12,7 @@
 
 import { Badge } from '@/shared/ui';
 import { PASSING_SCORE } from '@/types/constants';
+import { XPGainAnimation } from '@/features/gamification/components/XPGainAnimation';
 
 interface ScoreDisplayProps {
   score: number;
@@ -80,10 +81,14 @@ export function ScoreDisplay({
         </div>
       </div>
 
-      {/* XP badge */}
-      <Badge variant={passed ? 'success' : 'warning'} size="md">
-        +{xpEarned} XP
-      </Badge>
+      {/* XP earned indicator */}
+      {animate ? (
+        <XPGainAnimation xpEarned={xpEarned} />
+      ) : (
+        <Badge variant={passed ? 'success' : 'warning'} size="md">
+          +{xpEarned} XP
+        </Badge>
+      )}
     </div>
   );
 }
