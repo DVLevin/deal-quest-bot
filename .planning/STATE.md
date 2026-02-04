@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 5 in progress (Leads & Settings). Plan 1 (Lead pipeline) complete. Next: Plan 2 (Settings).
+**Current focus:** Phase 5 complete (Leads & Settings). Next: Phase 6 (Admin & Polish) or Phase 7 (Launch).
 
 ## Current Position
 
 Phase: 5 of 7 (Leads & Profile Settings)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-04 -- Completed 05-01-PLAN.md (Lead pipeline list/detail/status)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-04 -- Completed 05-02-PLAN.md (Activity timeline, notes, settings panel)
 
-Progress: [████████████░░░░░░░] 12/18 (67%)
+Progress: [█████████████░░░░░░] 13/18 (72%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 4.4m
-- Total execution time: 53m
+- Total plans completed: 13
+- Average duration: 4.3m
+- Total execution time: 56m
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [████████████░░░░░░░] 12/18 (67%
 | 2. Dashboard & Profile | 2/2 | 10m | 5m |
 | 3. Learn & Train | 3/3 | 16m | 5.3m |
 | 4. Support & Casebook | 2/2 | 6m | 3m |
-| 5. Leads & Settings | 1/2 | 3m | 3m |
+| 5. Leads & Settings | 2/2 | 6m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 6m, 5m, 3m, 3m, 3m
+- Last 5 plans: 5m, 3m, 3m, 3m, 3m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -97,6 +97,10 @@ Recent decisions affecting current work:
 - [05-01]: Status changes write activity_log entries (status_change type) for TMA-initiated changes
 - [05-01]: Lead TEXT fields (strategy, tactics, draft) treated as plain text, only prospect_analysis needs JSON.parse
 - [05-01]: Engagement plan displayed read-only (step toggling deferred to bot)
+- [05-02]: Notes section always visible (not conditional), allows adding notes to any lead
+- [05-02]: API key management via bot deep-link only (TMA cannot access Fernet ENCRYPTION_KEY)
+- [05-02]: Settings queries users table directly, no separate settings table needed
+- [05-02]: 4 OpenRouter models match bot MODEL_KEYBOARD exactly
 
 ### Pending Todos
 
@@ -119,5 +123,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 05-01-PLAN.md (Lead pipeline). Next: 05-02-PLAN.md (Settings panel).
+Stopped at: Completed 05-02-PLAN.md (Activity timeline, notes, settings). Phase 5 complete.
 Resume file: None
