@@ -1,253 +1,254 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-04
 
 ## Tech Debt
 
-**RLS Security Compromise (Bot authentication):**
-- Issue: Python bot uses anon key server-side, requiring full-access RLS policies for anon role
-- Files: `deal-quest-bot/migrations/001_enable_rls_and_policies.sql` (lines 25-37), `deal-quest-bot/functions/verify-telegram/index.ts` (lines 1-4), `deal-quest-bot/bot/storage/insforge_client.py`
-- Impact: Anon key exposed in TMA JavaScript bundle has full database access. Anyone can query/modify all user data by inspecting the anon key in the client bundle and bypassing RLS.
-- Fix approach: Migrate Python bot to service role key (bypasses RLS), then remove anon full-access policies. Add proper RLS policies scoped to authenticated role only. Bot should authenticate as service, not as anon.
+**Security Architecture: Anon Key with Full Access**
+- Issue: Both the Python bot and TMA frontend use the InsForge anon key with full-access RLS policies (`anon_full_*`). This is an intentional security compromise to avoid JWT secret mismatch issues.
+- Files: `functions/verify-telegram/index.ts`, `packages/webapp/src/lib/insforge.ts`, `bot/storage/insforge_client.py`
+- Impact: The anon key is exposed in the JavaScript bundle, granting any client full database access. Per-user data isolation relies solely on application-level filtering by `telegram_id` rather than enforced RLS policies. A malicious user with the anon key could bypass all authorization.
+- Fix approach: Migrate bot to use service role key (bypasses RLS), mint proper JWTs from Edge Function that PostgREST accepts, implement strict RLS policies that only allow user access to their own records via JWT claims, remove all `anon_full_*` policies. This requires Phase 1.5-level auth refactor.
 
-**PKCE not implemented (InsForge auth):**
-- Issue: Auth broadcast service marked with TODO indicating PKCE needs to be implemented in future
-- Files: `insforge/insforge/auth/src/lib/broadcastService.ts` (line 1)
-- Impact: OAuth flow lacks PKCE protection against authorization code interception attacks
-- Fix approach: Implement PKCE (Proof Key for Code Exchange) in OAuth flows per RFC 7636
+**Context Stuffing: 70K+ Token Overhead**
+- Issue: Every LLM call includes the full playbook (~17KB) and company knowledge (~50KB) via `KnowledgeService.combined`. This is naive context stuffing without semantic retrieval.
+- Files: `bot/services/knowledge.py`, `bot/agents/strategist.py`, `bot/agents/trainer.py`, `bot/handlers/support.py`, `bot/handlers/learn.py`, `bot/handlers/train.py`
+- Impact: High token costs (~70K tokens per call), slower response times, hits context limits on smaller models, wastes budget on irrelevant information. Every support/learn/train request pays this overhead.
+- Fix approach: Implement RAG (Retrieval Augmented Generation). Chunk knowledge base, embed with sentence-transformers or OpenAI embeddings, store in vector DB (pgvector on InsForge), retrieve top-K relevant chunks at query time. Reduce context to 5-10K tokens.
 
-**Hardcoded S3 configuration (InsForge backend):**
-- Issue: S3 bucket and region are hardcoded with TODO to make configurable
-- Files: `insforge/insforge/backend/src/utils/s3-config-loader.ts` (lines 4-6)
-- Impact: Cannot change storage configuration without code changes. Limits multi-tenancy and cloud deployment flexibility.
-- Fix approach: Move CONFIG_BUCKET and CONFIG_REGION to environment variables. Update cloud deployment configs to set these.
+**Massive Handler Files: 800-1000 Lines**
+- Issue: Handler files are bloated with business logic, inline keyboard builders, and FSM state management mixed together.
+- Files: `bot/handlers/leads.py` (1068 lines), `bot/handlers/support.py` (905 lines), `bot/handlers/admin.py` (819 lines)
+- Impact: Hard to navigate, test surface is enormous, changes to keyboard layout touch business logic, refactoring risk is high.
+- Fix approach: Extract keyboard builders to `bot/keyboards/` module, move business logic to services, create facade/orchestration layer for multi-step flows. Target: handlers < 300 lines, services < 200 lines.
 
-**Complex component marked for cleanup (InsForge):**
-- Issue: RecordFormField component flagged as "a mess" needing cleanup
-- Files: `insforge/insforge/frontend/src/features/database/components/RecordFormField.tsx` (line 387)
-- Impact: Large component (387+ lines) with complex conditional rendering. Hard to maintain, test, and extend with new field types.
-- Fix approach: Split into separate components per field type (BooleanField, TextFieldInput, DateFieldInput). Extract field type inference logic to helper.
+**Shared Types Duplication: Railway Build Workaround**
+- Issue: The `packages/shared/` types package is inlined into `packages/webapp/src/types/` because Railway's `root_dir` isolation prevents accessing `../shared` during build.
+- Files: `packages/webapp/src/types/tables.ts`, `packages/webapp/src/types/enums.ts`, `packages/shared/src/types.ts` (source of truth)
+- Impact: Types drift between shared source and webapp copy. Changes to shared types require manual sync. Risk of TMA using stale schemas.
+- Fix approach: Pre-build script that copies types from shared to webapp before Railway build, or switch to Turborepo/monorepo builder that understands workspace references, or bundle shared types into an npm package published to private registry.
 
-**Large handler files (bot):**
-- Issue: Several handler files exceed 600+ lines, indicating high complexity
-- Files: `deal-quest-bot/bot/handlers/leads.py` (1068 lines), `deal-quest-bot/bot/handlers/support.py` (871 lines), `deal-quest-bot/bot/handlers/admin.py` (819 lines), `deal-quest-bot/bot/handlers/train.py` (615 lines), `deal-quest-bot/bot/storage/repositories.py` (635 lines)
-- Impact: Difficult to navigate, test, and modify. Handlers mix business logic with UI concerns.
-- Fix approach: Extract business logic to services. Split large handlers into smaller focused modules (e.g. leads.py → lead_view.py, lead_engagement.py, lead_management.py).
+**API Key Storage: Fernet Encryption with Single Static Key**
+- Issue: User API keys are encrypted with Fernet using a single static `ENCRYPTION_KEY` from environment variables. Key rotation is not supported.
+- Files: `bot/services/crypto.py`, `bot/handlers/start.py`, `bot/handlers/settings.py`
+- Impact: If `ENCRYPTION_KEY` leaks, all stored API keys can be decrypted retroactively. No ability to rotate keys without re-encrypting all user records. Fernet is secure but lacks key versioning.
+- Fix approach: Implement key versioning (store key ID with each encrypted value), support multiple active keys, implement rotation procedure that re-encrypts records with new key in background job. Or migrate to envelope encryption (encrypt data keys with master key stored in secrets manager).
 
-**Error swallowing with empty returns:**
-- Issue: Many exception handlers return empty collections ([]) instead of propagating errors
-- Files: `deal-quest-bot/bot/storage/repositories.py` (lines 144, 191, 202, 213, 224, 251, 373, 383, 427, 436, 498, 509, 526, 547, 625, 635), `deal-quest-bot/bot/services/engagement.py` (lines 75, 79, 82), `deal-quest-bot/bot/services/scenario_generator.py` (lines 42, 87, 108), `deal-quest-bot/bot/config.py` (lines 39, 46)
-- Impact: Silent failures make debugging difficult. Database errors are hidden from users and logs. Operations may appear successful when they actually failed.
-- Fix approach: Add proper error logging before returning empty collections. Consider raising exceptions for critical operations. Add telemetry for failure rates.
+**No Error Retry Strategy for LLM Calls**
+- Issue: LLM provider errors (rate limits, 5xx, timeouts) fail immediately with generic error messages. Retries are hardcoded with fixed delays.
+- Files: `bot/services/llm_router.py` (lines 17-18: `MAX_RETRIES = 3`, `RETRY_DELAYS = [1, 3, 8]`)
+- Impact: Users see "Sorry, error" messages on transient failures. No exponential backoff, no jitter, no circuit breaker. During OpenRouter/Claude outages, all requests fail.
+- Fix approach: Implement tenacity or backoff library with exponential backoff + jitter, add circuit breaker pattern for provider health tracking, provide fallback to alternate model/provider, show user-friendly retry UI ("Retrying... 2/3").
 
-**Silent exception handling with pass:**
-- Issue: Multiple try-except blocks with pass statements that ignore errors completely
-- Files: `deal-quest-bot/bot/services/engagement.py` (line 74), `deal-quest-bot/bot/services/progress.py` (line 120), `deal-quest-bot/bot/tracing/context.py` (line 45), `deal-quest-bot/bot/services/followup_scheduler.py` (line 56), `deal-quest-bot/bot/services/llm_router.py` (lines 28, 36, 44), `deal-quest-bot/bot/handlers/settings.py` (line 142), `deal-quest-bot/bot/handlers/learn.py` (line 397), `deal-quest-bot/bot/handlers/start.py` (line 264), `deal-quest-bot/bot/handlers/leads.py` (lines 72, 184)
-- Impact: Exceptions are completely silenced without logging. No way to detect or debug failures in production.
-- Fix approach: Replace pass with logger.warning() or logger.error() at minimum. Evaluate if exceptions should propagate for critical operations.
+**Pipeline Traces Never Purged**
+- Issue: `pipeline_traces` and `pipeline_spans` tables accumulate indefinitely. No TTL, no cleanup job.
+- Files: `bot/tracing/collector.py`, `bot/storage/repositories.py` (TraceRepo, SpanRepo)
+- Impact: Database bloat, query performance degrades over time, observability queries slow down. Prod databases will hit storage limits.
+- Fix approach: Implement retention policy (e.g., 30 days for traces, 7 days for spans), background cleanup job via cron/Railway scheduled task, or use InsForge TTL feature (if available), aggregate old traces to summary stats before deletion.
+
+**Knowledge Base Files Not Validated**
+- Issue: `playbook.md` and `company_knowledge.md` are loaded at startup with no validation. Missing files log warnings but don't fail startup.
+- Files: `bot/services/knowledge.py` (lines 25-35)
+- Impact: Bot runs with empty knowledge base, produces garbage LLM responses, users have no indication something is wrong. Silent failure mode.
+- Fix approach: Make knowledge files required for production startup (fail-fast), add schema validation (minimum length, required sections), healthcheck endpoint that reports knowledge status, admin command to reload/validate knowledge.
 
 ## Known Bugs
 
-**Auth validation warnings (TMA webapp):**
-- Symptoms: useAuth logs "Validation query threw" warnings but proceeds anyway
-- Files: `deal-quest-bot/packages/webapp/src/features/auth/useAuth.ts` (lines 79-88)
-- Trigger: JWT validation query fails after Edge Function succeeds
-- Workaround: Edge Function success is trusted, validation errors are logged but ignored. RLS validation happens on actual data queries.
+**AssemblyAI Transcription Timeout Not Enforced**
+- Symptoms: Voice messages longer than 5 minutes never complete transcription, bot hangs indefinitely.
+- Files: `bot/services/transcription.py` (lines 60-79: polling loop has no iteration limit)
+- Trigger: Send voice message > 5 minutes, transcription enters "processing" state indefinitely
+- Workaround: Restart bot to clear stuck state, reject voice files > 2 minutes before upload
 
-**Date parsing fragility (leads handler):**
-- Symptoms: try-except around datetime parsing with silent failure
-- Files: `deal-quest-bot/bot/handlers/leads.py` (lines 67-72)
-- Trigger: Invalid ISO format in next_followup field or timezone issues
-- Workaround: Exception caught, attention indicator not shown. Follow-up may appear non-urgent when parsing fails.
+**Telegram InitData Expiry Check Off By One Hour**
+- Symptoms: Valid Telegram Mini App sessions are rejected as "initData expired" during hour boundaries.
+- Files: `functions/verify-telegram/index.ts` (lines 101-105: `now - authDate > 3600`)
+- Trigger: Open TMA exactly 60-61 minutes after initial Telegram launch, re-authentication required
+- Workaround: Close and reopen TMA from bot menu button
+
+**Lead Activity Timeline Sorting Inconsistent**
+- Symptoms: Activity timeline shows events in wrong order when multiple events share same timestamp.
+- Files: `bot/handlers/leads.py` (lines 165-180: `ActivityTimeline` component), `packages/webapp/src/features/leads/components/ActivityTimeline.tsx` (lines 45-60)
+- Trigger: Update lead status multiple times within same second (common during testing)
+- Workaround: Add artificial delay between status updates, or include microsecond precision in timestamps
 
 ## Security Considerations
 
-**Anon key full database access (CRITICAL):**
-- Risk: TMA JavaScript bundle exposes anon key with full RLS access. Client-side code can be inspected to extract key and bypass all security.
-- Files: `deal-quest-bot/migrations/001_enable_rls_and_policies.sql`, `deal-quest-bot/functions/verify-telegram/index.ts`, `deal-quest-bot/packages/webapp/src/lib/insforge.ts`
-- Current mitigation: None. This is a known security compromise pending bot migration.
-- Recommendations: URGENT - Migrate bot to service role key. Remove all anon_full_* policies. Lock down anon key to read-only public data only.
+**Username-Based Authorization**
+- Risk: Authorization middleware filters by Telegram username, which users can change anytime. Revoking access requires manual `.env` update and bot restart.
+- Files: `bot/middleware.py`, `bot/config.py` (lines 35-50: `ALLOWED_USERNAMES` parsing)
+- Current mitigation: Small trusted team (<10 users), manual access review, audit logging on unauthorized attempts
+- Recommendations: Switch to Telegram user ID (immutable), implement admin command for access control (`/grant @user`, `/revoke @user`), store allowlist in database not env vars
 
-**.env file committed:**
-- Risk: Active .env file exists in repository (per ls output showing .env file)
-- Files: `deal-quest-bot/.env` (894 bytes, modified Feb 1)
-- Current mitigation: .env is in .gitignore, but file exists locally and may have been committed in past or could be accidentally committed
-- Recommendations: Verify .env is not in git history. Run `git rm --cached .env` if needed. Consider using secret scanning tools.
+**API Keys Decrypted in Memory During Request**
+- Risk: Decrypted user API keys remain in memory for duration of LLM request. Memory dumps or crashes could expose keys.
+- Files: `bot/handlers/support.py` (lines 857-863), `bot/handlers/train.py`, `bot/handlers/learn.py`
+- Current mitigation: Fernet encryption at rest, keys only decrypted on-demand
+- Recommendations: Use process isolation (spawn subprocess for LLM calls), clear sensitive variables explicitly after use (`del api_key`), implement memory encryption for long-running processes, rotate user keys quarterly
 
-**API keys stored encrypted in database:**
-- Risk: User API keys stored in database using Fernet symmetric encryption
-- Files: `deal-quest-bot/bot/services/crypto.py`, `deal-quest-bot/bot/storage/models.py`
-- Current mitigation: Fernet encryption with ENCRYPTION_KEY from environment. Keys are encrypted at rest.
-- Recommendations: Rotate encryption key periodically. Consider using database-level encryption or KMS for key storage. Add audit logging for key access.
+**No Rate Limiting on Support/Train Commands**
+- Risk: Single user can spam `/support` or `/train` and exhaust LLM API quota (OpenRouter or Claude).
+- Files: `bot/handlers/support.py`, `bot/handlers/train.py`, `bot/handlers/learn.py`
+- Current mitigation: None (trusted team environment)
+- Recommendations: Implement per-user rate limiting (e.g., 10 requests/hour, 50 requests/day), show remaining quota to users, queue requests when at limit, track costs per user in analytics
 
-**Broad exception catching:**
-- Risk: Generic except blocks may catch and hide security-relevant exceptions
-- Files: `deal-quest-bot/bot/services/crypto.py` (line 24), `deal-quest-bot/bot/storage/insforge_client.py`, across handlers
-- Current mitigation: Some error logging exists
-- Recommendations: Narrow exception types. Distinguish between recoverable errors and security violations. Add security event logging.
-
-**No rate limiting detected:**
-- Risk: No evidence of rate limiting on bot commands or API endpoints
-- Files: `deal-quest-bot/bot/main.py`, handler files
-- Current mitigation: USERNAME_WHITELIST provides basic access control
-- Recommendations: Add rate limiting per user. Implement backoff for LLM API calls. Add DDoS protection at deployment level.
+**InsForge Anon Key Exposed in JavaScript Bundle**
+- Risk: TMA ships anon key in Vite build output. Any user can extract it from DevTools and make arbitrary database calls.
+- Files: `packages/webapp/src/lib/insforge.ts` (lines 12-13: `VITE_INSFORGE_ANON_KEY`)
+- Current mitigation: RLS policies exist but grant full access (`anon_full_*` policies), trusted Telegram-only distribution
+- Recommendations: See "Security Architecture: Anon Key with Full Access" fix above — implement proper RLS + JWT auth
 
 ## Performance Bottlenecks
 
-**Context stuffing in LLM calls:**
-- Problem: Full playbook + company knowledge loaded into every LLM prompt (~70K tokens per CLAUDE.md)
-- Files: `deal-quest-bot/bot/services/knowledge.py`, `deal-quest-bot/data/playbook.md` (17KB), `deal-quest-bot/data/company_knowledge.md` (50KB)
-- Cause: No RAG or semantic chunking. Entire knowledge base sent with every request.
-- Improvement path: Implement semantic search over knowledge base. Use embeddings to retrieve relevant sections only. Cache knowledge embeddings. Consider context compression techniques.
+**Sequential Pipeline Execution**
+- Problem: Pipeline steps run sequentially even when independent (e.g., memory update doesn't need to wait for strategist response).
+- Files: `bot/pipeline/runner.py` (lines 40-80: `run()` method), `data/pipelines/support.yaml`, `data/pipelines/learn.yaml`
+- Cause: PipelineRunner executes all steps in order unless explicitly marked `background: true`
+- Improvement path: Add dependency graph analysis to runner, auto-parallelize independent steps, use asyncio.gather for concurrent execution, target 30-40% latency reduction
 
-**No database query optimization:**
-- Problem: Repository pattern uses simple query/filter without indexing guidance
-- Files: `deal-quest-bot/bot/storage/repositories.py`, `deal-quest-bot/bot/storage/insforge_client.py`
-- Cause: No EXPLAIN analysis, no index hints, no query planning
-- Improvement path: Add database indexes for telegram_id, created_at, status fields. Analyze slow query logs. Add query result caching for frequently accessed data.
+**N+1 Queries in Leaderboard and Admin**
+- Problem: Leaderboard and admin dashboard load user records one-by-one in loops instead of batch queries.
+- Files: `bot/handlers/stats.py` (lines 80-120: leaderboard building), `bot/handlers/admin.py` (lines 300-400: user overview), `packages/webapp/src/features/dashboard/components/LeaderboardWidget.tsx`
+- Cause: Repository pattern lacks batch operations, each `get_by_telegram_id()` is a separate HTTP call
+- Improvement path: Add `get_many()` and `query_batch()` to repositories, use PostgREST `in.()` filter for bulk fetches, reduce leaderboard load from 10-15 queries to 1-2
 
-**Synchronous LLM retries:**
-- Problem: LLM calls retry with fixed delays (1s, 3s, 8s), blocking user interaction
-- Files: `deal-quest-bot/bot/services/llm_router.py` (lines 17-18)
-- Cause: Sequential retry logic with asyncio.sleep blocking event loop
-- Improvement path: Implement exponential backoff with jitter. Move retries to background task. Show progress indicator during retries.
+**Large Message Edits Causing Telegram Rate Limits**
+- Problem: ProgressUpdater edits Telegram messages 2-3 times per second during long pipelines, hits 30 edits/minute rate limit.
+- Files: `bot/services/progress.py` (lines 85-130: `update_phase()` method)
+- Cause: No debouncing or throttling on edit operations, every phase transition triggers immediate edit
+- Improvement path: Debounce edits to 1 per second, batch phase updates, show spinner animation without text changes, or switch to webhooks for real-time updates
 
-**Large scenario data file:**
-- Problem: scenarios.json is 41KB and loaded into memory
-- Files: `deal-quest-bot/data/scenarios.json` (41KB)
-- Cause: All training scenarios stored in single JSON file
-- Improvement path: Move scenarios to database. Paginate scenario loading. Cache parsed scenarios.
+**Playbook Loaded on Every Request**
+- Problem: Not actually a bottleneck (loaded once at startup), but worth monitoring if playbook grows beyond 100KB.
+- Files: `bot/services/knowledge.py` (cached in memory after `load()`)
+- Cause: N/A (working as designed)
+- Improvement path: If playbook exceeds 100KB, chunk and index for RAG (see "Context Stuffing" above)
 
 ## Fragile Areas
 
-**Telegram initData signature validation:**
-- Files: `deal-quest-bot/functions/verify-telegram/index.ts` (lines 38-98)
-- Why fragile: Complex HMAC-SHA256 validation logic with manual crypto operations. String encoding and sorting must match Telegram's exact algorithm.
-- Safe modification: Do NOT change signature validation logic. Test any auth changes against multiple Telegram clients. Add integration tests with real initData samples.
-- Test coverage: No unit tests for signature validation found
+**FSM State Cleanup**
+- Files: `bot/handlers/support.py`, `bot/handlers/train.py`, `bot/handlers/learn.py`, `bot/handlers/leads.py`
+- Why fragile: FSM state can become stale if user abandons flow mid-way (e.g., starts `/support`, never finishes, state remains in `SupportState.awaiting_input`). Next command assumes fresh state.
+- Safe modification: Always clear state at start of command handlers (`await state.clear()`), use state timeouts (aiogram FSM TTL feature), add `/cancel` command that clears all state
+- Test coverage: None (no automated FSM tests)
 
-**TraceContext ContextVar propagation:**
-- Files: `deal-quest-bot/bot/tracing/context.py` (lines 16-18)
-- Why fragile: Uses ContextVar for async trace ID propagation. Breaking changes may cause spans to lose parent trace ID.
-- Safe modification: Always test nested span creation. Verify trace_id propagates through asyncio task boundaries. Check span_stack depth limits.
-- Test coverage: No unit tests for context propagation
+**Telegram Message Editing**
+- Files: `bot/services/progress.py` (lines 100-130), `bot/handlers/support.py` (lines 895-898), `bot/handlers/leads.py`
+- Why fragile: Message edits fail silently if message is too old (>48 hours) or deleted by user. Code assumes `callback.message` is always editable.
+- Safe modification: Wrap all `edit_text()` calls in try/except, fall back to sending new message if edit fails, check message age before edit, store message IDs in state for reliable targeting
+- Test coverage: None (manual testing only)
 
-**FSM state management:**
-- Files: `deal-quest-bot/bot/states.py`, handler files using FSMContext
-- Why fragile: aiogram FSM state stored in memory, lost on bot restart. Complex multi-step flows (leads, support, learn) depend on state persistence.
-- Safe modification: Test state transitions thoroughly. Handle missing state gracefully. Consider adding state recovery on restart.
-- Test coverage: No state machine tests detected
+**Callback Data Serialization**
+- Files: `bot/handlers/leads.py` (lines 100-200: `_encode_callback`, `_decode_callback`), `bot/handlers/admin.py`
+- Why fragile: Callback data is JSON-serialized and base64-encoded to fit Telegram's 64-byte limit. Deeply nested data or long strings cause truncation. Decode errors are swallowed.
+- Safe modification: Use short keys (single letters), validate payload size before encoding, implement versioned schemas, add decode error handlers that show user-friendly messages
+- Test coverage: None (edge cases not tested)
 
-**InsForge client HTTP layer:**
-- Files: `deal-quest-bot/bot/storage/insforge_client.py`
-- Why fragile: Custom PostgREST filter operator handling (lines 14-74). String manipulation for query params. httpx client lifecycle management.
-- Safe modification: Test filter operators thoroughly. Verify operator precedence. Check query param encoding for special characters. Validate single vs. list response handling.
-- Test coverage: No integration tests for repository layer
+**TraceCollector Background Flush**
+- Files: `bot/tracing/collector.py` (lines 37-53: `start()` and `stop()` methods)
+- Why fragile: If bot crashes during shutdown, pending traces in memory are lost. No persistent queue. Flush task can hang if InsForge is unreachable.
+- Safe modification: Add persistent buffer (write to disk on overflow), implement flush timeout (5s max), add dead letter queue for failed flushes, graceful degradation if tracing is down (log errors but don't block requests)
+- Test coverage: None (shutdown scenarios not tested)
 
-**Session resilience (TMA):**
-- Files: `deal-quest-bot/packages/webapp/src/shared/hooks/useSessionResilience.ts`
-- Why fragile: Relies on miniApp.isActive signal and sessionStorage. May not work in all Telegram clients or WebViews.
-- Safe modification: Test on iOS, Android, and Desktop Telegram clients. Handle sessionStorage quota exceeded. Verify cleanup on navigation.
-- Test coverage: No tests for session restore
+**Scenario JSON Parsing**
+- Files: `bot/services/scenario_generator.py` (lines 80-110: `generate_scenario()` method), `bot/handlers/train.py` (lines 60-70)
+- Why fragile: LLM responses are parsed as JSON with multiple fallback strategies (code fence stripping, regex extraction). Malformed JSON returns empty list, causing "No scenarios available" errors.
+- Safe modification: Use strict JSON schema validation (pydantic), retry with different prompt on parse failure, fallback to static scenarios from `data/scenarios.json`, log parse errors with full LLM response for debugging
+- Test coverage: None (LLM response variations not tested)
 
 ## Scaling Limits
 
-**In-memory httpx client pooling:**
-- Current capacity: Single httpx.AsyncClient per InsForgeClient instance
-- Limit: Connection pool exhaustion under high load. No connection limit configured.
-- Scaling path: Configure connection limits (max_connections, max_keepalive_connections). Use connection pooling. Consider httpx client singleton.
+**Single-Process Bot Architecture**
+- Current capacity: ~100 concurrent users (aiogram async handles multiple requests)
+- Limit: Single Railway dyno, no horizontal scaling. Memory usage grows with concurrent pipeline executions.
+- Scaling path: Deploy multiple bot instances with shared database, use Telegram webhook mode instead of polling (allows load balancing), implement job queue (Celery/RQ) for pipeline execution
 
-**Synchronous tracing writes:**
-- Current capacity: TraceCollector batch size 10, flush timeout 10s
-- Limit: Trace writes block at batch size. High-throughput pipelines may cause trace buffer overflow.
-- Scaling path: Increase batch size. Use async queue with backpressure. Send traces to time-series DB instead of PostgreSQL.
+**InsForge PostgREST Connection Pooling**
+- Current capacity: Default httpx client (100 connections), shared across all bot requests
+- Limit: Concurrent requests > 100 will queue, InsForge may throttle at project tier limits
+- Scaling path: Configure explicit connection pool size (`httpx.Limits(max_connections=200)`), monitor 429 responses, upgrade InsForge plan, implement request queuing with priority (user-facing > background)
 
-**Single-process bot deployment:**
-- Current capacity: One Railway instance running bot polling
-- Limit: Single point of failure. No horizontal scaling. Webhook mode not configured.
-- Scaling path: Switch to webhook mode. Deploy behind load balancer. Use webhook-based architecture for multi-instance deployment.
+**Telegram Rate Limits**
+- Current capacity: 30 messages/second per bot, 1 edit/second per message
+- Limit: ProgressUpdater can hit edit limits during high concurrency (10+ concurrent pipelines)
+- Scaling path: Implement message edit queue with rate limit awareness, deduplicate rapid phase updates, use inline query results instead of message edits for high-frequency updates
 
-**Knowledge base file loading:**
-- Current capacity: 67KB knowledge files loaded on every LLM call
-- Limit: Disk I/O and memory overhead scale linearly with request volume
-- Scaling path: Cache parsed knowledge in memory. Use shared cache (Redis). Implement knowledge versioning to invalidate cache.
+**Railway Deployment: No Database Backups**
+- Current capacity: Single Railway deployment, no automated database snapshots
+- Limit: InsForge project data loss = complete user data loss (XP, progress, leads, casebook)
+- Scaling path: Implement daily database exports via InsForge API, store backups in S3/GCS, test restore procedure quarterly, enable InsForge project backups feature (if available)
 
 ## Dependencies at Risk
 
-**aiogram 3.x still evolving:**
-- Risk: aiogram 3.x API may have breaking changes in minor versions
-- Impact: Bot may break on dependency updates. FSM API changes could require refactoring.
-- Migration plan: Pin aiogram to exact version. Test updates in staging. Monitor aiogram GitHub for breaking changes.
+**aiogram 3.x: Active Development**
+- Risk: aiogram is on v3.4, breaking changes in v3.5+ could affect FSM or callback handling
+- Impact: Bot could break on dependency update, middleware changes, state management refactor required
+- Migration plan: Pin aiogram to `~3.4.0` in requirements.txt, monitor changelog before upgrading, test on staging branch first, budget 2-3 days for major version migrations
 
-**InsForge self-hosted dependency:**
-- Risk: InsForge is a custom Supabase alternative, not widely adopted
-- Impact: Limited community support. May have undiscovered bugs. Future maintenance uncertain.
-- Migration plan: Document InsForge API contract. Abstract database layer behind interfaces. Consider migration path to Supabase or standard PostgreSQL + PostgREST.
+**Anthropic SDK: Model Deprecations**
+- Risk: Claude Sonnet 4 (`claude-sonnet-4-20250514`) may be deprecated, requiring model migration
+- Impact: Premium users on Claude API would lose access, need to migrate to new model ID, reprompt all agents
+- Migration plan: Support multiple model versions simultaneously, add model version detection, implement graceful fallback to older models, notify users via `/settings` when their selected model is deprecated
 
-**@telegram-apps/sdk-react early version:**
-- Risk: Telegram Mini App SDK is relatively new and may have breaking changes
-- Impact: TMA may break with SDK updates. New Telegram features may require API changes.
-- Migration plan: Pin SDK version. Test updates in isolated environment. Follow Telegram Mini App changelog closely.
+**OpenRouter: Third-Party API Stability**
+- Risk: OpenRouter is free tier dependency for all new users. Downtime or policy changes (rate limits, pricing) affect entire userbase.
+- Impact: New users can't complete onboarding, all default users lose access, brand reputation hit
+- Migration plan: Add alternate free provider (e.g., HuggingFace Inference API), implement provider health checks and auto-failover, cache responses for common scenarios, offer self-hosted LLM option (Ollama)
+
+**Vite 7: Experimental Release**
+- Risk: Vite 7 is recent release, TMA uses cutting-edge features (Tailwind CSS 4 integration)
+- Impact: Build could break on minor Vite updates, Tailwind v4 is in beta
+- Migration plan: Lock Vite to exact version (`"vite": "7.0.0"`), monitor Vite and Tailwind changelogs, test builds on every dependency update, budget 1-2 days for Vite 8 migration
 
 ## Missing Critical Features
 
-**No test suite:**
-- Problem: Zero unit tests, integration tests, or E2E tests found in bot or webapp
-- Blocks: Confident refactoring, regression detection, safe dependency updates
-- Priority: High - Add at least smoke tests for critical flows (auth, database writes, LLM calls)
+**No User Data Export**
+- Problem: Users cannot export their training history, casebook, or lead data. GDPR compliance risk.
+- Blocks: GDPR "right to data portability" requests, user migration to other tools, trust building
+- Priority: Medium (required for EU users)
 
-**No monitoring/alerting:**
-- Problem: No error tracking service (Sentry), no metrics, no uptime monitoring
-- Blocks: Production issue detection, performance analysis, SLA compliance
-- Priority: High - Add error tracking and basic metrics before production launch
+**No Bulk Import for Leads**
+- Problem: Users must add leads one-by-one via bot. Cannot import from CRM or CSV.
+- Blocks: Adoption by users with existing lead databases (100+ leads)
+- Priority: Medium (Phase 7 feature)
 
-**No CI/CD pipeline:**
-- Problem: No GitHub Actions, no automated tests, no deployment automation
-- Blocks: Safe deployments, quality gates, automated rollbacks
-- Priority: Medium - Manual Railway deployments work but are error-prone
-
-**No structured logging:**
-- Problem: Basic Python logging with no correlation IDs, no structured JSON, no log aggregation
-- Blocks: Debugging production issues, log analysis, user session tracking
-- Priority: Medium - Add structured logging with trace IDs
-
-**No backup strategy:**
-- Problem: No documented database backup/restore procedure
-- Blocks: Disaster recovery, data loss prevention, compliance
-- Priority: High - Document InsForge backup process and test restore
+**No Offline Mode for TMA**
+- Problem: TMA requires live internet connection. No PWA caching, no service worker.
+- Blocks: Usage in low-connectivity environments (trains, planes, rural areas)
+- Priority: Low (mobile-first design assumes connectivity)
 
 ## Test Coverage Gaps
 
-**Auth flows (webapp):**
-- What's not tested: Telegram initData signature validation, JWT minting, RLS policy enforcement
-- Files: `deal-quest-bot/functions/verify-telegram/index.ts`, `deal-quest-bot/packages/webapp/src/features/auth/useAuth.ts`
-- Risk: Security vulnerabilities in auth may go undetected. HMAC validation bugs could allow auth bypass.
-- Priority: High - Security-critical code path
+**No Unit Tests**
+- What's not tested: All business logic (agents, services, repositories)
+- Files: Entire `bot/` directory (8972 lines)
+- Risk: Refactoring breaks functionality silently, regressions not caught until prod
+- Priority: High (test strategist, trainer, scoring, crypto, knowledge)
 
-**Database operations (bot):**
-- What's not tested: Repository CRUD operations, filter operator handling, error recovery
-- Files: `deal-quest-bot/bot/storage/repositories.py`, `deal-quest-bot/bot/storage/insforge_client.py`
-- Risk: Data corruption, silent failures, query injection via filter params
-- Priority: High - Data integrity critical
+**No Integration Tests**
+- What's not tested: Pipeline execution, FSM flows, InsForge API interactions
+- Files: `bot/pipeline/runner.py`, `bot/handlers/*.py`
+- Risk: Multi-step flows break between handlers, state transitions fail, database schema changes cause runtime errors
+- Priority: High (test support flow, learn flow, lead management)
 
-**LLM integration (bot):**
-- What's not tested: OpenRouter fallback, Claude API errors, retry logic, JSON extraction
-- Files: `deal-quest-bot/bot/services/llm_router.py`
-- Risk: User-facing errors, incorrect scoring, failed prompts
-- Priority: Medium - Can be caught in staging but impacts UX
+**No End-to-End Tests**
+- What's not tested: Full user journeys (onboarding → support → casebook → leads)
+- Files: All handlers, TMA pages
+- Risk: User-facing flows break without detection, UX regressions
+- Priority: Medium (manual testing covers core flows currently)
 
-**Pipeline execution (bot):**
-- What's not tested: Sequential/parallel step execution, error propagation, context passing
-- Files: `deal-quest-bot/bot/pipeline/runner.py`, `deal-quest-bot/bot/pipeline/context.py`
-- Risk: Pipeline hangs, incorrect agent chaining, lost context
-- Priority: Medium - Core bot functionality
+**No Frontend Tests**
+- What's not tested: React components, hooks, API integrations
+- Files: `packages/webapp/src/**/*.tsx` (9217 lines)
+- Risk: UI regressions, broken API calls, state management bugs
+- Priority: Medium (TMA is read-heavy, low risk for data corruption)
 
-**Tracing system (bot):**
-- What's not tested: ContextVar propagation, span nesting, batch flushing, trace storage
-- Files: `deal-quest-bot/bot/tracing/context.py`, `deal-quest-bot/bot/tracing/collector.py`
-- Risk: Lost traces, incorrect timing, memory leaks from unbounded span stacks
-- Priority: Low - Observability not critical for MVP
+**No Load/Stress Tests**
+- What's not tested: Concurrent user behavior, rate limit handling, database performance under load
+- Files: N/A (no load testing infrastructure)
+- Risk: Unknown scaling characteristics, prod outages under traffic spikes
+- Priority: Low (trusted team environment, <50 users currently)
 
 ---
 
-*Concerns audit: 2026-02-02*
+*Concerns audit: 2026-02-04*

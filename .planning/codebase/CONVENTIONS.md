@@ -1,89 +1,69 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-04
 
 ## Naming Patterns
 
 **Python Files:**
-- snake_case for all Python files: `llm_router.py`, `config_loader.py`, `support.py`
-- Module names match purpose: `bot/handlers/support.py`, `bot/services/llm_router.py`
+- Snake_case for modules: `llm_router.py`, `config_loader.py`, `insforge_client.py`
+- Private/internal modules prefixed with underscore: `_safe_serialize`, `_sanitize`
+- Test files: Not present (no testing infrastructure detected)
 
 **TypeScript Files:**
-- PascalCase for React components: `Button.tsx`, `Card.tsx`, `AuthProvider.tsx`
-- camelCase for utilities and hooks: `useAuth.ts`, `store.ts`, `cn.ts`
-- PascalCase for pages: `Dashboard.tsx`, `Support.tsx`, `Learn.tsx`
+- PascalCase for components: `SettingsPanel.tsx`, `AuthProvider.tsx`, `LeadCard.tsx`
+- camelCase for utilities: `insforge.ts`, `cn.ts`
+- Page components named after route: `Dashboard.tsx`, `Support.tsx`, `Learn.tsx`
 
-**JavaScript Files:**
-- kebab-case for edge functions: `db-proxy.js`
-- camelCase for variables within: `corsHeaders`, `respond`
-
-**Python Functions/Methods:**
-- snake_case for all functions: `load_settings()`, `create_provider()`, `format_support_response()`
-- Private functions prefixed with underscore: `_extract_json()`, `_sanitize()`, `_safe_serialize()`
-- Async functions use `async def`: all handlers and service methods
+**Python Functions:**
+- snake_case: `load_settings()`, `create_provider()`, `get_by_telegram_id()`
+- Private functions prefixed with underscore: `_extract_json()`, `_safe_serialize()`, `_sanitize()`
+- Async functions use `async def` convention consistently
 
 **TypeScript Functions:**
-- camelCase for regular functions: `authenticateWithTelegram()`, `createAuthenticatedClient()`
-- PascalCase for React components: `Button()`, `Card()`, `Dashboard()`
+- camelCase for functions: `createAuthenticatedClient()`, `useUserSettings()`, `handleProviderChange()`
+- Custom hooks prefixed with `use`: `useUserSettings`, `useUpdateSettings`, `useDebouncedValue`
 
 **Python Variables:**
-- snake_case for variables: `telegram_id`, `user_message`, `pipeline_ctx`
-- UPPER_SNAKE_CASE for constants: `MAX_MESSAGE_LENGTH`, `MAX_RETRIES`, `RETRY_DELAYS`
-- Private variables prefixed with underscore: `_trace_id`, `_span_stack`, `_prompt_template`
-- ContextVar variables: `_trace_id: ContextVar[str | None]`
+- snake_case: `telegram_id`, `user_repo`, `trace_id`, `api_key`
+- ALL_CAPS for constants: `MAX_MESSAGE_LENGTH`, `MAX_RETRIES`, `RETRY_DELAYS`
+- Private module-level vars with underscore: `_trace_id`, `_span_stack`, `_PROMPT_PATH`
 
 **TypeScript Variables:**
-- camelCase for regular variables: `telegramId`, `isLoading`, `authClient`
-- PascalCase for React components stored in variables: `Component`
-- Short names for Zustand selectors: `useAuthStore((s) => s.telegramId)`
+- camelCase: `telegramId`, `insforgeAuth`, `botUsername`
+- UPPER_SNAKE_CASE for constants: `INSFORGE_URL`, `INSFORGE_ANON_KEY`, `OPENROUTER_MODELS`
 
-**Python Classes:**
-- PascalCase with descriptive suffixes:
-  - `BaseAgent`, `StrategistAgent`, `TrainerAgent` - Agent classes
-  - `ClaudeProvider`, `OpenRouterProvider` - Provider classes
-  - `CasebookService`, `EngagementService`, `KnowledgeService` - Service classes
-  - `UserRepo`, `LeadRegistryRepo`, `SupportSessionRepo` - Repository classes
-  - `UserModel`, `AttemptModel`, `PipelineTraceModel` - Model classes
-  - `TraceContext`, `PipelineContext` - Context classes
-  - `PipelineRunner` - Orchestration classes
-  - `Settings` - Configuration classes
+**Python Types/Classes:**
+- PascalCase for classes: `UserModel`, `TraceContext`, `BaseAgent`, `LLMProvider`
+- Pydantic models suffixed with `Model`: `UserModel`, `AttemptModel`, `PipelineTraceModel`
+- Repo classes suffixed with `Repo`: `UserRepo`, `AttemptRepo`, `TraceRepo`
+- Abstract base classes use ABC pattern: `BaseAgent`, `LLMProvider`
 
-**TypeScript Types/Interfaces:**
-- PascalCase for interfaces: `AuthState`, `ButtonProps`, `CardProps`
-- Suffix `Row` for database types: `UserRow`, `AttemptRow`, `LeadRegistryRow`
-- Suffix `Props` for component props: `ButtonProps`, `CardProps`
-- Type aliases use PascalCase: `TrackStatus`, `AttemptMode`, `LLMProvider`
+**TypeScript Types:**
+- PascalCase for interfaces/types: `ButtonProps`, `InsForgeClient`, `TrainScenario`
+- Props interfaces suffixed with `Props`: `ButtonProps`, `CardProps`, `SkeletonProps`
 
 ## Code Style
 
 **Python Formatting:**
-- No explicit formatter config detected (no `black`, `ruff format`, `yapf`)
-- Inferred from codebase:
-  - 4 spaces indentation (standard Python)
-  - Line length: ~100-120 characters (soft limit, not enforced)
-  - Double quotes for docstrings (standard)
-  - Mixed single/double quotes for regular strings (no enforced preference)
-  - Blank line between imports and code
-  - Two blank lines between top-level definitions
-
-**TypeScript Formatting:**
-- No Prettier config detected
-- Inferred from codebase:
-  - 2 spaces indentation
-  - Single quotes for imports and strings
-  - Trailing commas in objects and arrays
-  - Semicolons used consistently
-  - Arrow functions preferred: `const Button = forwardRef<...>(...)`
+- No formatter tool detected (no `.black`, `.ruff`, or `pyproject.toml` with formatter config)
+- Manual formatting observed:
+  - 4-space indentation
+  - Line length ~100-120 characters (not strictly enforced)
+  - Type hints used extensively: `str | None`, `dict[str, Any]`, `list[dict[str, Any]]`
+  - Modern union syntax: `str | None` instead of `Optional[str]`
 
 **Python Linting:**
-- No explicit linter config detected
-- Type checking via Pydantic and type hints
-- Modern Python patterns: `from __future__ import annotations` for forward references
+- No linter config detected (no `.flake8`, `.pylintrc`, or `ruff.toml`)
+
+**TypeScript Formatting:**
+- No explicit formatter config (no `.prettierrc`, `eslint.config.js`)
+- Vite + TypeScript strict mode (`strict: true` in `tsconfig.json`)
+- 2-space indentation
+- Single quotes preferred for strings
+- Semicolons omitted
 
 **TypeScript Linting:**
-- No ESLint config detected in project root
-- TypeScript compiler flags provide strict type checking via `tsconfig.json`:
-  - `strict: true`
+- TypeScript strict mode enabled:
   - `noUnusedLocals: true`
   - `noUnusedParameters: true`
   - `noFallthroughCasesInSwitch: true`
@@ -92,174 +72,167 @@
 ## Import Organization
 
 **Python Order:**
-1. Future imports: `from __future__ import annotations`
-2. Standard library: `import asyncio`, `import logging`, `from datetime import datetime`
-3. Third-party: `from aiogram import Bot, F, Router`, `from pydantic import BaseModel`
-4. Local imports (absolute): `from bot.agents.registry import AgentRegistry`
+1. `from __future__ import annotations` (always first)
+2. Standard library imports (alphabetically): `asyncio`, `json`, `logging`, `time`, `uuid`
+3. Third-party imports: `httpx`, `aiogram`, `pydantic`
+4. Local imports: `from bot.agents import`, `from bot.services import`
 
 **Python Path Style:**
-- Absolute imports from project root: `from bot.services.llm_router import create_provider`
-- Grouped by category: `from aiogram.types import (CallbackQuery, InlineKeyboardButton, ...)`
+- Absolute imports from `bot.` package: `from bot.agents.base import BaseAgent`
+- No relative imports used
 
 **TypeScript Order:**
-1. React imports (if needed): `import { forwardRef } from 'react'`
-2. Third-party: `import { create } from 'zustand'`, `import { clsx } from 'clsx'`
-3. Path alias imports: `import { Card } from '@/shared/ui'`
-4. Relative imports: `import { cn } from '@/shared/lib/cn'`
+1. External dependencies: `react`, `react-router`, `@telegram-apps/sdk-react`
+2. Internal UI components: `@/shared/ui`, `@/features/*/components`
+3. Hooks: `@/features/*/hooks`
+4. Types: `@/types`, `@deal-quest/shared`
+5. Utilities: `@/lib/*`
 
 **TypeScript Path Aliases:**
-- `@/*` maps to `./src/*` in webapp package (`packages/webapp/tsconfig.json`)
-- Workspace dependencies: `@deal-quest/shared` via `workspace:*`
-- No path aliases in shared package (relative imports only)
+- `@/*` maps to `./src/*`
+- `@deal-quest/shared` maps to `./src/types/index.ts`
+- Path aliases configured in `tsconfig.json` and resolved via `vite-tsconfig-paths`
 
 ## Error Handling
 
 **Python Patterns:**
-- Try-except blocks with specific exception types first, generic `Exception` last
-- Log errors before handling: `logger.error("Agent %s failed: %s", step.agent, e)`
-- Return error states in data models: `AgentOutput(success=False, error=str(e))`
-- HTTP errors caught specifically: `except httpx.HTTPStatusError as e:`
-- Retry logic with exponential backoff:
-```python
-MAX_RETRIES = 3
-RETRY_DELAYS = [1, 3, 8]
-for attempt in range(MAX_RETRIES):
-    try:
-        # ... operation
-    except httpx.HTTPStatusError as e:
-        if attempt < MAX_RETRIES - 1:
-            await asyncio.sleep(RETRY_DELAYS[attempt])
-        else:
-            raise
-```
-- Fallback values for JSON parsing: `return {"raw_response": text}` when parsing fails
-- Context managers for cleanup: `async with TraceContext(...): ...`
+- Try/except blocks wrap external API calls (LLM, database, HTTP)
+- Specific exceptions caught first, broad exceptions as fallback
+- Logging at error level: `logger.error("message: %s", e)`
+- Errors propagated upward, not silently swallowed
+- Custom exceptions: `TranscriptionError` in `bot/services/transcription.py`
+- Return `None` for not-found cases (repository methods)
+- Return `AgentOutput(success=False, error=str(e))` for agent failures
+
+**Python Retry Logic:**
+- Exponential backoff in `llm_router.py`: `MAX_RETRIES = 3`, `RETRY_DELAYS = [1, 3, 8]`
+- Retry on 429, 500, 502, 503 status codes
+- Async sleep: `await asyncio.sleep(RETRY_DELAYS[attempt])`
 
 **TypeScript Patterns:**
-- Promise-based async/await (no explicit try-catch in UI components)
-- Error states in Zustand stores: `error: string | null`
-- InsForge SDK returns `{ data, error }` tuples (no exceptions thrown)
+- Error boundaries not detected (no `ErrorBoundary` component)
+- React Query handles API errors via `isError` state
+- Client-side validation via TypeScript strict mode
+- Throws for uninitialized client: `throw new Error("InsForge client not authenticated")`
+- Environment variable validation at module load:
+```typescript
+if (!INSFORGE_URL) {
+  throw new Error('VITE_INSFORGE_URL environment variable is not set');
+}
+```
 
 ## Logging
 
 **Python Framework:**
 - Standard library `logging` module
 - Logger per module: `logger = logging.getLogger(__name__)`
+- Centralized setup in `bot/main.py`:
+```python
+logging.basicConfig(
+    level=getattr(logging, level.upper(), logging.INFO),
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    stream=sys.stdout,
+)
+```
 
 **Python Patterns:**
-- Info level for milestones: `logger.info("Running pipeline: %s (%d steps)", config.name, len(config.steps))`
-- Error level for failures: `logger.error("Agent %s failed: %s", step.agent, e)`
-- Warning level for missing resources: `logger.warning("Strategist prompt not found: %s", _PROMPT_PATH)`
-- Format: %-style string formatting: `logger.info("New lead %s created for user %s", saved_lead_id, tg_id)`
+- Info level for flow: `logger.info("Bot initialized. Starting polling...")`
+- Warning for degraded mode: `logger.warning("No OPENROUTER_API_KEY set — engagement features disabled")`
+- Error for failures: `logger.error("Claude API error: %s", e)`
+- Structured messages with trace IDs: `logger.info("Trace started: trace_id=%s pipeline=%s", trace_id, pipeline_name)`
 
-**TypeScript Logging:**
-- No structured logging framework detected
-- Console methods used directly (not observed in reviewed files)
+**TypeScript Framework:**
+- `console.log` / `console.error` (no formal logging framework detected)
+- Minimal logging observed
 
 ## Comments
 
 **Python When to Comment:**
-- Module-level docstrings for all modules: `"""Handler for /support — deal analysis with strategist agent pipeline."""`
-- Class docstrings: `"""Abstract base agent."""`
-- Method docstrings: `"""Execute the agent's logic."""`
-- Inline comments for non-obvious logic: `# Try direct parse`, `# Strip markdown code fences`
-- Context comments for complex sections: `# Wall-clock timestamps for DB storage`
-- Algorithm explanations: `# Group steps by execution mode`
+- Module docstrings: Triple-quoted string at top of every file
+- Function docstrings: Not consistently used (some functions have docstrings, many don't)
+- Inline comments for non-obvious logic: Rare, code mostly self-documenting
+- Type hints used instead of comments for parameter/return documentation
 
-**TypeScript When to Comment:**
-- JSDoc-style block comments for interfaces and complex types
-- Field documentation in interfaces: `/** JWT from verify-telegram Edge Function */`
-- Important behavioral notes: `// Start as loading -- auth runs on mount`
-- File-level explanations (see `packages/shared/src/tables.ts`)
+**Python Docstring Style:**
+- Simple one-liners: `"""Repository classes for database operations."""`
+- No structured docstring format (not Google/NumPy/Sphinx style)
+- Decorators documented in comments: `# @traced_span decorator comment`
 
-**Python JSDoc/Docstrings:**
-- Triple-quoted strings
-- Single-line: `"""Execute the agent's logic."""`
-- Multi-line with usage examples:
-```python
-"""Async context manager for pipeline tracing.
-
-Usage mirrors ProgressUpdater pattern:
-
-    async with TraceContext("learn", telegram_id=123, user_id=1):
-        await runner.run(pipeline_config, ctx)
-
-Automatically captures:
-- Pipeline execution timing (both wall-clock and perf_counter)
-- Success/failure status
-- Trace ID for span correlation
-"""
+**TypeScript Comments:**
+- JSDoc for component-level docs:
+```typescript
+/**
+ * Settings panel for the Profile page.
+ *
+ * Displays:
+ * - Provider selector (OpenRouter vs Claude API)
+ * - OpenRouter model selector
+ * - API key status with deep-link to bot
+ */
 ```
-
-**TypeScript JSDoc/TSDoc:**
-- JSDoc comments for type documentation: `/** Telegram user ID from initData */`
-- Block comments for file-level context (convention notes, important warnings)
+- Inline comments for configuration: `// Path aliases`, `// Bundler mode`
+- Section separators in components: `// ---------------------------------------------------------------------------`
 
 ## Function Design
 
 **Python Size:**
-- Handler functions: 50-200 lines (orchestration logic with multiple phases)
-- Service functions: 20-80 lines (focused single responsibility)
-- Helper functions: 10-30 lines (utilities like `_sanitize()`, `_extract_json()`)
-- Agent run methods: 20-60 lines (LLM interaction + error handling)
+- Agent methods: 30-60 lines
+- Handler functions: 100-200 lines (long, orchestration-heavy)
+- Utility functions: 5-20 lines
+- No strict size limit enforced
 
 **Python Parameters:**
-- Type hints required: `async def run(self, input_data: AgentInput, pipeline_ctx: PipelineContext) -> AgentOutput:`
-- Return type hints required
-- Optional parameters use union type: `image_b64: str | None = None`
-- Default values for optional params: `max_size: int = 50000`
-- Pydantic models for complex params: `input_data: AgentInput`
-
-**TypeScript Parameters:**
-- Type annotations required (strict mode enabled)
-- Optional parameters use `?`: `isLoading?: boolean`
-- Default values in destructuring: `padding = 'md'`
-- Props spread pattern: `...props`
-- Destructuring in function signature: `({ className, variant, size, ...props })`
+- Keyword-only args after `*`: `async def complete(self, system_prompt: str, user_message: str, *, image_b64: str | None = None)`
+- Dependency injection via function params (no globals)
+- Type hints on all parameters
+- Optional parameters with defaults: `model: str = "claude-sonnet-4-20250514"`
 
 **Python Return Values:**
-- Explicit return type hints: `-> dict[str, Any]`, `-> AgentOutput`, `-> bool`
-- Pydantic models for structured returns: `AgentOutput(success=True, data=result)`
-- Tuples for multiple values: `tuple[int, int, int]` in `format_xp_level()`
-- Async functions return `Coroutine[Any, Any, ReturnType]` (implicit)
+- Explicit return types in signatures: `-> UserModel | None`, `-> dict[str, Any]`
+- `None` for not-found or error cases
+- Pydantic models for structured data
+- Async functions return coroutines: `async def get(...) -> Model | None`
+
+**TypeScript Size:**
+- Components: 50-150 lines
+- Hooks: 10-30 lines
+- Utilities: 10-50 lines
+
+**TypeScript Parameters:**
+- Object destructuring for props: `{ className, variant, size, isLoading, disabled, children, ...props }`
+- Type inference from generics: `forwardRef<HTMLButtonElement, ButtonProps>`
+- Optional parameters with `?`: `isLoading?: boolean`
 
 **TypeScript Return Values:**
-- Explicit return types for functions: `: Promise<AuthResult>`
-- React components return JSX.Element (implicit)
-- Void for side-effect functions (implicit)
-- Zustand store methods use `set()` for state updates
+- Explicit return types for exported functions: `export function createAuthenticatedClient(_jwt: string): InsForgeClient`
+- Hooks return tuples or objects: `const { data, isLoading } = useQuery(...)`
+- Components return JSX: `export default function App() { return <div>...</div>; }`
 
 ## Module Design
 
 **Python Exports:**
-- Classes and functions exported by module-level definition (no explicit export)
-- `__init__.py` files expose public API:
+- No explicit `__all__` declarations
+- Public API defined by non-underscore names
+- Package-level exports via `__init__.py`:
 ```python
+# bot/tracing/__init__.py
+from bot.tracing.collector import get_collector, init_collector
 from bot.tracing.context import TraceContext, traced_span
-from bot.tracing.collector import init_collector, get_collector
 ```
-- Private functions (underscore prefix) not imported in `__init__.py`
-
-**TypeScript Exports:**
-- Named exports for components: `export const Button = forwardRef<...>(...)`
-- Named exports for utilities: `export function cn(...inputs: ClassValue[]) { ... }`
-- Type exports: `export type { UserRow, AttemptRow }`
-- Default exports for pages: `export default function Dashboard() { ... }`
 
 **Python Barrel Files:**
-- Used in package `__init__.py`: `bot/tracing/__init__.py`, `bot/agents/__init__.py`
-- Re-exports provide clean public API
+- Used sparingly: `bot/tracing/__init__.py`, `bot/agents/__init__.py`
+- Most imports are direct: `from bot.agents.strategist import StrategistAgent`
+
+**TypeScript Exports:**
+- Named exports preferred: `export { Button, type ButtonProps }`
+- Default exports for page components: `export default function Dashboard()`
+- Barrel files used extensively: `@/shared/ui/index.ts` exports all UI components
 
 **TypeScript Barrel Files:**
-- Used for UI components: `packages/webapp/src/shared/ui/index.ts`
-- Used for shared types: `packages/shared/src/index.ts` re-exports from multiple files
-- Pattern:
-```typescript
-export type { UserRow, AttemptRow } from './tables';
-export type { TrackStatus, AttemptMode } from './enums';
-export { XP_PER_LEVEL, RANK_TITLES } from './constants';
-```
+- `src/shared/ui/index.ts`: Centralized UI component exports
+- Feature-level barrels not used (direct imports from feature directories)
 
 ---
 
-*Convention analysis: 2026-02-02*
+*Convention analysis: 2026-02-04*

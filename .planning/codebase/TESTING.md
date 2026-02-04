@@ -1,397 +1,354 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-04
 
 ## Test Framework
 
-**Python:**
-- No test framework detected in dependencies
-- `requirements.txt` does not include pytest, unittest, or other testing frameworks
-- No test files found in `bot/` directory structure
+**Python Runner:**
+- None detected
+- No `pytest.ini`, `setup.cfg`, or test files found in `bot/` or root directory
+- No test dependencies in `requirements.txt`
 
-**TypeScript:**
-- No test framework detected in package.json
-- No Vitest, Jest, or Mocha configuration files found
-- No test files (*.test.ts, *.spec.ts) found in `packages/webapp/src/` or `packages/shared/src/`
+**Python Status:**
+- **Zero test coverage** — no test infrastructure present
+
+**TypeScript Runner:**
+- Framework: Not configured for webapp (`packages/webapp/`)
+- InsForge backend has tests: Vitest detected in `insforge/insforge/backend/`
+  - Config: `insforge/insforge/backend/tests/unit/*.test.ts`
+  - Vitest config: `insforge/insforge/frontend/vitest.config.ts`
+- Webapp has no test files or config
+
+**TypeScript Status:**
+- **Webapp: Zero test coverage** — no test infrastructure
+- InsForge (external dependency) has unit tests, but not relevant to this codebase
 
 **Run Commands:**
 ```bash
-# No test commands configured
-# Neither package.json nor requirements.txt include testing scripts
+# Python - Not applicable (no tests)
+
+# TypeScript - Not applicable (no tests configured for webapp)
 ```
 
 ## Test File Organization
 
 **Location:**
-- No test files present in codebase
+- Not applicable — no test files exist
 
-**Expected Future Organization:**
-- Python: tests could follow pytest convention with `tests/` directory or `test_*.py` files co-located
-- TypeScript: tests would likely use `*.test.ts` or `*.spec.ts` co-located with source files
+**Naming:**
+- Not applicable
 
 **Structure:**
-- Not applicable (no tests present)
+- Not applicable
 
 ## Test Structure
 
-**Suite Organization:**
-Not applicable - no tests present in codebase.
+**Python Suite Organization:**
+Not applicable — no tests exist.
 
-**Expected Pattern (Python):**
+**Expected pattern** (based on Python best practices):
 ```python
-# Future pytest pattern
+# If tests existed, they would follow:
+# bot/tests/test_agents.py
+# bot/tests/test_storage.py
+
 import pytest
-from bot.services.llm_router import create_provider
+from bot.agents.base import AgentInput, AgentOutput
+from bot.agents.strategist import StrategistAgent
 
-@pytest.fixture
-def mock_api_key():
-    return "test_key_12345"
+@pytest.mark.asyncio
+async def test_strategist_agent_success():
+    # Arrange
+    agent = StrategistAgent()
+    input_data = AgentInput(user_message="test")
 
-def test_create_provider_claude(mock_api_key):
-    provider = create_provider("claude", mock_api_key, "claude-sonnet-4")
-    assert provider is not None
-    assert provider.name == "claude"
+    # Act
+    result = await agent.run(input_data, mock_context)
+
+    # Assert
+    assert result.success is True
 ```
 
-**Expected Pattern (TypeScript):**
-```typescript
-// Future Vitest pattern
-import { describe, it, expect } from 'vitest';
-import { cn } from '@/shared/lib/cn';
+**TypeScript Suite Organization:**
+Not applicable — no tests exist.
 
-describe('cn utility', () => {
-  it('merges class names correctly', () => {
-    const result = cn('base', 'override');
-    expect(result).toBe('base override');
+**Expected pattern** (based on InsForge reference):
+```typescript
+// If tests existed, they would follow Vitest pattern:
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { Button } from '@/shared/ui';
+
+describe('Button', () => {
+  it('renders children correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 });
 ```
 
 ## Mocking
 
-**Framework:** Not applicable - no testing framework present
+**Python Framework:**
+Not applicable — no mocking infrastructure detected.
 
-**Expected Patterns:**
+**Expected approach** (based on codebase architecture):
+- Mock external dependencies: InsForge client, LLM providers, Telegram Bot API
+- Mock repositories for handler tests
+- Use `pytest-asyncio` for async test support
+- Fixture factories for Pydantic models
 
-Python (pytest):
-```python
-# Mock httpx for LLM API calls
-@pytest.mark.asyncio
-async def test_llm_router_retry_logic(mocker):
-    mock_post = mocker.patch('httpx.AsyncClient.post')
-    mock_post.side_effect = [
-        httpx.HTTPStatusError("500", request=..., response=...),
-        httpx.Response(200, json={"content": [{"text": "success"}]})
-    ]
+**TypeScript Framework:**
+Not applicable — no mocking detected.
 
-    provider = ClaudeProvider(api_key="test", model="claude-sonnet-4")
-    result = await provider.complete("system", "user")
-
-    assert mock_post.call_count == 2
-    assert result["analysis"] is not None
-```
-
-TypeScript (Vitest):
-```typescript
-// Mock InsForge SDK calls
-import { vi } from 'vitest';
-
-vi.mock('@insforge/sdk', () => ({
-  createClient: vi.fn(() => ({
-    database: {
-      from: vi.fn(() => ({
-        select: vi.fn().mockResolvedValue({ data: [], error: null }),
-      })),
-    },
-  })),
-}));
-```
-
-**What to Mock:**
-- HTTP calls (httpx in Python, fetch/InsForge SDK in TypeScript)
-- LLM API interactions (Claude, OpenRouter)
-- Database operations (InsForge client)
-- File system operations (reading prompts, scenarios)
-- Telegram Bot API calls (aiogram)
-- External services (AssemblyAI transcription)
-
-**What NOT to Mock:**
-- Pydantic model validation
-- Pure utility functions (formatting, calculations)
-- Type definitions and constants
-- Configuration parsing (test with real Pydantic Settings)
+**Expected approach** (based on React best practices):
+- Mock API calls with Mock Service Worker (MSW) or Vitest mocks
+- Mock Telegram SDK: `@telegram-apps/sdk-react`
+- Mock InsForge client responses
+- Mock React Query for data fetching tests
 
 ## Fixtures and Factories
 
-**Test Data:**
-Not applicable - no tests present.
+**Python Test Data:**
+Not applicable — no fixtures exist.
 
-**Expected Pattern (Python):**
+**Expected pattern:**
 ```python
-# bot/tests/fixtures.py
+# bot/tests/fixtures.py (if it existed)
 import pytest
-from bot.storage.models import UserModel, AttemptModel
+from bot.storage.models import UserModel
 
 @pytest.fixture
 def sample_user():
     return UserModel(
-        telegram_id=123456789,
+        telegram_id=12345,
         username="testuser",
         provider="openrouter",
-        total_xp=500,
-        current_level=3
-    )
-
-@pytest.fixture
-def sample_attempt():
-    return AttemptModel(
-        telegram_id=123456789,
-        scenario_id="sales_101",
-        mode="practice",
-        score=75,
-        xp_earned=50
+        total_xp=1000,
+        current_level=5,
     )
 ```
 
-**Expected Pattern (TypeScript):**
+**TypeScript Test Data:**
+Not applicable — no test data factories exist.
+
+**Expected pattern:**
 ```typescript
-// packages/webapp/src/test/factories.ts
-import type { UserRow } from '@deal-quest/shared';
-
-export function createMockUser(overrides?: Partial<UserRow>): UserRow {
-  return {
-    id: 1,
-    telegram_id: 123456789,
-    username: 'testuser',
-    first_name: 'Test',
-    provider: 'openrouter',
-    encrypted_api_key: null,
-    openrouter_model: 'openai/gpt-oss-120b',
-    total_xp: 500,
-    current_level: 3,
-    streak_days: 5,
-    last_active_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
+// src/test/factories.ts (if it existed)
+export const createMockUser = (overrides = {}) => ({
+  id: 1,
+  telegram_id: 12345,
+  username: 'testuser',
+  provider: 'openrouter',
+  total_xp: 1000,
+  current_level: 5,
+  ...overrides,
+});
 ```
-
-**Location:**
-- Would be in `bot/tests/fixtures.py` for Python
-- Would be in `packages/webapp/src/test/factories.ts` for TypeScript
 
 ## Coverage
 
-**Requirements:** Not enforced - no coverage tooling configured
+**Python Requirements:**
+None enforced — no coverage tooling detected.
 
-**Expected Setup (Python):**
-```bash
-# Install pytest-cov
-pip install pytest pytest-cov
-
-# Run with coverage
-pytest --cov=bot --cov-report=html --cov-report=term
-
-# View coverage report
-open htmlcov/index.html
-```
-
-**Expected Setup (TypeScript):**
-```bash
-# Vitest includes coverage via v8 or istanbul
-npm install -D vitest @vitest/coverage-v8
-
-# Run with coverage
-npm run test:coverage
-
-# View report
-open coverage/index.html
-```
+**TypeScript Requirements:**
+None enforced — no coverage tooling detected.
 
 **View Coverage:**
-Not applicable - no coverage configuration present
+```bash
+# Not applicable (no tests or coverage tools configured)
+```
 
 ## Test Types
 
 **Unit Tests:**
-- Not present in codebase
-- Would test:
-  - Python: Individual agent logic (`bot/agents/strategist.py`, `bot/agents/trainer.py`)
-  - Python: Service layer (`bot/services/llm_router.py`, `bot/services/scoring.py`)
-  - Python: Utilities (`bot/utils.py` formatting functions)
-  - TypeScript: UI components (`packages/webapp/src/shared/ui/Button.tsx`)
-  - TypeScript: Hooks (`packages/webapp/src/features/auth/useAuth.ts`)
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Agent logic (`bot/agents/`)
+  - Utility functions (`bot/utils.py`)
+  - Data transformations (`bot/services/scoring.py`)
+  - UI components (`packages/webapp/src/shared/ui/`)
 
 **Integration Tests:**
-- Not present in codebase
-- Would test:
-  - Python: Pipeline execution end-to-end (`bot/pipeline/runner.py`)
-  - Python: InsForge repository operations (`bot/storage/repositories.py`)
-  - Python: Telegram handler flows (`bot/handlers/support.py`, `bot/handlers/learn.py`)
-  - TypeScript: Page-level interactions with mocked backend
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Pipeline execution (`bot/pipeline/runner.py`)
+  - Repository operations with real database
+  - LLM provider calls with mocked HTTP responses
+  - Full handler flows (command → repository → response)
 
 **E2E Tests:**
-- Not present in codebase
-- Would test:
-  - Full bot conversation flows via Telegram API
-  - TMA user journeys (login → support → save lead)
-  - Edge function integration
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Full bot conversation flows (aiogram testing utilities)
+  - Telegram Mini App user journeys (Playwright or Cypress)
 
 ## Common Patterns
 
-**Async Testing (Python):**
-Expected pattern using pytest-asyncio:
+**Python Async Testing:**
+Not implemented.
+
+**Expected pattern:**
 ```python
 import pytest
 
 @pytest.mark.asyncio
-async def test_pipeline_runner_sequential():
-    """Test sequential step execution in pipeline."""
-    registry = AgentRegistry()
-    runner = PipelineRunner(registry)
+async def test_user_repo_get_by_telegram_id(insforge_client_mock):
+    # Arrange
+    repo = UserRepo(insforge_client_mock)
 
-    config = load_pipeline("support")
-    ctx = PipelineContext(
-        user_message="Help with deal",
-        llm=mock_provider,
-        knowledge_base="Test KB"
-    )
+    # Act
+    user = await repo.get_by_telegram_id(12345)
 
-    results = await runner.run(config, ctx)
-    assert results["strategist"].success is True
+    # Assert
+    assert user is not None
+    assert user.telegram_id == 12345
 ```
 
-**Async Testing (TypeScript):**
-Expected pattern using Vitest:
-```typescript
-import { describe, it, expect, vi } from 'vitest';
+**Python Error Testing:**
+Not implemented.
 
-describe('authenticateWithTelegram', () => {
-  it('successfully authenticates with valid initData', async () => {
-    vi.mock('@telegram-apps/sdk-react', () => ({
-      retrieveLaunchParams: () => ({ initDataRaw: 'mock_data' }),
-    }));
-
-    const result = await authenticateWithTelegram();
-
-    expect(result.jwt).toBeDefined();
-    expect(result.telegramId).toBeGreaterThan(0);
-  });
-});
-```
-
-**Error Testing (Python):**
-Expected pattern:
+**Expected pattern:**
 ```python
-def test_llm_router_invalid_provider():
-    """Test error handling for unsupported provider."""
-    with pytest.raises(ValueError, match="Unsupported provider"):
-        create_provider("invalid_provider", "key", "model")
+import pytest
 
 @pytest.mark.asyncio
-async def test_agent_handles_llm_failure():
-    """Test agent gracefully handles LLM errors."""
-    agent = StrategistAgent()
-    mock_llm = Mock()
-    mock_llm.complete.side_effect = Exception("API Error")
+async def test_llm_provider_handles_rate_limit():
+    # Arrange
+    provider = ClaudeProvider(api_key="test")
 
-    input_data = AgentInput(user_message="test")
-    ctx = PipelineContext(llm=mock_llm)
+    # Act & Assert
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        await provider.complete("system", "user")
 
-    output = await agent.run(input_data, ctx)
-    assert output.success is False
-    assert "API Error" in output.error
+    assert exc_info.value.response.status_code == 429
 ```
 
-**Error Testing (TypeScript):**
-Expected pattern:
-```typescript
-describe('Button', () => {
-  it('disables button when isLoading is true', () => {
-    const { getByRole } = render(<Button isLoading>Click Me</Button>);
-    const button = getByRole('button');
+**TypeScript Async Testing:**
+Not implemented.
 
-    expect(button).toBeDisabled();
+**Expected pattern:**
+```typescript
+import { describe, it, expect } from 'vitest';
+import { waitFor } from '@testing-library/react';
+
+describe('useUserSettings', () => {
+  it('fetches user settings', async () => {
+    const { result } = renderHook(() => useUserSettings());
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeDefined();
   });
 });
 ```
 
-## Test Coverage Gaps
+**TypeScript Error Testing:**
+Not implemented.
 
-**Untested Areas (as of 2026-02-02):**
+**Expected pattern:**
+```typescript
+import { describe, it, expect } from 'vitest';
 
-**Python Bot (`bot/`):**
-- All handler logic (`bot/handlers/*`)
-- All agent implementations (`bot/agents/*`)
-- All service layer (`bot/services/*`)
-- Pipeline orchestration (`bot/pipeline/runner.py`)
-- Tracing system (`bot/tracing/*`)
-- Repository layer (`bot/storage/repositories.py`)
-- Utilities (`bot/utils.py`)
+describe('getInsforge', () => {
+  it('throws when client not authenticated', () => {
+    expect(() => getInsforge()).toThrow(
+      'InsForge client not authenticated'
+    );
+  });
+});
+```
 
-**TypeScript Webapp (`packages/webapp/`):**
-- All React components (`src/shared/ui/*`, `src/pages/*`)
-- Authentication logic (`src/features/auth/useAuth.ts`)
-- State management (`src/features/auth/store.ts`)
-- Routing (`src/app/Router.tsx`)
+## Testing Gaps
 
-**TypeScript Shared (`packages/shared/`):**
-- Type definitions (types don't need runtime tests, but validation logic would)
-- Constants and calculations (`src/constants.ts`)
+**Critical Untested Areas:**
 
-**Edge Functions (`functions/`):**
-- Database proxy (`db-proxy.js`)
-- Telegram verification (`verify-telegram/`)
+**Python Bot:**
+- `bot/agents/*` — Zero coverage on AI agent logic
+- `bot/pipeline/runner.py` — Pipeline execution not tested
+- `bot/storage/repositories.py` — Database operations not tested (11 repo classes)
+- `bot/handlers/*` — Command handlers not tested (9 handler modules)
+- `bot/services/llm_router.py` — LLM provider logic not tested
+- `bot/tracing/*` — Observability system not tested (spans, traces, collector)
 
-**Priority for Testing:**
-1. High: Core bot logic (agents, handlers, services) - this is production code handling user interactions
-2. High: Pipeline execution and tracing - critical for observability
-3. Medium: Repository layer - data integrity matters
-4. Medium: UI components - user-facing but easier to test manually
-5. Low: Utilities and formatters - simple, low-risk code
+**TypeScript Webapp:**
+- `packages/webapp/src/features/*` — Zero coverage on all features
+- `packages/webapp/src/shared/ui/*` — UI components not tested (8 components)
+- `packages/webapp/src/lib/insforge.ts` — Client initialization not tested
+- `packages/webapp/src/app/providers/*` — Auth and Query providers not tested
 
-## Recommendations
+**Risk Assessment:**
+- High risk: Agent pipeline execution (complex async flows, external API dependencies)
+- High risk: Database operations (data integrity, error handling)
+- Medium risk: UI components (user-facing, but type-safe)
+- Medium risk: LLM provider abstraction (retry logic, error handling)
 
-**Set Up Testing Infrastructure:**
+**Recommended First Tests:**
+1. Python: Repository unit tests with mocked InsForge client
+2. Python: Agent unit tests with mocked LLM responses
+3. TypeScript: UI component snapshot/render tests
+4. TypeScript: Hook tests with mocked API responses
 
-Python:
-```bash
-# Add to requirements.txt
+## Testing Infrastructure Setup (Recommended)
+
+**Python:**
+```toml
+# pyproject.toml (to be created)
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["bot/tests"]
+python_files = "test_*.py"
+
+[tool.coverage.run]
+source = ["bot"]
+omit = ["bot/tests/*", "bot/.venv/*"]
+```
+
+**Python Dependencies:**
+```
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
 pytest-mock>=3.12.0
-httpx>=0.27.0  # Already present, needed for test fixtures
+httpx-mock>=0.15.0
 ```
 
-TypeScript:
+**TypeScript:**
+```typescript
+// vitest.config.ts (to be created)
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react-swc';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [react(), tsconfigPaths()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
+});
+```
+
+**TypeScript Dependencies:**
 ```json
-// Add to packages/webapp/package.json
 {
   "devDependencies": {
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/user-event": "^14.5.0",
-    "jsdom": "^25.0.0"
-  },
-  "scripts": {
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "vitest": "^1.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jsdom": "^23.0.0",
+    "msw": "^2.0.0"
   }
 }
 ```
 
-**Testing Strategy:**
-1. Start with unit tests for critical path (agent logic, LLM routing)
-2. Add integration tests for pipelines
-3. Mock external dependencies (Telegram API, LLM APIs, InsForge)
-4. Use fixtures for common test data (users, attempts, scenarios)
-5. Aim for 70%+ coverage on business logic, lower on UI
-
 ---
 
-*Testing analysis: 2026-02-02*
+*Testing analysis: 2026-02-04*
