@@ -134,14 +134,19 @@ Recent decisions affecting current work:
 - [01-02]: If InsForge doesn't support current_setting('request.jwt.claims'), RLS authenticated policies may need adjustment
 - [deploy]: Railway deployment pending verification -- inlined shared types should fix build
 
+### Pending Todos (quick tasks)
+
+- [quick-002]: Run migration `migrations/002_lead_person_company_fields.sql` on InsForge database
+
 ## Quick Tasks
 
 | Task | Status | Summary |
 |------|--------|---------|
 | 001-bot-button-audit | Task 1/3 done | 87-trigger test matrix generated, awaiting manual testing (Task 2) |
+| 002-lead-company-enrichment | Complete (3/3) | Structured prospect info (first/last name, geography) with enriched web research |
 
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 07-02-PLAN.md (Deep link routing via startParam). Phase 7 complete (2/2 plans done). All 18 plans across 7 phases complete.
+Stopped at: Completed quick-002 (Lead & Company Data Enrichment). All 3 tasks done.
 Resume file: None
