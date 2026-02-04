@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-04)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-9 complete, Phase 10 in progress (3/4).
+**Current focus:** Milestone v1.1 — Quick & Medium Wins. Phases 8-10 complete, Phase 11 next.
 
 ## Previous Milestone (v1.0)
 
@@ -16,19 +16,19 @@ Total execution time: 74m
 ## Current Position
 
 Milestone: v1.1 — Quick & Medium Wins
-Phase: 10 of 8-11 — IN PROGRESS (Error Handling & UX)
-Plans completed: 25/26 total (3/4 in Phase 10)
-Status: Executing Phase 10 Wave 2
-Last activity: 2026-02-04 -- Completed 10-03-PLAN.md
+Phase: 10 of 8-11 — COMPLETE (Error Handling & UX)
+Plans completed: 26/26 total (4/4 in Phase 10)
+Status: Phase 10 complete
+Last activity: 2026-02-04 -- Completed 10-02-PLAN.md
 
-Progress: [████████████░░░░░░░] 12/19 v1.1 requirements (63%)
+Progress: [█████████████░░░░░░] 13/19 v1.1 requirements (68%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 26
 - Average duration: 3.7m
-- Total execution time: 93m
+- Total execution time: 98m
 
 **By Phase:**
 
@@ -43,10 +43,10 @@ Progress: [████████████░░░░░░░] 12/19 v1.1
 | 7. Bot Integration | 2/2 | 8m | 4m |
 | 8. Lead Management | 2/2 | 5m | 2.5m |
 | 9. Training Experience | 2/2 | 5m | 2.5m |
-| 10. Error Handling & UX | 3/4 | 9m | 3m |
+| 10. Error Handling & UX | 4/4 | 14m | 3.5m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 2m, 2m, 2m, 5m
+- Last 5 plans: 2m, 2m, 2m, 5m, 5m
 - Trend: stable (fast)
 
 *Updated after each plan completion*
@@ -157,6 +157,10 @@ Recent decisions affecting current work:
 - [10-03]: Retry action on status update and note save, not on settings (user can re-select)
 - [10-03]: Captured vars object before mutate call to prevent stale closure in retry onClick
 - [10-03]: Both SupportHome and SessionHistory empty states upgraded (SessionHistory was very bare)
+- [10-02]: ErrorCard compact inside Card wrappers, full mode for standalone error sections
+- [10-02]: Custom hooks (useUserBadges, useAttemptHistory, useUserStats) must expose refetch in return
+- [10-02]: CasebookList uses props-based isError/onRetry forwarding since parent owns the query
+- [10-02]: Admin card components preserve section header above ErrorCard compact for context
 - [10-04]: Shared validate_user_input() in bot/utils_validation.py for all text handlers
 - [10-04]: learn/train handlers gain fuzzy command detection (previously only literal /cancel)
 - [10-04]: Max length 4000 first-pass truncation; storage 2000-char limit remains as hard limit
@@ -189,6 +193,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 10-03-PLAN.md (Mutation Feedback & Empty States)
+Stopped at: Completed 10-02-PLAN.md (Consistent Error States)
 Resume file: None
-Next action: Execute remaining Phase 10 plan (10-02)
+Next action: Phase 10 complete. Plan Phase 11 or wrap up v1.1 milestone.
