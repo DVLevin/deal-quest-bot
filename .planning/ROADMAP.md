@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
 - [x] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
 - [x] **Phase 6: Gamification & Admin** - Badge wall, animations, streak visuals, and team admin dashboard
-- [ ] **Phase 7: Bot Integration** - Wire TMA into existing bot with inline buttons and deep links
+- [x] **Phase 7: Bot Integration** - Wire TMA into existing bot with inline buttons and deep links
 
 ## Phase Details
 
@@ -132,8 +132,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
-- [ ] 07-02-PLAN.md — TMA deep link routing hook for startParam fallback (Wave 1)
+- [x] 07-01-PLAN.md — Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
+- [x] 07-02-PLAN.md — TMA deep link routing hook for startParam fallback (Wave 1)
 
 ## Progress
 
@@ -149,4 +149,4 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 4. Support & Casebook | 2/2 | Complete | 2026-02-03 |
 | 5. Leads | 2/2 | Complete | 2026-02-04 |
 | 6. Gamification & Admin | 3/3 | Complete | 2026-02-04 |
-| 7. Bot Integration | 0/2 | Not started | - |
+| 7. Bot Integration | 2/2 | Complete | 2026-02-04 |

@@ -196,9 +196,9 @@
 | ADMIN-04 | Phase 6 | Complete |
 | ADMIN-05 | Phase 6 | Complete |
 | ADMIN-06 | Phase 6 | Complete |
-| BOT-01 | Phase 7 | Pending |
-| BOT-02 | Phase 7 | Pending |
-| BOT-03 | Phase 7 | Pending |
+| BOT-01 | Phase 7 | Complete |
+| BOT-02 | Phase 7 | Complete |
+| BOT-03 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 58 total
