@@ -12,6 +12,7 @@ import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { StatsOverview } from '@/features/profile/components/StatsOverview';
 import { BadgeCollection } from '@/features/profile/components/BadgeCollection';
 import { AttemptHistory } from '@/features/profile/components/AttemptHistory';
+import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
 
 export default function Profile() {
   return (
@@ -20,6 +21,7 @@ export default function Profile() {
       <StatsOverview />
       <BadgeCollection />
       <AttemptHistory />
+      <SettingsPanel />
     </div>
   );
 }
