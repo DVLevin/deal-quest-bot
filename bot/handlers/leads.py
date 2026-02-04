@@ -21,6 +21,7 @@ from bot.states import LeadEngagementState
 from bot.storage.models import LeadActivityModel
 from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, UserRepo
 from bot.utils import _sanitize, truncate_message
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -291,7 +292,7 @@ def _format_lead_detail(lead) -> str:
 
 
 @router.message(Command("leads"))
-async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegistryRepo) -> None:
+async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegistryRepo, tma_url: str = "") -> None:
     """Show the user's lead registry."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
 
@@ -303,12 +304,14 @@ async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegist
     leads = await lead_repo.get_for_user(tg_id, limit=50)
 
     if not leads:
+        keyboard = add_open_in_app_row(None, tma_url, "leads")
         await message.answer(
             "📋 *Lead Registry*\n\n"
             "No leads yet. Use /support to analyze a prospect — "
             "every analysis is automatically saved here.\n\n"
             "Send a photo or text description of a prospect to get started.",
             parse_mode="Markdown",
+            reply_markup=keyboard,
         )
         return
 
@@ -331,13 +334,15 @@ async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegist
 
     summary = "\n".join(summary_lines) if summary_lines else "  No leads yet"
 
+    kb = _leads_list_keyboard(leads)
+    kb = add_open_in_app_row(kb, tma_url, "leads")
     await message.answer(
         f"📋 *Lead Registry*\n\n"
         f"Total: {len(leads)} leads ({photo_count} with photos, {enriched_count} with plans)\n\n"
         f"{summary}\n\n"
         f"Tap a lead to view details, manage plan, or get AI advice:",
         parse_mode="Markdown",
-        reply_markup=_leads_list_keyboard(leads),
+        reply_markup=kb,
     )
 
 

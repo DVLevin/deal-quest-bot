@@ -42,6 +42,7 @@ from bot.storage.repositories import (
     UserRepo,
 )
 from bot.utils import format_support_response
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarku
 
 
 @router.message(Command("support"))
-async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) -> None:
+async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo, tma_url: str = "") -> None:
     """Start support mode."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -78,6 +79,7 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
         await message.answer("Please run /start first to set up your account.")
         return
 
+    keyboard = add_open_in_app_row(None, tma_url, "support")
     await message.answer(
         "📊 *Support Mode*\n\n"
         "Describe your prospect or deal situation:\n"
@@ -88,6 +90,7 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
         "🎙️ *Voice messages work great here!*\n\n"
         "_Photos are saved to your lead registry for tracking._",
         parse_mode="Markdown",
+        reply_markup=keyboard,
     )
     await state.set_state(SupportState.waiting_input)
 

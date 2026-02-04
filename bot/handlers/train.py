@@ -39,6 +39,7 @@ from bot.storage.repositories import (
     UserRepo,
 )
 from bot.utils import _sanitize, format_training_feedback
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +161,7 @@ async def cmd_train(
     user_repo: UserRepo,
     seen_repo: ScenariosSeenRepo,
     generated_scenario_repo: GeneratedScenarioRepo,
+    tma_url: str = "",
 ) -> None:
     """Start a random training scenario — show difficulty picker."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -178,12 +180,13 @@ async def cmd_train(
     all_ids = [s["id"] for s in pool]
     unseen_count = sum(1 for sid in all_ids if sid not in seen_ids)
 
+    kb = add_open_in_app_row(DIFFICULTY_KEYBOARD, tma_url, "train")
     await message.answer(
         f"🎲 *Training Mode*\n\n"
         f"Pool: {len(pool)} scenarios ({unseen_count} unseen)\n\n"
         f"Choose difficulty:",
         parse_mode="Markdown",
-        reply_markup=DIFFICULTY_KEYBOARD,
+        reply_markup=kb,
     )
 
 

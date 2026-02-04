@@ -38,6 +38,7 @@ from bot.storage.repositories import (
     UserRepo,
 )
 from bot.utils import _sanitize, format_training_feedback
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ async def cmd_learn(
     state: FSMContext,
     user_repo: UserRepo,
     track_repo: TrackProgressRepo,
+    tma_url: str = "",
 ) -> None:
     """Show learning track progress."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -134,8 +136,9 @@ async def cmd_learn(
 
     if buttons:
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+        keyboard = add_open_in_app_row(keyboard, tma_url, "learn")
     else:
-        keyboard = None
+        keyboard = add_open_in_app_row(None, tma_url, "learn")
 
     await message.answer(progress_text, parse_mode="Markdown", reply_markup=keyboard)
 
