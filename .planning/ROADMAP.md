@@ -118,7 +118,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md — Badge wall and rarity system (Wave 1)
-- [ ] 06-02-PLAN.md — Level-up, XP, and streak animations (Wave 1)
+- [x] 06-02-PLAN.md — Level-up, XP, and streak animations (Wave 1)
 - [ ] 06-03-PLAN.md — Admin dashboard with team analytics and access control (Wave 1)
 
 ### Phase 7: Bot Integration
@@ -148,5 +148,5 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 3. Learn & Train | 3/3 | Complete | 2026-02-03 |
 | 4. Support & Casebook | 2/2 | Complete | 2026-02-03 |
 | 5. Leads | 2/2 | Complete | 2026-02-04 |
-| 6. Gamification & Admin | 1/3 | In progress | - |
+| 6. Gamification & Admin | 2/3 | In progress | - |
 | 7. Bot Integration | 0/2 | Not started | - |
