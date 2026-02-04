@@ -19,6 +19,7 @@ import {
   ListChecks,
   Globe,
   StickyNote,
+  History,
   User,
   Copy,
   Check,
@@ -28,6 +29,8 @@ import { useAuthStore } from '@/features/auth/store';
 import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { LeadStatusSelector } from './LeadStatusSelector';
+import { LeadNotes } from './LeadNotes';
+import { ActivityTimeline } from './ActivityTimeline';
 import {
   parseLeadAnalysis,
   parseLeadStrategy,
@@ -385,13 +388,18 @@ export function LeadDetail() {
       )}
 
       {/* Notes section */}
-      {lead.notes && (
-        <Section icon={StickyNote} title="Notes">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-            {lead.notes}
-          </p>
-        </Section>
-      )}
+      <Section icon={StickyNote} title="Notes">
+        <LeadNotes leadId={lead.id} currentNote={lead.notes} />
+      </Section>
+
+      {/* Activity timeline */}
+      <Card padding="sm">
+        <div className="mb-3 flex items-center gap-2">
+          <History className="h-4 w-4 text-accent" />
+          <h3 className="text-sm font-semibold text-text">Activity</h3>
+        </div>
+        <ActivityTimeline leadId={lead.id} />
+      </Card>
     </div>
   );
 }
