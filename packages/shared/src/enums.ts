@@ -27,7 +27,13 @@ export type LeadActivityType =
   | 'screenshot_comment'
   | 'ai_advice'
   | 'followup_sent'
-  | 'status_change';
+  | 'status_change'
+  | 'step_execution'
+  | 'step_snooze'
+  | 'step_skip'
+  | 'prospect_response'
+  | 'meeting_notes'
+  | 're_analysis';
 
 /** users.provider */
 export type LLMProvider = 'openrouter' | 'anthropic';

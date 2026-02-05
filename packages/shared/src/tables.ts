@@ -143,6 +143,23 @@ export interface LeadActivityRow {
   activity_type: string;
   content: string;
   ai_response: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// lead_analysis_history
+// ---------------------------------------------------------------------------
+export interface LeadAnalysisHistoryRow {
+  id: number;
+  lead_id: number;
+  telegram_id: number;
+  version_number: number;
+  analysis_snapshot: Record<string, unknown>;
+  changes_summary: string | null;
+  field_diff: Record<string, unknown> | null;
+  triggered_by: string;
+  triggering_activity_id: number | null;
   created_at: string | null;
 }
 
