@@ -17,7 +17,7 @@ from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
 from bot.agents.trainer import TrainerAgent
 from bot.config import load_settings
-from bot.handlers import admin, leads, learn, progress, reminders, settings, start, stats, support, train
+from bot.handlers import admin, comment, leads, learn, progress, reminders, settings, start, stats, support, train
 from bot.middleware import AuthorizationMiddleware
 from bot.pipeline.config_loader import load_all_pipelines
 from bot.services.analytics import TeamAnalyticsService
@@ -179,6 +179,7 @@ async def main() -> None:
     dp.include_router(settings.router)
     dp.include_router(leads.router)
     dp.include_router(reminders.router)
+    dp.include_router(comment.router)
     dp.include_router(admin.router)
 
     logger.info("Bot initialized. Starting polling...")
