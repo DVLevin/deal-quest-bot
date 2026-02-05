@@ -6,6 +6,7 @@ import asyncio
 import base64
 import io
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -47,8 +48,30 @@ from bot.storage.repositories import (
 from bot.utils import format_support_response
 from bot.utils_tma import add_open_in_app_row
 from bot.utils_validation import validate_user_input
+from bot.services.image_utils import pre_resize_image
 
 logger = logging.getLogger(__name__)
+
+# URL detection pattern for routing
+URL_PATTERN = re.compile(
+    r'(?:https?://)?'  # Optional protocol
+    r'(?:www\.)?'      # Optional www
+    r'(?:'
+    r'linkedin\.com/(?:in|pub|profile)/[\w-]+'  # LinkedIn profiles
+    r'|'
+    r'[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}'   # Generic domains
+    r')'
+)
+
+URL_GUIDANCE_MESSAGE = (
+    "I noticed you sent a URL. Unfortunately, I can't automatically "
+    "scrape web pages (LinkedIn blocks this anyway).\n\n"
+    "Instead, please:\n"
+    "1. Open the profile in your browser\n"
+    "2. Select and copy the visible text\n"
+    "3. Paste it here\n\n"
+    "Or take a screenshot and send it as a photo!"
+)
 
 router = Router(name="support")
 
@@ -120,6 +143,7 @@ async def _run_support_pipeline(
     input_type: str = "text",
     image_b64: str | None = None,
     reminder_repo: ScheduledReminderRepo | None = None,
+    pipeline_name: str = "support",
 ) -> None:
     """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -157,10 +181,10 @@ async def _run_support_pipeline(
             image_b64=image_b64,
         )
 
-        # Run support pipeline
-        pipeline_config = load_pipeline("support")
+        # Run support pipeline (or support_photo for images)
+        pipeline_config = load_pipeline(pipeline_name)
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="support", telegram_id=tg_id, user_id=user.id or 0):
+        async with TraceContext(pipeline_name=pipeline_name, telegram_id=tg_id, user_id=user.id or 0):
             async with ProgressUpdater(status_msg, Phase.ANALYSIS):
                 await runner.run(pipeline_config, ctx)
 
@@ -645,6 +669,9 @@ async def on_support_photo(
     await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
     file_bytes = file_bytes_io.getvalue()
 
+    # Pre-resize image for vision models (max 1568px)
+    file_bytes = pre_resize_image(file_bytes)
+
     # Upload to InsForge storage
     photo_url: str | None = None
     photo_key: str | None = None
@@ -689,6 +716,7 @@ async def on_support_photo(
         input_type="photo",
         image_b64=photo_b64,
         reminder_repo=reminder_repo,
+        pipeline_name="support_photo",
     )
 
 
@@ -776,6 +804,11 @@ async def on_support_input(
     """Process text input through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_input = message.text or ""
+
+    # Check for URL input and show guidance
+    if URL_PATTERN.search(user_input.strip()):
+        await message.answer(URL_GUIDANCE_MESSAGE)
+        return  # Stay in waiting_input state so user can paste text
 
     result = validate_user_input(user_input, context="support", min_length=10)
     if not result.is_valid:
