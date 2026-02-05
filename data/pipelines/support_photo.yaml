@@ -1,0 +1,25 @@
+name: support_photo
+description: "Photo lead creation: extract OCR -> strategist analysis -> memory update"
+steps:
+  # Step 1: Extract structured data from screenshot (focused OCR, no KB)
+  - agent: extraction
+    mode: sequential
+    input_mapping:
+      # ExtractionAgent reads image_b64 from pipeline context
+      # No knowledge_base injection - pure OCR
+
+  # Step 2: Run strategist with extracted data as context
+  - agent: strategist
+    mode: sequential
+    input_mapping:
+      knowledge_base: "ctx.knowledge_base"
+      user_memory: "ctx.user_memory"
+      casebook_text: "ctx.casebook_text"
+      # Extracted data will be available via ctx.get_result("extraction")
+
+  # Step 3: Background memory update (same as regular support)
+  - agent: memory
+    mode: background
+    input_mapping:
+      strategist_output: "result.strategist"
+      user_memory: "ctx.user_memory"
