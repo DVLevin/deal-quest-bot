@@ -11,6 +11,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from bot.agents.extraction import ExtractionAgent
 from bot.agents.memory import MemoryAgent
 from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
@@ -105,6 +106,7 @@ async def main() -> None:
 
     # Initialize agent registry
     agent_registry = AgentRegistry()
+    agent_registry.register(ExtractionAgent())
     agent_registry.register(StrategistAgent())
     agent_registry.register(TrainerAgent())
     agent_registry.register(MemoryAgent())
