@@ -621,6 +621,30 @@ class ScheduledReminderRepo:
             updates["completed_at"] = now
         await self.client.update(self.table, {"id": reminder_id}, updates)
 
+    async def snooze(self, reminder_id: int, new_due_iso: str) -> None:
+        """Snooze a reminder by updating due_at and incrementing snooze_count."""
+        rows = await self.client.query(
+            self.table,
+            filters={"id": reminder_id},
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return
+
+        current_snooze = rows[0].get("snooze_count", 0)
+        now = datetime.now(timezone.utc).isoformat()
+
+        await self.client.update(
+            self.table,
+            {"id": reminder_id},
+            {
+                "due_at": new_due_iso,
+                "status": "pending",
+                "snooze_count": current_snooze + 1,
+                "updated_at": now,
+            },
+        )
+
     async def delete_for_lead(self, lead_id: int) -> None:
         """Delete all reminders for a lead (cascade on lead deletion)."""
         await self.client.delete(self.table, {"lead_id": lead_id})
