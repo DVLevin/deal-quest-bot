@@ -16,6 +16,7 @@ from bot.storage.models import (
     PipelineSpanModel,
     PipelineTraceModel,
     ScenarioSeenModel,
+    ScheduledReminderModel,
     SupportSessionModel,
     TrackProgressModel,
     UserMemoryModel,
@@ -507,6 +508,144 @@ class LeadActivityRepo:
         if rows and isinstance(rows, list):
             return [LeadActivityModel(**r) for r in rows]
         return []
+
+
+class ScheduledReminderRepo:
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "scheduled_reminders"
+
+    async def create(self, reminder: ScheduledReminderModel) -> ScheduledReminderModel:
+        data = reminder.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        result = await self.client.create(self.table, data)
+        return ScheduledReminderModel(**result) if result else reminder
+
+    async def get_due_reminders(self, now_iso: str) -> list[ScheduledReminderModel]:
+        """Get reminders where due_at <= now and status is pending or sent."""
+        try:
+            rows = await self.client.query(
+                self.table,
+                filters={"due_at": f"lte.{now_iso}", "status": "in.(pending,sent)"},
+                order="due_at.asc",
+                limit=50,
+            )
+        except Exception:
+            # Fallback: fetch all active reminders and filter in Python
+            logger.warning("PostgREST lte filter failed, falling back to Python filtering")
+            rows = await self.client.query(
+                self.table,
+                filters={"status": "in.(pending,sent)"},
+                order="due_at.asc",
+                limit=200,
+            )
+
+        if not rows or not isinstance(rows, list):
+            return []
+
+        reminders = [ScheduledReminderModel(**r) for r in rows]
+
+        # Filter in Python: verify due_at is due
+        from datetime import datetime as _dt
+        try:
+            now_dt = _dt.fromisoformat(now_iso.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return []
+
+        due = []
+        for reminder in reminders:
+            if not reminder.due_at:
+                continue
+            try:
+                due_dt = _dt.fromisoformat(reminder.due_at.replace("Z", "+00:00"))
+                if due_dt <= now_dt:
+                    due.append(reminder)
+            except (ValueError, TypeError):
+                continue
+        return due
+
+    async def cancel_pending_for_lead(self, lead_id: int) -> None:
+        """Cancel all pending/sent reminders for a lead (for idempotent re-scheduling)."""
+        try:
+            rows = await self.client.query(
+                self.table,
+                filters={"lead_id": lead_id, "status": "in.(pending,sent)"},
+            )
+        except Exception:
+            # Fallback: fetch all for lead and filter in Python
+            rows = await self.client.query(
+                self.table,
+                filters={"lead_id": lead_id},
+            )
+            if rows and isinstance(rows, list):
+                rows = [r for r in rows if r.get("status") in ("pending", "sent")]
+
+        if not rows or not isinstance(rows, list):
+            return
+
+        now = datetime.now(timezone.utc).isoformat()
+        for row in rows:
+            reminder_id = row.get("id")
+            if reminder_id:
+                await self.client.update(
+                    self.table,
+                    {"id": reminder_id},
+                    {"status": "cancelled", "updated_at": now},
+                )
+
+    async def mark_reminded(self, reminder_id: int, now_iso: str) -> None:
+        """Mark a reminder as having been sent (increment reminder_count)."""
+        rows = await self.client.query(
+            self.table,
+            filters={"id": reminder_id},
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return
+
+        current_count = rows[0].get("reminder_count", 0)
+        await self.client.update(
+            self.table,
+            {"id": reminder_id},
+            {
+                "last_reminded_at": now_iso,
+                "reminder_count": current_count + 1,
+                "updated_at": now_iso,
+            },
+        )
+
+    async def update_status(self, reminder_id: int, status: str) -> None:
+        """Update reminder status. If completed, also set completed_at."""
+        now = datetime.now(timezone.utc).isoformat()
+        updates: dict[str, Any] = {"status": status, "updated_at": now}
+        if status == "completed":
+            updates["completed_at"] = now
+        await self.client.update(self.table, {"id": reminder_id}, updates)
+
+    async def delete_for_lead(self, lead_id: int) -> None:
+        """Delete all reminders for a lead (cascade on lead deletion)."""
+        await self.client.delete(self.table, {"lead_id": lead_id})
+
+    async def get_for_lead(self, lead_id: int) -> list[ScheduledReminderModel]:
+        """Get all reminders for a lead, ordered by step_id."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id},
+            order="step_id.asc",
+        )
+        if rows and isinstance(rows, list):
+            return [ScheduledReminderModel(**r) for r in rows]
+        return []
+
+    async def get_by_lead_and_step(self, lead_id: int, step_id: int) -> ScheduledReminderModel | None:
+        """Get a specific reminder by lead_id and step_id."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id, "step_id": step_id},
+            limit=1,
+        )
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            return ScheduledReminderModel(**rows[0])
+        return None
 
 
 class CasebookRepo:

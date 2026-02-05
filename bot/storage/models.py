@@ -153,6 +153,22 @@ class GeneratedScenarioModel(BaseModel):
     created_at: str | None = None
 
 
+class ScheduledReminderModel(BaseModel):
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    step_id: int
+    due_at: str
+    status: str = "pending"
+    snooze_count: int = 0
+    reminder_count: int = 0
+    last_reminded_at: str | None = None
+    draft_text: str | None = None
+    completed_at: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
 class PipelineTraceModel(BaseModel):
     id: int | None = None
     trace_id: str
