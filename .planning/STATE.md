@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 14 complete.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15.1 in progress.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 14 of 12-16 (Engagement Plan Execution)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-05 -- Completed 14-02-PLAN.md (Reminder Action Handlers)
+Phase: 15.1 (Lead Enhancements)
+Plan: 1 of ? in current phase
+Status: In progress
+Last activity: 2026-02-05 -- Completed 15.1-01-PLAN.md (Web Research Versioning)
 
 Progress: [##########----------] 12/25 v2.0 requirements (48%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37
+- Total plans completed: 38
 - Average duration: 3.5m
-- Total execution time: 130m
+- Total execution time: 133m
 
 **By Phase:**
 
@@ -47,9 +47,10 @@ Progress: [##########----------] 12/25 v2.0 requirements (48%)
 | 12. Scheduling & Reminder | 2/2 | 12m | 6m |
 | 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
 | 14. Engagement Plan Execution | 2/2 | 3m | 1.5m |
+| 15.1. Lead Enhancements | 1/? | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 3m, 5m, 1m, 2m
+- Last 5 plans: 3m, 5m, 1m, 2m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -86,6 +87,7 @@ Recent decisions affecting current work:
 - [quick-002]: Run migration `migrations/002_lead_person_company_fields.sql` on InsForge database
 - [08-01]: Run migration `migrations/003_lead_source_field.sql` on InsForge database
 - [12-01]: Run migration `insforge/migrations/002_scheduled_reminders.sql` on InsForge database
+- [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
 
 ### Blockers/Concerns
 
@@ -101,6 +103,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 14-02-PLAN.md (Reminder Action Handlers) -- Phase 14 complete
+Stopped at: Completed 15.1-01-PLAN.md (Web Research Versioning)
 Resume file: None
-Next action: Plan Phase 15 (Re-Analysis on New Context) or Phase 16 (TMA Experience)
+Next action: Continue with Phase 15.1 plans or start Phase 16 (TMA Experience)
