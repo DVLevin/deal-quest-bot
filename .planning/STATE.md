@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15.1 complete.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15 complete.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 15 (Conversational Re-analysis)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-05 -- Completed 15-03-PLAN.md (ReanalysisStrategistAgent)
+Phase: 15 (Conversational Re-analysis) -- COMPLETE
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-05 -- Completed 15-04-PLAN.md (ReanalysisHandler Integration)
 
-Progress: [################----] 18/25 v2.0 requirements (72%)
+Progress: [#################---] 19/25 v2.0 requirements (76%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43
+- Total plans completed: 44
 - Average duration: 3.4m
-- Total execution time: 146m
+- Total execution time: 149m
 
 **By Phase:**
 
@@ -48,10 +48,10 @@ Progress: [################----] 18/25 v2.0 requirements (72%)
 | 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
 | 14. Engagement Plan Execution | 2/2 | 3m | 1.5m |
 | 15.1. Lead Enhancements | 3/3 | 9m | 3m |
-| 15. Conversational Re-analysis | 3/4 | 7m | 2.3m |
+| 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 3m, 3m, 2m, 3m
+- Last 5 plans: 3m, 3m, 2m, 3m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -91,6 +91,9 @@ Recent decisions affecting current work:
 - [15-02]: context:add:{lead_id} callback pattern for entering context input flow
 - [15-03]: Code-based JSON diff (compute_analysis_diff), not LLM self-reports
 - [15-03]: Human-readable diff formatting (_humanize_field converts field_name to Field Name)
+- [15-04]: SimplePipelineCtx class for standalone agent execution without full pipeline runner
+- [15-04]: changes_summary handles both dict and string formats from LLM
+- [15-04]: re_analysis activity logged with headline and changes_count metadata
 
 ### Pending Todos
 
@@ -116,6 +119,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 15-03-PLAN.md (ReanalysisStrategistAgent) -- Phase 15 in progress
+Stopped at: Completed 15-04-PLAN.md (ReanalysisHandler Integration) -- Phase 15 complete
 Resume file: None
-Next action: Execute 15-04-PLAN.md (ReanalysisHandler Integration) to complete phase 15
+Next action: Plan and execute Phase 16 (TMA Experience)
