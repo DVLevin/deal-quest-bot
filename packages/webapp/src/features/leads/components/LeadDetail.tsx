@@ -21,6 +21,8 @@ import {
   User,
   Copy,
   Check,
+  Circle,
+  SkipForward,
 } from 'lucide-react';
 import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
 import { useToast } from '@/shared/stores/toastStore';
@@ -29,6 +31,7 @@ import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
 import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
 import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
+import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
 import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -42,6 +45,7 @@ import {
   formatLeadDate,
 } from '../types';
 import type { LeadStatus } from '@/types/enums';
+import type { PlanStepStatus } from '@/types/tables';
 import type { SupportAnalysis } from '@/features/support/types';
 
 // ---------------------------------------------------------------------------
@@ -191,6 +195,7 @@ export function LeadDetail() {
     Number.isNaN(numericId) ? 0 : numericId,
   );
   const mutation = useUpdateLeadStatus();
+  const stepMutation = useUpdatePlanStep();
   const { toast } = useToast();
 
   const [copied, setCopied] = useState(false);
@@ -229,6 +234,46 @@ export function LeadDetail() {
       });
     },
     [lead, telegramId, mutation, toast],
+  );
+
+  const handleStepToggle = useCallback(
+    (stepId: number, currentStatus: PlanStepStatus) => {
+      if (!lead || !telegramId) return;
+      // Cycle: pending -> done -> skipped -> pending
+      let newStatus: PlanStepStatus;
+      if (currentStatus === 'pending') {
+        newStatus = 'done';
+      } else if (currentStatus === 'done') {
+        newStatus = 'skipped';
+      } else {
+        newStatus = 'pending';
+      }
+      stepMutation.mutate(
+        { leadId: lead.id, stepId, newStatus, telegramId },
+        {
+          onSuccess: () => {
+            const label =
+              newStatus === 'done'
+                ? 'Done'
+                : newStatus === 'skipped'
+                  ? 'Skipped'
+                  : 'Pending';
+            toast({ type: 'success', message: `Step ${stepId} marked ${label}` });
+          },
+          onError: () => {
+            toast({
+              type: 'error',
+              message: 'Failed to update step',
+              action: {
+                label: 'Retry',
+                onClick: () => handleStepToggle(stepId, currentStatus),
+              },
+            });
+          },
+        },
+      );
+    },
+    [lead, telegramId, stepMutation, toast],
   );
 
   if (Number.isNaN(numericId)) {
@@ -395,12 +440,27 @@ export function LeadDetail() {
                     )}
                   </div>
                 </div>
-                <Badge
-                  variant={step.status === 'done' ? 'success' : 'default'}
-                  size="sm"
+                <button
+                  type="button"
+                  onClick={() => handleStepToggle(step.step_id, step.status)}
+                  disabled={stepMutation.isPending}
+                  className={`flex min-h-[32px] items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors active:scale-95 disabled:opacity-50 ${
+                    step.status === 'done'
+                      ? 'bg-success/15 text-success'
+                      : step.status === 'skipped'
+                        ? 'bg-text-hint/15 text-text-hint'
+                        : 'bg-surface-secondary text-text-secondary'
+                  }`}
                 >
-                  {step.status === 'done' ? 'Done' : 'Pending'}
-                </Badge>
+                  {step.status === 'done' && <Check className="h-3 w-3" />}
+                  {step.status === 'skipped' && <SkipForward className="h-3 w-3" />}
+                  {step.status === 'pending' && <Circle className="h-3 w-3" />}
+                  {step.status === 'done'
+                    ? 'Done'
+                    : step.status === 'skipped'
+                      ? 'Skipped'
+                      : 'Pending'}
+                </button>
               </div>
             ))}
           </div>
