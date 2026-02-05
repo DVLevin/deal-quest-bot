@@ -13,6 +13,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.agents.extraction import ExtractionAgent
 from bot.agents.memory import MemoryAgent
+from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
 from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
 from bot.agents.trainer import TrainerAgent
@@ -110,6 +111,7 @@ async def main() -> None:
     agent_registry.register(StrategistAgent())
     agent_registry.register(TrainerAgent())
     agent_registry.register(MemoryAgent())
+    agent_registry.register(ReanalysisStrategistAgent())
 
     # Load pipeline configs (validates YAML at startup)
     pipelines = load_all_pipelines()
