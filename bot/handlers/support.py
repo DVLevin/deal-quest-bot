@@ -198,6 +198,21 @@ async def _run_support_pipeline(
 
         output_data = strategist_result.data
 
+        # If extraction ran, merge its data into prospect_info for lead storage
+        extraction_result = ctx.get_result("extraction")
+        if extraction_result and extraction_result.success:
+            extracted = extraction_result.data or {}
+            # Extraction data provides cleaner names than strategist parsing
+            if "prospect_info" not in output_data:
+                output_data["prospect_info"] = {}
+            # Only override if extraction found values
+            for field in ("first_name", "last_name", "title", "company", "geography"):
+                if extracted.get(field) and not output_data["prospect_info"].get(field):
+                    output_data["prospect_info"][field] = extracted[field]
+            # Add context as additional signal
+            if extracted.get("context"):
+                output_data["prospect_info"]["extracted_context"] = extracted["context"]
+
         # Handle memory update from background agent
         memory_result = ctx.get_result("memory")
         if memory_result and memory_result.success:
