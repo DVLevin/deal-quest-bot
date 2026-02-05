@@ -36,6 +36,7 @@ Use these action_type values:
     "description": "Like their 3 most recent posts to get on their radar",
     "suggested_text": null,
     "timing": "Day 1",
+    "delay_days": 1,
     "status": "pending",
     "completed_at": null
   },
@@ -44,7 +45,8 @@ Use these action_type values:
     "action_type": "linkedin_comment",
     "description": "Comment on their post about [specific topic from research]",
     "suggested_text": "Great insight on [topic]. We're seeing similar patterns at GetDeal — especially around [relevant angle].",
-    "timing": "Day 1-2",
+    "timing": "Day 2",
+    "delay_days": 2,
     "status": "pending",
     "completed_at": null
   }
@@ -60,3 +62,6 @@ Use these action_type values:
 5. **Match the prospect's level** — C-suite needs different approach than mid-level
 6. **Reference research** — Every step should connect to something found in research
 7. Return ONLY the JSON array, no extra text or markdown fences
+8. **Always include `delay_days`** — an integer representing the number of days after the plan starts when this step should be executed. Day 0 = immediately, Day 1 = tomorrow, etc.
+9. **`delay_days` must be monotonically increasing** — each step's `delay_days` should be >= the previous step's `delay_days`
+10. **Typical pacing:** Steps should be spaced across 1-3 weeks. Common pattern: 0, 1, 3, 5, 7, 10, 14
