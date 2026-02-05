@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Roadmap created, ready to plan Phase 12.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 12 complete, ready to plan Phase 13 or 14.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 12 of 12-16 (Scheduling & Reminder Infrastructure)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-05 -- Completed 12-01-PLAN.md (Data Foundation)
+Phase: 12 of 12-16 (Scheduling & Reminder Infrastructure) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-05 -- Completed 12-02-PLAN.md (Scheduler Integration)
 
-Progress: [##------------------] 1/25 v2.0 requirements (4%)
+Progress: [####----------------] 2/25 v2.0 requirements (8%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
-- Average duration: 3.6m
-- Total execution time: 102m
+- Total plans completed: 30
+- Average duration: 3.7m
+- Total execution time: 114m
 
 **By Phase:**
 
@@ -44,10 +44,11 @@ Progress: [##------------------] 1/25 v2.0 requirements (4%)
 | 9. Training Experience | 2/2 | 5m | 2.5m |
 | 10. Error Handling & UX | 4/4 | 14m | 3.5m |
 | 11. Performance & Reliability | 2/2 | 4m | 2m |
+| 12. Scheduling & Reminder | 2/2 | 12m | 6m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 5m, 5m, 0m, 4m
-- Trend: stable (fast)
+- Last 5 plans: 5m, 0m, 4m, 4m, 8m
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [v2.0 Roadmap]: No LinkedIn URL scraping (legal risk); "paste the text" guidance instead
 - [v2.0 Roadmap]: User-triggered re-analysis only (no automatic strategy rewrites)
 - [v2.0 Roadmap]: PostgreSQL polling scheduler (extend followup_scheduler.py, no new dependencies)
+- [12-02]: 15-minute polling interval balances responsiveness with resource usage
+- [12-02]: Optimistic update before send prevents duplicate reminders on bot restart
+- [12-02]: Timing parser prioritizes delay_days over timing string regex
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 12-01-PLAN.md (Data Foundation)
+Stopped at: Completed 12-02-PLAN.md (Scheduler Integration), Phase 12 complete
 Resume file: None
-Next action: Execute 12-02-PLAN.md (Scheduler Integration)
+Next action: Plan Phase 13 (Smart Lead Creation) or Phase 14 (Reminder UX)
