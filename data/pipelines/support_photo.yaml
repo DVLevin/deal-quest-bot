@@ -2,11 +2,10 @@ name: support_photo
 description: "Photo lead creation: extract OCR -> strategist analysis -> memory update"
 steps:
   # Step 1: Extract structured data from screenshot (focused OCR, no KB)
+  # ExtractionAgent reads image_b64 from pipeline context - no knowledge_base injection
   - agent: extraction
     mode: sequential
-    input_mapping:
-      # ExtractionAgent reads image_b64 from pipeline context
-      # No knowledge_base injection - pure OCR
+    input_mapping: {}
 
   # Step 2: Run strategist with extracted data as context
   - agent: strategist
