@@ -15,12 +15,12 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 15.1 (Lead Enhancements)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-05 -- Completed 15.1-03-PLAN.md (Standalone Comment Flow)
+Phase: 15 (Conversational Re-analysis)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-05 -- Completed 15-01-PLAN.md (Database Foundation)
 
-Progress: [##############------] 15/25 v2.0 requirements (60%)
+Progress: [##############------] 16/25 v2.0 requirements (64%)
 
 ## Performance Metrics
 
@@ -82,6 +82,9 @@ Recent decisions affecting current work:
 - [15.1-02]: Status cycles pending -> done -> skipped -> pending on tap (three-state toggle)
 - [15.1-03]: Standalone comment flow independent of leads system (no lead creation)
 - [15.1-03]: Three tone options: Professional, Casual, Value-Adding Question
+- [15-01]: MAX_VERSIONS = 5 for analysis history auto-pruning
+- [15-01]: triggered_by field tracks initial | context_update | manual triggers
+- [15-01]: metadata JSONB on LeadActivityModel for flexible structured data
 
 ### Pending Todos
 
@@ -91,6 +94,7 @@ Recent decisions affecting current work:
 - [08-01]: Run migration `migrations/003_lead_source_field.sql` on InsForge database
 - [12-01]: Run migration `insforge/migrations/002_scheduled_reminders.sql` on InsForge database
 - [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
+- [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
 
 ### Blockers/Concerns
 
@@ -106,6 +110,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 15.1-03-PLAN.md (Standalone Comment Flow) -- Phase 15.1 complete
+Stopped at: Completed 15-01-PLAN.md (Database Foundation) -- Phase 15 in progress
 Resume file: None
-Next action: Plan Phase 15 (Conversational Re-analysis) or Phase 16 (TMA Lead Experience)
+Next action: Execute 15-02-PLAN.md (Context Input Handlers)
