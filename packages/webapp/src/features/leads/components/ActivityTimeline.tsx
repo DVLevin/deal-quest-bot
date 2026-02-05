@@ -17,6 +17,9 @@ import {
   Sparkles,
   Send,
   Clock,
+  MessageSquare,
+  ClipboardList,
+  RefreshCw,
 } from 'lucide-react';
 import { Skeleton, ErrorCard } from '@/shared/ui';
 import { useLeadActivities } from '../hooks/useLeadActivities';
@@ -59,6 +62,22 @@ const ACTIVITY_STYLES: Record<string, ActivityStyle> = {
     icon: Send,
     bgColor: 'bg-accent/15',
     iconColor: 'text-accent',
+  },
+  // New activity types for conversational re-analysis
+  prospect_response: {
+    icon: MessageSquare,
+    bgColor: 'bg-cyan-500/15',
+    iconColor: 'text-cyan-500',
+  },
+  meeting_notes: {
+    icon: ClipboardList,
+    bgColor: 'bg-indigo-500/15',
+    iconColor: 'text-indigo-500',
+  },
+  re_analysis: {
+    icon: RefreshCw,
+    bgColor: 'bg-orange-500/15',
+    iconColor: 'text-orange-500',
   },
 };
 
