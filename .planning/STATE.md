@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 15.1 (Lead Enhancements)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-05 -- Completed 15.1-02-PLAN.md (TMA Plan Step Toggle)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-05 -- Completed 15.1-03-PLAN.md (Standalone Comment Flow)
 
 Progress: [##########----------] 12/25 v2.0 requirements (48%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 39
+- Total plans completed: 40
 - Average duration: 3.5m
-- Total execution time: 136m
+- Total execution time: 139m
 
 **By Phase:**
 
@@ -47,10 +47,10 @@ Progress: [##########----------] 12/25 v2.0 requirements (48%)
 | 12. Scheduling & Reminder | 2/2 | 12m | 6m |
 | 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
 | 14. Engagement Plan Execution | 2/2 | 3m | 1.5m |
-| 15.1. Lead Enhancements | 2/3 | 6m | 3m |
+| 15.1. Lead Enhancements | 3/3 | 9m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 5m, 1m, 2m, 3m
+- Last 5 plans: 5m, 1m, 2m, 3m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -80,6 +80,8 @@ Recent decisions affecting current work:
 - [14-02]: Activity types: step_execution, step_snooze, step_skip for lead_activity_log
 - [14-02]: Dual-update on Done/Skip: update both scheduled_reminders and engagement_plan JSONB
 - [15.1-02]: Status cycles pending -> done -> skipped -> pending on tap (three-state toggle)
+- [15.1-03]: Standalone comment flow independent of leads system (no lead creation)
+- [15.1-03]: Three tone options: Professional, Casual, Value-Adding Question
 
 ### Pending Todos
 
@@ -104,6 +106,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 15.1-02-PLAN.md (TMA Plan Step Toggle)
+Stopped at: Completed 15.1-03-PLAN.md (Standalone Comment Flow) -- Phase 15.1 complete
 Resume file: None
-Next action: Continue with 15.1-03 (TMA Activity Timeline) or start Phase 16 (TMA Experience)
+Next action: Plan Phase 16 (TMA Experience) or continue with more v2.0 work
