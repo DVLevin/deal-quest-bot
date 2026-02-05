@@ -34,6 +34,13 @@ class CommentSupportState(StatesGroup):
     refining_comment = State()
 
 
+class ReanalysisState(StatesGroup):
+    """States for context input and re-analysis flow."""
+    collecting_context = State()      # Waiting for context input (text/voice/photo/forward)
+    confirming_reanalysis = State()   # Showing "Re-analyze Strategy?" button
+    updating_plan = State()           # Showing "Update engagement plan too?" button
+
+
 class SettingsState(StatesGroup):
     main_menu = State()
     changing_provider = State()
