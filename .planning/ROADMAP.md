@@ -222,7 +222,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
 - [x] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
 - [x] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
-- [ ] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
+- [x] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
 - [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 
@@ -287,9 +287,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 15.1-01-PLAN.md -- Web research versioning: schema migration, model update, bot re-research flow with URL input (Wave 1)
-- [ ] 15.1-02-PLAN.md -- TMA engagement step mutation: useUpdatePlanStep hook, interactive LeadDetail toggles (Wave 1)
-- [ ] 15.1-03-PLAN.md -- Standalone /comment command: FSM states, prompt, handler module with regeneration (Wave 1)
+- [x] 15.1-01-PLAN.md -- Web research versioning: schema migration, model update, bot re-research flow with URL input (Wave 1)
+- [x] 15.1-02-PLAN.md -- TMA engagement step mutation: useUpdatePlanStep hook, interactive LeadDetail toggles (Wave 1)
+- [x] 15.1-03-PLAN.md -- Standalone /comment command: FSM states, prompt, handler module with regeneration (Wave 1)
 
 ### Phase 15: Conversational Re-analysis
 **Goal**: Users can feed prospect responses and meeting notes back into a lead, and the AI re-analyzes the strategy with full context of how the deal has evolved -- turning Deal Quest into a living co-pilot, not a one-shot analyzer
@@ -362,6 +362,6 @@ Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 | 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
 | 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
-| 15.1. Lead Enhancements | 0/3 | Not started | - |
+| 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |

@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15.1 in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15.1 complete.
 
 ## Previous Milestones
 
@@ -20,7 +20,7 @@ Plan: 3 of 3 in current phase
 Status: Phase complete
 Last activity: 2026-02-05 -- Completed 15.1-03-PLAN.md (Standalone Comment Flow)
 
-Progress: [##########----------] 12/25 v2.0 requirements (48%)
+Progress: [##############------] 15/25 v2.0 requirements (60%)
 
 ## Performance Metrics
 
@@ -108,4 +108,4 @@ None currently.
 Last session: 2026-02-05
 Stopped at: Completed 15.1-03-PLAN.md (Standalone Comment Flow) -- Phase 15.1 complete
 Resume file: None
-Next action: Plan Phase 16 (TMA Experience) or continue with more v2.0 work
+Next action: Plan Phase 15 (Conversational Re-analysis) or Phase 16 (TMA Lead Experience)
