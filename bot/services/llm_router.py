@@ -89,6 +89,22 @@ class ClaudeProvider(LLMProvider):
     ) -> dict[str, Any]:
         import asyncio
 
+        # Build user content - multipart if image provided
+        if image_b64:
+            user_content: list[dict[str, Any]] | str = [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_b64,
+                    },
+                },
+                {"type": "text", "text": user_message},
+            ]
+        else:
+            user_content = user_message
+
         for attempt in range(MAX_RETRIES):
             try:
                 resp = await self._client.post(
@@ -97,7 +113,7 @@ class ClaudeProvider(LLMProvider):
                         "model": self.model,
                         "max_tokens": 4096,
                         "system": system_prompt,
-                        "messages": [{"role": "user", "content": user_message}],
+                        "messages": [{"role": "user", "content": user_content}],
                     },
                 )
                 resp.raise_for_status()
