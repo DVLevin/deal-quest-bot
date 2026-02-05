@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 13 in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 13 complete.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 13 of 12-16 (Smart Lead Creation) -- IN PROGRESS
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-05 -- Completed 13-02-PLAN.md (Extraction Agent)
+Phase: 13 of 12-16 (Smart Lead Creation) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-05 -- Completed 13-03-PLAN.md (Lead Creation Pipeline)
 
-Progress: [####----------------] 2/25 v2.0 requirements (8%)
+Progress: [######--------------] 5/25 v2.0 requirements (20%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32
-- Average duration: 3.7m
-- Total execution time: 117m
+- Total plans completed: 35
+- Average duration: 3.6m
+- Total execution time: 127m
 
 **By Phase:**
 
@@ -45,9 +45,10 @@ Progress: [####----------------] 2/25 v2.0 requirements (8%)
 | 10. Error Handling & UX | 4/4 | 14m | 3.5m |
 | 11. Performance & Reliability | 2/2 | 4m | 2m |
 | 12. Scheduling & Reminder | 2/2 | 12m | 6m |
+| 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 4m, 8m, 1m, 2m
+- Last 5 plans: 8m, 1m, 2m, 3m, 5m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [12-02]: 15-minute polling interval balances responsiveness with resource usage
 - [12-02]: Optimistic update before send prevents duplicate reminders on bot restart
 - [12-02]: Timing parser prioritizes delay_days over timing string regex
+- [13-03]: URL inputs show guidance instead of attempting scrape
+- [13-03]: Extraction data prepended to user_message for strategist LLM call
+- [13-03]: Extraction results merged into prospect_info only if strategist didn't capture them
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 13-02-PLAN.md
+Stopped at: Completed 13-03-PLAN.md (Phase 13 complete)
 Resume file: None
-Next action: Execute 13-03-PLAN.md (Lead Creation Pipeline)
+Next action: Research Phase 14 (Reminder UX) or Phase 15 (Re-analysis)
