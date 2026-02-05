@@ -12,6 +12,7 @@ from bot.storage.models import (
     CasebookModel,
     GeneratedScenarioModel,
     LeadActivityModel,
+    LeadAnalysisHistoryModel,
     LeadRegistryModel,
     PipelineSpanModel,
     PipelineTraceModel,
@@ -588,6 +589,92 @@ class LeadActivityRepo:
         if rows and isinstance(rows, list):
             return [LeadActivityModel(**r) for r in rows]
         return []
+
+
+class LeadAnalysisHistoryRepo:
+    """Repository for lead analysis version history."""
+
+    MAX_VERSIONS = 5  # Keep last 5 versions per lead
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "lead_analysis_history"
+
+    async def save_version(
+        self,
+        lead_id: int,
+        telegram_id: int,
+        analysis_snapshot: dict[str, Any],
+        changes_summary: str | None = None,
+        field_diff: dict[str, Any] | None = None,
+        triggered_by: str = "initial",
+        triggering_activity_id: int | None = None,
+    ) -> LeadAnalysisHistoryModel:
+        """Save a new analysis version. Auto-increments version_number."""
+        # Get current max version
+        rows = await self.client.query(
+            self.table,
+            select="version_number",
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+            limit=1,
+        )
+        next_version = 1
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            next_version = rows[0].get("version_number", 0) + 1
+
+        data = {
+            "lead_id": lead_id,
+            "telegram_id": telegram_id,
+            "version_number": next_version,
+            "analysis_snapshot": analysis_snapshot,
+            "changes_summary": changes_summary,
+            "field_diff": field_diff,
+            "triggered_by": triggered_by,
+            "triggering_activity_id": triggering_activity_id,
+        }
+        result = await self.client.create(self.table, data)
+
+        # Prune old versions beyond MAX_VERSIONS
+        await self._prune_old_versions(lead_id)
+
+        return LeadAnalysisHistoryModel(**result) if result else LeadAnalysisHistoryModel(**data)
+
+    async def get_versions(self, lead_id: int, limit: int = 5) -> list[LeadAnalysisHistoryModel]:
+        """Get analysis versions for a lead, newest first."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadAnalysisHistoryModel(**r) for r in rows]
+        return []
+
+    async def get_latest(self, lead_id: int) -> LeadAnalysisHistoryModel | None:
+        """Get the most recent analysis version for a lead."""
+        versions = await self.get_versions(lead_id, limit=1)
+        return versions[0] if versions else None
+
+    async def _prune_old_versions(self, lead_id: int) -> None:
+        """Delete versions beyond MAX_VERSIONS (keep newest)."""
+        rows = await self.client.query(
+            self.table,
+            select="id,version_number",
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+        )
+        if not rows or not isinstance(rows, list):
+            return
+
+        # Keep MAX_VERSIONS, delete the rest
+        if len(rows) > self.MAX_VERSIONS:
+            to_delete = rows[self.MAX_VERSIONS:]
+            for row in to_delete:
+                row_id = row.get("id")
+                if row_id:
+                    await self.client.delete(self.table, {"id": row_id})
 
 
 class ScheduledReminderRepo:
