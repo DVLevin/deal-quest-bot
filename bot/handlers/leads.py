@@ -19,7 +19,7 @@ from aiogram.types import (
 from bot.services.engagement import EngagementService
 from bot.states import LeadEngagementState
 from bot.storage.models import LeadActivityModel
-from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, UserRepo
+from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, ScheduledReminderRepo, UserRepo
 from bot.utils import _sanitize, truncate_message
 from bot.utils_tma import add_open_in_app_row
 
@@ -495,7 +495,9 @@ async def on_lead_plan(
 
 @router.callback_query(F.data.startswith("lead:step:"))
 async def on_lead_step_toggle(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Toggle a plan step between pending and done."""
     parts = callback.data.split(":")  # type: ignore[union-attr]
@@ -519,6 +521,17 @@ async def on_lead_step_toggle(
         updated_plan.append(step)
 
     await lead_repo.update_lead(lead_id, engagement_plan=updated_plan)
+
+    # Sync scheduled_reminders row
+    if reminder_repo:
+        try:
+            sr = await reminder_repo.get_by_lead_and_step(lead_id, step_id)
+            if sr and sr.id:
+                new_sr_status = "completed" if toggled_status == "done" else "pending"
+                await reminder_repo.update_status(sr.id, new_sr_status)
+        except Exception as e:
+            logger.error("Failed to sync reminder for lead %s step %s: %s", lead_id, step_id, e)
+
     await callback.answer(f"Step {step_id}: {toggled_status}")
 
     # Refresh plan view by re-triggering the plan display
@@ -901,7 +914,9 @@ async def on_lead_delete_confirm(
 
 @router.callback_query(F.data.startswith("lead:confirm_delete:"))
 async def on_lead_delete_execute(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Permanently delete a lead."""
     lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
@@ -912,6 +927,13 @@ async def on_lead_delete_execute(
         return
 
     name = _lead_display_name(lead)
+
+    # Delete associated reminders (no FK cascade, so explicit)
+    if reminder_repo:
+        try:
+            await reminder_repo.delete_for_lead(lead_id)
+        except Exception as e:
+            logger.error("Failed to delete reminders for lead %s: %s", lead_id, e)
 
     try:
         await lead_repo.delete_lead(lead_id)

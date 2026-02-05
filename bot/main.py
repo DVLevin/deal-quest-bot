@@ -24,6 +24,7 @@ from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.engagement import EngagementService
 from bot.services.followup_scheduler import start_followup_scheduler
+from bot.services.plan_scheduler import start_plan_scheduler
 from bot.services.knowledge import KnowledgeService
 from bot.services.scenario_generator import ScenarioGeneratorService
 from bot.services.transcription import TranscriptionService
@@ -35,6 +36,7 @@ from bot.storage.repositories import (
     GeneratedScenarioRepo,
     LeadActivityRepo,
     LeadRegistryRepo,
+    ScheduledReminderRepo,
     ScenariosSeenRepo,
     SupportSessionRepo,
     TraceRepo,
@@ -78,6 +80,7 @@ async def main() -> None:
     activity_repo = LeadActivityRepo(insforge)
     generated_scenario_repo = GeneratedScenarioRepo(insforge)
     trace_repo = TraceRepo(insforge)
+    reminder_repo = ScheduledReminderRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -148,6 +151,7 @@ async def main() -> None:
             "activity_repo": activity_repo,
             "generated_scenario_repo": generated_scenario_repo,
             "trace_repo": trace_repo,
+            "reminder_repo": reminder_repo,
             "insforge": insforge,
             "crypto": crypto,
             "knowledge": knowledge,
@@ -183,6 +187,13 @@ async def main() -> None:
             name="followup_scheduler",
         )
         logger.info("Followup scheduler started")
+
+        # Start plan step reminder scheduler in background
+        create_background_task(
+            start_plan_scheduler(bot, reminder_repo, lead_repo, activity_repo),
+            name="plan_scheduler",
+        )
+        logger.info("Plan scheduler started (15-minute interval)")
 
     # Start background scenario generation loop
     if scenario_generator:

@@ -36,8 +36,10 @@ from bot.task_utils import create_background_task
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadRegistryModel, SupportSessionModel
+from bot.services.plan_scheduler import schedule_plan_reminders
 from bot.storage.repositories import (
     LeadRegistryRepo,
+    ScheduledReminderRepo,
     SupportSessionRepo,
     UserMemoryRepo,
     UserRepo,
@@ -117,6 +119,7 @@ async def _run_support_pipeline(
     photo_key: str | None = None,
     input_type: str = "text",
     image_b64: str | None = None,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -328,6 +331,7 @@ async def _run_support_pipeline(
                         prospect_company=prospect_company,
                         prospect_geography=prospect_geography,
                         original_context=user_input[:300],
+                        reminder_repo=reminder_repo,
                     ),
                     name=f"enrich_lead_{saved_lead_id}",
                 )
@@ -416,6 +420,7 @@ async def _background_enrich_lead(
     prospect_company: str | None,
     prospect_geography: str | None = None,
     original_context: str | None = None,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Background task: web research + engagement plan generation for a new lead."""
     try:
@@ -463,11 +468,23 @@ async def _background_enrich_lead(
 
         plan = await engagement_service.generate_plan(lead, research)
         if plan:
-            # Schedule first followup 3 days from now
+            # Schedule first followup 3 days from now (backward compat with old scheduler)
             next_followup = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
             await lead_repo.update_lead(
                 lead_id, engagement_plan=plan, next_followup=next_followup
             )
+            # Schedule per-step reminders (new scheduler)
+            if reminder_repo:
+                try:
+                    await schedule_plan_reminders(
+                        reminder_repo=reminder_repo,
+                        lead_id=lead_id,
+                        telegram_id=lead.telegram_id,
+                        plan_steps=plan,
+                        base_date=datetime.now(timezone.utc),
+                    )
+                except Exception as e:
+                    logger.error("Failed to schedule plan reminders for lead %s: %s", lead_id, e)
 
         logger.info("Background enrichment complete for lead %s", lead_id)
     except Exception as e:
@@ -613,6 +630,7 @@ async def on_support_photo(
     insforge: InsForgeClient,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Process photo upload in support mode — download, store, analyze."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -670,6 +688,7 @@ async def on_support_photo(
         photo_key=photo_key,
         input_type="photo",
         image_b64=photo_b64,
+        reminder_repo=reminder_repo,
     )
 
 
@@ -689,6 +708,7 @@ async def on_support_voice(
     transcription: TranscriptionService,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Transcribe voice message and run through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -733,6 +753,7 @@ async def on_support_voice(
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
         input_type="voice",
+        reminder_repo=reminder_repo,
     )
 
 
@@ -750,6 +771,7 @@ async def on_support_input(
     agent_registry: AgentRegistry,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Process text input through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -796,6 +818,7 @@ async def on_support_input(
         state=state,
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
+        reminder_repo=reminder_repo,
     )
 
 
