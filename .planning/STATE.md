@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 14 in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 14 complete.
 
 ## Previous Milestones
 
@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 14 of 12-16 (Engagement Plan Execution)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-05 -- Completed 14-01-PLAN.md (Rich Reminder Messages)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-05 -- Completed 14-02-PLAN.md (Reminder Action Handlers)
 
-Progress: [#########-----------] 11/25 v2.0 requirements (44%)
+Progress: [##########----------] 12/25 v2.0 requirements (48%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36
-- Average duration: 3.6m
-- Total execution time: 128m
+- Total plans completed: 37
+- Average duration: 3.5m
+- Total execution time: 130m
 
 **By Phase:**
 
@@ -46,10 +46,10 @@ Progress: [#########-----------] 11/25 v2.0 requirements (44%)
 | 11. Performance & Reliability | 2/2 | 4m | 2m |
 | 12. Scheduling & Reminder | 2/2 | 12m | 6m |
 | 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
-| 14. Engagement Plan Execution | 1/2 | 1m | 1m |
+| 14. Engagement Plan Execution | 2/2 | 3m | 1.5m |
 
 **Recent Trend:**
-- Last 5 plans: 1m, 2m, 3m, 5m, 1m
+- Last 5 plans: 2m, 3m, 5m, 1m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [13-03]: Extraction results merged into prospect_info only if strategist didn't capture them
 - [14-01]: 3 reminders before auto-snooze (MAX_ESCALATION=3)
 - [14-01]: Callback data format: reminder:{action}:{lead_id}:{step_id}
+- [14-02]: Activity types: step_execution, step_snooze, step_skip for lead_activity_log
+- [14-02]: Dual-update on Done/Skip: update both scheduled_reminders and engagement_plan JSONB
 
 ### Pending Todos
 
@@ -99,6 +101,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 14-01-PLAN.md (Rich Reminder Messages)
+Stopped at: Completed 14-02-PLAN.md (Reminder Action Handlers) -- Phase 14 complete
 Resume file: None
-Next action: Execute 14-02-PLAN.md (Reminder Action Handlers)
+Next action: Plan Phase 15 (Re-Analysis on New Context) or Phase 16 (TMA Experience)
