@@ -223,7 +223,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
 - [x] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
 - [x] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
-- [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
+- [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 
 ### Phase 12: Scheduling & Reminder Infrastructure
@@ -304,10 +304,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 15-01-PLAN.md -- Database foundation: lead_analysis_history table, extended activity types, models (Wave 1)
-- [ ] 15-02-PLAN.md -- Context input flow: FSM states, multimodal handlers (text/voice/photo/forward), activity logging (Wave 1)
-- [ ] 15-03-PLAN.md -- ReanalysisStrategistAgent: agent class, prompt, JSON diff utility (Wave 2)
-- [ ] 15-04-PLAN.md -- Re-analysis trigger: button handlers, history saving, plan update flow, TMA display (Wave 3)
+- [x] 15-01-PLAN.md -- Database foundation: lead_analysis_history table, extended activity types, models (Wave 1)
+- [x] 15-02-PLAN.md -- Context input flow: FSM states, multimodal handlers (text/voice/photo/forward), activity logging (Wave 1)
+- [x] 15-03-PLAN.md -- ReanalysisStrategistAgent: agent class, prompt, JSON diff utility (Wave 2)
+- [x] 15-04-PLAN.md -- Re-analysis trigger: button handlers, history saving, plan update flow, TMA display (Wave 3)
 
 ### Phase 16: TMA Lead Experience & Dashboard
 **Goal**: The TMA transforms from a passive lead viewer into an action-oriented sales cockpit -- leads open to their engagement plan first, steps are completable from the app, and the dashboard tells users what to do today
@@ -369,5 +369,5 @@ Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 | 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
-| 15. Conversational Re-analysis | 0/4 | Not started | - |
+| 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |

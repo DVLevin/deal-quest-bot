@@ -344,11 +344,11 @@
 | EPLAN-V20-03 | Phase 14 | Complete |
 | EPLAN-V20-04 | Phase 14 | Complete |
 | EPLAN-V20-05 | Phase 14 | Complete |
-| REANA-V20-01 | Phase 15 | Pending |
-| REANA-V20-02 | Phase 15 | Pending |
-| REANA-V20-03 | Phase 15 | Pending |
-| REANA-V20-04 | Phase 15 | Pending |
-| REANA-V20-05 | Phase 15 | Pending |
+| REANA-V20-01 | Phase 15 | Complete |
+| REANA-V20-02 | Phase 15 | Complete |
+| REANA-V20-03 | Phase 15 | Complete |
+| REANA-V20-04 | Phase 15 | Complete |
+| REANA-V20-05 | Phase 15 | Complete |
 | TMAUX-V20-01 | Phase 16 | Pending |
 | TMAUX-V20-02 | Phase 16 | Pending |
 | TMAUX-V20-03 | Phase 16 | Pending |
