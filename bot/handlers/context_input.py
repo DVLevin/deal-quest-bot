@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import logging
 
 from aiogram import Bot, F, Router
@@ -15,12 +16,22 @@ from aiogram.types import (
     Message,
 )
 
+from bot.agents.base import AgentInput
+from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
+from bot.config import settings
+from bot.services.knowledge import get_knowledge_base
+from bot.services.llm_router import get_llm_for_user
 from bot.services.transcription import TranscriptionService
 from bot.states import ReanalysisState
+from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadActivityModel
 from bot.storage.repositories import (
     LeadActivityRepo,
+    LeadAnalysisHistoryRepo,
     LeadRegistryRepo,
+    ScheduledReminderRepo,
+    UserMemoryRepo,
+    UserRepo,
 )
 from bot.utils import _sanitize, truncate_message
 
@@ -507,5 +518,328 @@ async def on_reanalyze_skip(
             ]),
         )
 
+    await state.clear()
+    await callback.answer()
+
+
+# ─── Re-analysis Execution ─────────────────────────────────────────
+
+class SimplePipelineCtx:
+    """Minimal pipeline context for standalone agent execution."""
+
+    def __init__(self, llm, kb: str, memory: dict) -> None:
+        self.llm = llm
+        self.knowledge_base = kb
+        self.user_memory = memory
+        self.image_b64 = None
+
+    def get_result(self, name: str):
+        return None
+
+
+@router.callback_query(F.data.startswith("reanalyze:start:"))
+async def on_reanalyze_start(
+    callback: CallbackQuery,
+    state: FSMContext,
+    lead_repo: LeadRegistryRepo,
+    activity_repo: LeadActivityRepo,
+    user_repo: UserRepo,
+    openrouter_api_key: str = "",
+) -> None:
+    """Execute re-analysis on a lead with accumulated context."""
+    lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
+    tg_id = callback.from_user.id
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await callback.answer("Lead not found.")
+        return
+
+    await callback.answer("Re-analyzing strategy...")
+
+    # Get state data (context items collected)
+    data = await state.get_data()
+    context_items = data.get("context_items", [])
+
+    # Load recent activities for this lead
+    recent_activities = await activity_repo.get_for_lead(lead_id, limit=10)
+    new_context_items = [
+        {
+            "activity_type": a.activity_type,
+            "content": a.content,
+            "created_at": a.created_at,
+            "metadata": a.metadata,
+        }
+        for a in recent_activities
+        if a.activity_type in ("prospect_response", "meeting_notes", "context_update")
+    ][:5]  # Last 5 relevant activities
+
+    # Build prior analysis from lead fields
+    prior_analysis = {}
+    try:
+        if lead.prospect_analysis:
+            prior_analysis["analysis"] = (
+                json.loads(lead.prospect_analysis)
+                if lead.prospect_analysis.startswith("{")
+                else {"raw": lead.prospect_analysis}
+            )
+        if lead.closing_strategy:
+            prior_analysis["strategy"] = (
+                json.loads(lead.closing_strategy)
+                if lead.closing_strategy.startswith("{")
+                else {"raw": lead.closing_strategy}
+            )
+        if lead.engagement_tactics:
+            prior_analysis["engagement_tactics"] = (
+                json.loads(lead.engagement_tactics)
+                if lead.engagement_tactics.startswith("{")
+                else {"raw": lead.engagement_tactics}
+            )
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Build lead info
+    lead_info = {
+        "name": _lead_display_name(lead),
+        "company": lead.prospect_company,
+        "title": lead.prospect_title,
+        "geography": lead.prospect_geography,
+    }
+
+    # Get LLM and knowledge base
+    user = await user_repo.get_by_telegram_id(tg_id)
+    llm = await get_llm_for_user(user, openrouter_api_key)
+    knowledge_base = await get_knowledge_base()
+
+    # Load user memory
+    client = InsForgeClient(settings.insforge_url, settings.insforge_service_key)
+    memory_repo = UserMemoryRepo(client)
+    user_memory_model = await memory_repo.get(tg_id)
+    user_memory = user_memory_model.memory_data if user_memory_model else {}
+
+    pipeline_ctx = SimplePipelineCtx(llm, knowledge_base, user_memory)
+
+    # Run the agent
+    agent = ReanalysisStrategistAgent()
+    agent_input = AgentInput(
+        user_message="Re-analyze this lead with new context",
+        context={
+            "prior_analysis": prior_analysis,
+            "new_context_items": new_context_items,
+            "lead_info": lead_info,
+        },
+    )
+
+    status_msg = await callback.message.reply(  # type: ignore[union-attr]
+        "*Re-analyzing strategy...*\n\n"
+        "Reviewing new context and updating analysis.",
+        parse_mode="Markdown",
+    )
+
+    result = await agent.run(agent_input, pipeline_ctx)
+
+    if not result.success:
+        await status_msg.edit_text(
+            f"Re-analysis failed: {result.error[:200] if result.error else 'Unknown error'}"
+        )
+        await state.clear()
+        return
+
+    # Parse result
+    result_data = result.data or {}
+    changes_summary = result_data.get("changes_summary", {})
+    updated_analysis = result_data.get("updated_analysis", {})
+    updated_strategy = result_data.get("updated_strategy", {})
+    updated_tactics = result_data.get("updated_engagement_tactics", {})
+    updated_draft = result_data.get("updated_draft", {})
+    field_diff = result_data.get("field_diff", {})
+    recommended_action = result_data.get("recommended_next_action", "")
+
+    # Save to lead_analysis_history
+    analysis_snapshot = {
+        "analysis": updated_analysis,
+        "strategy": updated_strategy,
+        "engagement_tactics": updated_tactics,
+        "draft": updated_draft,
+    }
+
+    headline = changes_summary.get("headline", "Strategy updated") if isinstance(changes_summary, dict) else str(changes_summary)[:100]
+    details = changes_summary.get("details", []) if isinstance(changes_summary, dict) else []
+    narrative = f"{headline}\n" + "\n".join(f"- {d}" for d in details[:5])
+
+    # Find triggering activity ID (most recent)
+    triggering_id = None
+    if context_items:
+        triggering_id = context_items[-1].get("activity_id")
+
+    # Save history
+    history_repo = LeadAnalysisHistoryRepo(client)
+    await history_repo.save_version(
+        lead_id=lead_id,
+        telegram_id=tg_id,
+        analysis_snapshot=analysis_snapshot,
+        changes_summary=narrative,
+        field_diff=field_diff,
+        triggered_by="context_update",
+        triggering_activity_id=triggering_id,
+    )
+
+    # Update lead with new analysis
+    updates = {}
+    if updated_analysis:
+        updates["prospect_analysis"] = json.dumps(updated_analysis)
+    if updated_strategy:
+        updates["closing_strategy"] = json.dumps(updated_strategy)
+    if updated_tactics:
+        updates["engagement_tactics"] = json.dumps(updated_tactics)
+    if updated_draft:
+        updates["draft_response"] = json.dumps(updated_draft)
+
+    # Remove pending re-analysis note
+    if lead.notes and "[Pending re-analysis]" in lead.notes:
+        updates["notes"] = lead.notes.replace("[Pending re-analysis]", "").strip()
+
+    if updates:
+        await lead_repo.update_lead(lead_id, **updates)
+
+    # Log re-analysis activity
+    await activity_repo.create(
+        LeadActivityModel(
+            lead_id=lead_id,
+            telegram_id=tg_id,
+            activity_type="re_analysis",
+            content=narrative[:1000],
+            metadata={
+                "headline": headline,
+                "changes_count": len(details),
+                "has_field_diff": bool(field_diff),
+            },
+        )
+    )
+
+    # Format response with changes summary first
+    name = _sanitize(_lead_display_name(lead))
+    response = f"*Strategy Re-analyzed -- {name}*\n\n"
+    response += f"*WHAT CHANGED*\n"
+    response += f"_{_sanitize(headline)}_\n\n"
+
+    if details:
+        for detail in details[:5]:
+            response += f"- {_sanitize(detail)}\n"
+        response += "\n"
+
+    if recommended_action:
+        response += f"*Next Action:* {_sanitize(recommended_action)}\n\n"
+
+    # Store for plan update decision
+    await state.update_data(
+        reanalysis_result=result_data,
+        reanalysis_lead_id=lead_id,
+    )
+    await state.set_state(ReanalysisState.updating_plan)
+
+    await status_msg.edit_text(
+        truncate_message(response)
+        + "\nWould you like me to update the engagement plan based on this new analysis?",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Yes, Update Plan",
+                        callback_data=f"reanalyze:plan:{lead_id}",
+                    ),
+                    InlineKeyboardButton(
+                        text="No, Keep Current",
+                        callback_data=f"reanalyze:noplan:{lead_id}",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="View Lead",
+                        callback_data=f"lead:view:{lead_id}",
+                    ),
+                ],
+            ]
+        ),
+    )
+
+
+@router.callback_query(F.data.startswith("reanalyze:plan:"))
+async def on_reanalyze_update_plan(
+    callback: CallbackQuery,
+    state: FSMContext,
+    lead_repo: LeadRegistryRepo,
+    reminder_repo: ScheduledReminderRepo | None = None,
+) -> None:
+    """Regenerate engagement plan after re-analysis."""
+    lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await callback.answer("Lead not found.")
+        await state.clear()
+        return
+
+    await callback.answer("Updating engagement plan...")
+
+    # Cancel existing pending reminders
+    if reminder_repo:
+        await reminder_repo.cancel_pending_for_lead(lead_id)
+
+    # Mark that plan needs regeneration (via notes or a flag)
+    current_notes = lead.notes or ""
+    if "[Plan update pending]" not in current_notes:
+        new_notes = f"[Plan update pending] {current_notes}".strip()
+        await lead_repo.update_lead(lead_id, notes=new_notes[:1000])
+
+    name = _sanitize(_lead_display_name(lead))
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        f"*Engagement plan will be updated for {name}*\n\n"
+        f"The old plan has been cleared. A new plan will be generated "
+        f"based on the updated analysis.\n\n"
+        f"Use /leads to view the lead and check back for the new plan.",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="View Lead", callback_data=f"lead:view:{lead_id}"
+                    )
+                ],
+            ]
+        ),
+    )
+    await state.clear()
+
+
+@router.callback_query(F.data.startswith("reanalyze:noplan:"))
+async def on_reanalyze_skip_plan(
+    callback: CallbackQuery,
+    state: FSMContext,
+    lead_repo: LeadRegistryRepo,
+) -> None:
+    """Keep existing engagement plan after re-analysis."""
+    lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
+
+    lead = await lead_repo.get_by_id(lead_id)
+    name = _sanitize(_lead_display_name(lead)) if lead else f"Lead #{lead_id}"
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        f"*Re-analysis complete for {name}*\n\n"
+        f"The strategy has been updated. The existing engagement plan "
+        f"has been kept as-is.\n\n"
+        f"Use /leads to view the updated lead.",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="View Lead", callback_data=f"lead:view:{lead_id}"
+                    )
+                ],
+            ]
+        ),
+    )
     await state.clear()
     await callback.answer()
