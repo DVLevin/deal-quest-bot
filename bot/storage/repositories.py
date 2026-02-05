@@ -476,6 +476,86 @@ class LeadRegistryRepo:
                 counts[s] = counts.get(s, 0) + 1
         return counts
 
+    async def add_research_version(
+        self, lead_id: int, query: str, url: str | None, content: str
+    ) -> None:
+        """Add a new web research version to a lead."""
+        lead = await self.get_by_id(lead_id)
+        if not lead:
+            return
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Initialize or get existing versions structure
+        versions_data = lead.web_research_versions or {"versions": [], "current_version_id": 0}
+        versions = versions_data.get("versions", [])
+
+        # Calculate new version_id
+        new_version_id = max((v.get("version_id", 0) for v in versions), default=0) + 1
+
+        # Create new version entry
+        new_version = {
+            "version_id": new_version_id,
+            "created_at": now,
+            "query_used": query,
+            "url_provided": url,
+            "content": content,
+        }
+
+        versions.append(new_version)
+        versions_data["versions"] = versions
+        versions_data["current_version_id"] = new_version_id
+
+        # Update both web_research_versions and legacy web_research field
+        await self.update_lead(
+            lead_id,
+            web_research_versions=versions_data,
+            web_research=content,
+        )
+
+    async def delete_research_version(self, lead_id: int, version_id: int) -> None:
+        """Delete a specific web research version from a lead."""
+        lead = await self.get_by_id(lead_id)
+        if not lead:
+            return
+
+        versions_data = lead.web_research_versions
+        if not versions_data:
+            return
+
+        versions = versions_data.get("versions", [])
+        current_version_id = versions_data.get("current_version_id", 0)
+
+        # Filter out the version to delete
+        remaining_versions = [v for v in versions if v.get("version_id") != version_id]
+
+        if len(remaining_versions) == len(versions):
+            # Version not found, nothing to delete
+            return
+
+        versions_data["versions"] = remaining_versions
+
+        # If deleted version was current, set current to most recent remaining (or None)
+        if current_version_id == version_id:
+            if remaining_versions:
+                # Set to the most recent version (highest version_id)
+                new_current = max(remaining_versions, key=lambda v: v.get("version_id", 0))
+                versions_data["current_version_id"] = new_current.get("version_id", 0)
+                current_content = new_current.get("content", "")
+            else:
+                versions_data["current_version_id"] = 0
+                current_content = ""
+
+            # Update legacy web_research to current version content
+            await self.update_lead(
+                lead_id,
+                web_research_versions=versions_data,
+                web_research=current_content if current_content else None,
+            )
+        else:
+            # Just update versions, keep current web_research
+            await self.update_lead(lead_id, web_research_versions=versions_data)
+
 
 class LeadActivityRepo:
     def __init__(self, client: InsForgeClient) -> None:

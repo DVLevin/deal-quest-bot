@@ -100,6 +100,7 @@ class LeadRegistryModel(BaseModel):
     input_type: str = "text"
     original_context: str | None = None
     web_research: str | None = None
+    web_research_versions: dict[str, Any] | None = None
     engagement_plan: list[dict[str, Any]] | None = None
     last_contacted: str | None = None
     next_followup: str | None = None
