@@ -219,7 +219,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 
 ### v2.0 Phases
 
-- [ ] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
+- [x] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
 - [ ] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
 - [ ] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
 - [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
@@ -237,8 +237,8 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 **Plans**: 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Data foundation: migration SQL, ScheduledReminderModel, ScheduledReminderRepo, updated engagement plan prompt (Wave 1)
-- [ ] 12-02-PLAN.md -- Plan scheduler service, plan-to-reminders wiring in support.py, lead lifecycle hooks, scheduler startup (Wave 2)
+- [x] 12-01-PLAN.md -- Data foundation: migration SQL, ScheduledReminderModel, ScheduledReminderRepo, updated engagement plan prompt (Wave 1)
+- [x] 12-02-PLAN.md -- Plan scheduler service, plan-to-reminders wiring in support.py, lead lifecycle hooks, scheduler startup (Wave 2)
 
 ### Phase 13: Smart Lead Creation
 **Goal**: Users can screenshot a LinkedIn profile, email, or business card and get a fully analyzed lead with strategy and engagement plan -- reducing lead creation from minutes of manual typing to a single photo
@@ -332,7 +332,7 @@ Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Scheduling Infrastructure | 0/2 | Not started | - |
+| 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
 | 13. Smart Lead Creation | 0/TBD | Not started | - |
 | 14. Engagement Plan Execution | 0/TBD | Not started | - |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
