@@ -101,9 +101,19 @@ def _lead_detail_keyboard(
     has_draft: bool = False,
     has_research: bool = False,
     research_version_count: int = 0,
+    has_pending_reanalysis: bool = False,
 ) -> InlineKeyboardMarkup:
     """Build expanded lead detail keyboard with engagement actions."""
     buttons = []
+
+    # Pending re-analysis row (if applicable) - show prominently at top
+    if has_pending_reanalysis:
+        buttons.append([
+            InlineKeyboardButton(
+                text="🔄 Re-analyze Strategy (Pending)",
+                callback_data=f"reanalyze:start:{lead_id}",
+            ),
+        ])
 
     # Refresh + Plan row
     top_row = [
@@ -408,12 +418,19 @@ async def on_lead_view(
     research_version_count = len(
         (lead.web_research_versions or {}).get("versions", [])
     )
+    has_pending_reanalysis = bool(lead.notes and "[Pending re-analysis]" in lead.notes)
 
     await callback.message.edit_text(  # type: ignore[union-attr]
         truncate_message(text),
         parse_mode="Markdown",
         reply_markup=_lead_detail_keyboard(
-            lead_id, lead.status, has_plan, has_draft, has_research, research_version_count
+            lead_id,
+            lead.status,
+            has_plan,
+            has_draft,
+            has_research,
+            research_version_count,
+            has_pending_reanalysis,
         ),
         disable_web_page_preview=True,
     )
@@ -447,12 +464,19 @@ async def on_lead_status_update(
         research_version_count = len(
             (lead.web_research_versions or {}).get("versions", [])
         )
+        has_pending_reanalysis = bool(lead.notes and "[Pending re-analysis]" in lead.notes)
 
         await callback.message.edit_text(  # type: ignore[union-attr]
             truncate_message(text),
             parse_mode="Markdown",
             reply_markup=_lead_detail_keyboard(
-                lead_id, new_status, has_plan, has_draft, has_research, research_version_count
+                lead_id,
+                new_status,
+                has_plan,
+                has_draft,
+                has_research,
+                research_version_count,
+                has_pending_reanalysis,
             ),
             disable_web_page_preview=True,
         )
