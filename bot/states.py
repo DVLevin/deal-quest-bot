@@ -26,6 +26,12 @@ class LeadEngagementState(StatesGroup):
     adding_context = State()
     sending_screenshot = State()
     editing_lead = State()
+    reresearch_input = State()
+
+
+class CommentSupportState(StatesGroup):
+    waiting_screenshot = State()
+    refining_comment = State()
 
 
 class SettingsState(StatesGroup):
