@@ -41,14 +41,12 @@ export function useUpdateLeadStatus() {
       // 2. Insert activity log entry for the status change
       const { error: activityError } = await getInsforge()
         .database.from('lead_activity_log')
-        .insert([
-          {
-            lead_id: leadId,
-            telegram_id: telegramId,
-            activity_type: 'status_change',
-            content: `Status changed from ${oldStatus} to ${newStatus}`,
-          },
-        ]);
+        .insert({
+          lead_id: leadId,
+          telegram_id: telegramId,
+          activity_type: 'status_change',
+          content: `Status changed from ${oldStatus} to ${newStatus}`,
+        });
 
       if (activityError) throw activityError;
     },

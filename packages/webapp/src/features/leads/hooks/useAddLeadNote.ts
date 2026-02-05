@@ -37,14 +37,12 @@ export function useAddLeadNote() {
       // 2. Create activity log entry
       const { error: activityError } = await getInsforge()
         .database.from('lead_activity_log')
-        .insert([
-          {
-            lead_id: leadId,
-            telegram_id: telegramId,
-            activity_type: 'context_update',
-            content: note,
-          },
-        ]);
+        .insert({
+          lead_id: leadId,
+          telegram_id: telegramId,
+          activity_type: 'context_update',
+          content: note,
+        });
 
       if (activityError) throw activityError;
     },

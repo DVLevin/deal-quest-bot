@@ -13,8 +13,6 @@ import { useState, useCallback, type ComponentType } from 'react';
 import { useParams, Navigate } from 'react-router';
 import {
   Target,
-  TrendingUp,
-  MessageSquare,
   FileText,
   ListChecks,
   Globe,
@@ -27,6 +25,8 @@ import {
 import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
+import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
+import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
 import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { LeadStatusSelector } from './LeadStatusSelector';
@@ -323,33 +323,39 @@ export function LeadDetail() {
         <AnalysisSection analysis={analysis} />
       )}
 
-      {/* Strategy section */}
-      {strategy && (
-        <Section icon={TrendingUp} title="Closing Strategy">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-            {strategy}
-          </p>
-        </Section>
+      {/* Strategy section (reuses Support display component) */}
+      {strategy && strategy.steps.length > 0 && (
+        <Card padding="sm">
+          <StrategyDisplay strategy={strategy} />
+        </Card>
       )}
 
-      {/* Tactics section */}
-      {tactics && (
-        <Section icon={MessageSquare} title="Engagement Tactics">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-            {tactics}
-          </p>
-        </Section>
+      {/* Tactics section (reuses Support display component) */}
+      {tactics && tactics.linkedin_actions.length > 0 && (
+        <Card padding="sm">
+          <TacticsDisplay tactics={tactics} />
+        </Card>
       )}
 
       {/* Draft response section with copy */}
-      {draft && (
+      {draft && draft.message && (
         <Section icon={FileText} title="Draft Response">
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-text-secondary">
-            {draft}
-          </pre>
+          <div className="flex items-center gap-2 mb-2">
+            {draft.platform && (
+              <Badge variant="brand" size="sm">{draft.platform}</Badge>
+            )}
+            {draft.word_count > 0 && (
+              <Badge variant="default" size="sm">{draft.word_count} words</Badge>
+            )}
+          </div>
+          <Card padding="sm" className="bg-surface-secondary/30">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-text">
+              {draft.message}
+            </pre>
+          </Card>
           <button
             type="button"
-            onClick={() => handleCopy(draft)}
+            onClick={() => handleCopy(draft.message)}
             className="mt-2 flex min-h-[44px] items-center gap-1.5 rounded-lg bg-surface-secondary px-3 py-2 text-xs font-medium text-text-secondary transition-colors active:bg-surface-secondary/70"
           >
             {copied ? (

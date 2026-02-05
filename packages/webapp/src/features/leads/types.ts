@@ -11,7 +11,12 @@
 
 import type { LeadStatus } from '@/types/enums';
 import type { EngagementPlanStep } from '@/types/tables';
-import type { SupportAnalysis } from '@/features/support/types';
+import type {
+  SupportAnalysis,
+  SupportStrategy,
+  EngagementTactics,
+  SupportDraft,
+} from '@/features/support/types';
 
 // ---------------------------------------------------------------------------
 // Status configuration (matches bot/handlers/leads.py STATUS_LABELS exactly)
@@ -81,31 +86,85 @@ export function parseLeadAnalysis(raw: string | null): SupportAnalysis {
 }
 
 // ---------------------------------------------------------------------------
-// Plain text field parsers (TEXT columns, not structured JSON)
+// Structured field parsers (TEXT columns containing JSON strings)
 // ---------------------------------------------------------------------------
 
-/**
- * Parse closing_strategy TEXT field. Stored as plain text, not structured JSON.
- */
-export function parseLeadStrategy(raw: string | null): string {
-  if (!raw || raw.trim() === '' || raw === 'null') return '';
-  return raw;
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+}
+
+function parseNumberField(value: unknown, fallback: number): number {
+  return typeof value === 'number' ? value : fallback;
 }
 
 /**
- * Parse engagement_tactics TEXT field. Stored as plain text, not structured JSON.
+ * Parse closing_strategy TEXT field into SupportStrategy.
+ *
+ * Stored as JSON string: {"steps": [...], "anticipated_objection": "...", ...}
  */
-export function parseLeadTactics(raw: string | null): string {
-  if (!raw || raw.trim() === '' || raw === 'null') return '';
-  return raw;
+export function parseLeadStrategy(raw: string | null): SupportStrategy | null {
+  if (!raw || raw.trim() === '' || raw === 'null') return null;
+  try {
+    const obj = raw.trim().startsWith('{') ? JSON.parse(raw) : null;
+    if (!obj || typeof obj !== 'object') return null;
+    const steps = Array.isArray(obj.steps)
+      ? obj.steps
+          .filter((s: unknown): s is Record<string, unknown> => typeof s === 'object' && s !== null)
+          .map((s: Record<string, unknown>) => ({
+            principle: parseStringField(s.principle, ''),
+            detail: parseStringField(s.detail, ''),
+          }))
+      : [];
+    return {
+      steps,
+      anticipated_objection: parseStringField(obj.anticipated_objection, ''),
+      objection_response: parseStringField(obj.objection_response, ''),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Parse draft_response TEXT field. Stored as plain text, not structured JSON.
+ * Parse engagement_tactics TEXT field into EngagementTactics.
+ *
+ * Stored as JSON string: {"linkedin_actions": [...], "comment_suggestion": "...", ...}
  */
-export function parseLeadDraft(raw: string | null): string {
-  if (!raw || raw.trim() === '' || raw === 'null') return '';
-  return raw;
+export function parseLeadTactics(raw: string | null): EngagementTactics | null {
+  if (!raw || raw.trim() === '' || raw === 'null') return null;
+  try {
+    const obj = raw.trim().startsWith('{') ? JSON.parse(raw) : null;
+    if (!obj || typeof obj !== 'object') return null;
+    return {
+      linkedin_actions: parseStringArray(obj.linkedin_actions),
+      comment_suggestion: parseStringField(obj.comment_suggestion, ''),
+      timing: parseStringField(obj.timing, ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse draft_response TEXT field into SupportDraft.
+ *
+ * Stored as JSON string: {"platform": "...", "message": "...", ...}
+ */
+export function parseLeadDraft(raw: string | null): SupportDraft | null {
+  if (!raw || raw.trim() === '' || raw === 'null') return null;
+  try {
+    const obj = raw.trim().startsWith('{') ? JSON.parse(raw) : null;
+    if (!obj || typeof obj !== 'object') return null;
+    return {
+      platform: parseStringField(obj.platform, ''),
+      message: parseStringField(obj.message, ''),
+      word_count: parseNumberField(obj.word_count, 0),
+      playbook_reference: parseStringField(obj.playbook_reference, ''),
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
