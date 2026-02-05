@@ -250,7 +250,12 @@ Plans:
   3. Uploaded images are pre-resized to 1568px max dimension before vision model calls (verified by checking image dimensions in the pipeline)
   4. Sending a URL shows guidance to paste the profile text instead of attempting automated scraping
   5. Sending plain text still routes through the existing strategist pipeline with no regression
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md -- ClaudeProvider image fix + image pre-resize utility (Wave 1)
+- [ ] 13-02-PLAN.md -- ExtractionAgent with focused OCR prompt (Wave 1)
+- [ ] 13-03-PLAN.md -- Two-step pipeline config + input routing in support.py (Wave 2)
 
 ### Phase 14: Engagement Plan Execution
 **Goal**: The bot actively coaches users through their engagement plans -- sending timed reminders with contextual drafts, accepting Done/Snooze/Skip responses, and escalating overdue steps
@@ -333,7 +338,7 @@ Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
-| 13. Smart Lead Creation | 0/TBD | Not started | - |
+| 13. Smart Lead Creation | 0/3 | Ready | - |
 | 14. Engagement Plan Execution | 0/TBD | Not started | - |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |
