@@ -234,7 +234,11 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
   2. The engagement plan prompt produces `delay_days` integer for each step, and the timing parser correctly computes due dates from plan creation time
   3. The polling scheduler runs every 15 minutes, finds due reminders, and sends a basic notification to the user (rich UX in Phase 14)
   4. Duplicate reminders are prevented -- restarting the bot does not re-send reminders that were already dispatched (guarded by `last_reminded_at`)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 12-01-PLAN.md -- Data foundation: migration SQL, ScheduledReminderModel, ScheduledReminderRepo, updated engagement plan prompt (Wave 1)
+- [ ] 12-02-PLAN.md -- Plan scheduler service, plan-to-reminders wiring in support.py, lead lifecycle hooks, scheduler startup (Wave 2)
 
 ### Phase 13: Smart Lead Creation
 **Goal**: Users can screenshot a LinkedIn profile, email, or business card and get a fully analyzed lead with strategy and engagement plan -- reducing lead creation from minutes of manual typing to a single photo
@@ -328,7 +332,7 @@ Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Scheduling Infrastructure | 0/TBD | Not started | - |
+| 12. Scheduling Infrastructure | 0/2 | Not started | - |
 | 13. Smart Lead Creation | 0/TBD | Not started | - |
 | 14. Engagement Plan Execution | 0/TBD | Not started | - |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
