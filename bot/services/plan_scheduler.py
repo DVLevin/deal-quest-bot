@@ -9,14 +9,18 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.storage.models import ScheduledReminderModel
+from bot.storage.models import LeadRegistryModel, ScheduledReminderModel
 from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, ScheduledReminderRepo
 
 logger = logging.getLogger(__name__)
 
 # Check every 15 minutes
 PLAN_CHECK_INTERVAL = 15 * 60
+
+# After 3 reminder sends, auto-snooze for 7 days
+MAX_ESCALATION = 3
 
 # Default spacing between steps if no timing info
 DEFAULT_SPACING_DAYS = 3
@@ -118,6 +122,79 @@ async def schedule_plan_reminders(
     )
 
 
+def _format_reminder_message(
+    lead: LeadRegistryModel,
+    reminder: ScheduledReminderModel,
+    step: dict | None,
+    escalation_level: int,
+) -> str:
+    """Format a rich reminder message with escalation tone."""
+    name = lead.prospect_name or f"Lead #{lead.id}"
+    company = f" @ {lead.prospect_company}" if lead.prospect_company else ""
+
+    # Get step details
+    step_desc = ""
+    if step:
+        step_desc = step.get("description", "")
+
+    # Escalation tone
+    if escalation_level == 0:
+        icon = "\U0001F514"  # bell
+        intro = "Time for your next engagement step!"
+    elif escalation_level == 1:
+        icon = "\U0001F514"  # bell
+        intro = "Gentle reminder: this step is still pending."
+    else:
+        icon = "\u2757"  # exclamation
+        intro = "Final reminder before auto-snooze."
+
+    # Draft preview (truncated)
+    draft_preview = ""
+    draft_text = reminder.draft_text or (step.get("suggested_text") if step else None)
+    if draft_text:
+        preview = draft_text[:150].replace("\n", " ")
+        draft_preview = f'\n\n\U0001F4DD *Draft:* "{preview}..."'
+
+    return (
+        f"{icon} *Engagement Step Due: {name}{company}*\n\n"
+        f"{intro}\n\n"
+        f"\U0001F4CB *Step {reminder.step_id}:* {step_desc}"
+        f"{draft_preview}"
+    )
+
+
+def _reminder_action_keyboard(lead_id: int, step_id: int) -> InlineKeyboardMarkup:
+    """Build inline keyboard for reminder actions."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="\u2705 Done",
+                callback_data=f"reminder:done:{lead_id}:{step_id}"
+            ),
+            InlineKeyboardButton(
+                text="\u23F0 Snooze 24h",
+                callback_data=f"reminder:snooze:{lead_id}:{step_id}"
+            ),
+            InlineKeyboardButton(
+                text="\u23ED Skip",
+                callback_data=f"reminder:skip:{lead_id}:{step_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="\U0001F4DD View Full Draft",
+                callback_data=f"reminder:draft:{lead_id}:{step_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="\U0001F4CB View Lead",
+                callback_data=f"lead:view:{lead_id}"
+            ),
+        ],
+    ])
+
+
 async def _process_due_plan_reminders(
     bot: Bot,
     reminder_repo: ScheduledReminderRepo,
@@ -147,31 +224,63 @@ async def _process_due_plan_reminders(
                 except (ValueError, TypeError):
                     pass
 
-            # Optimistic update BEFORE sending (at-most-once delivery)
-            await reminder_repo.mark_reminded(reminder.id, now_iso)  # type: ignore[arg-type]
+            # Check escalation level
+            reminder_count = reminder.reminder_count or 0
 
-            # Fetch lead for context
+            # Fetch lead for context (needed for both escalation and normal flow)
             lead = await lead_repo.get_by_id(reminder.lead_id)
             if not lead:
                 # Lead was deleted — mark reminder as skipped
                 await reminder_repo.update_status(reminder.id, "skipped")  # type: ignore[arg-type]
                 continue
 
-            # Build notification text (simple Markdown, Phase 14 will upgrade)
-            name = lead.prospect_name or f"Lead #{lead.id}"
-            step_desc = reminder.draft_text or f"Step {reminder.step_id} of your engagement plan"
+            if reminder_count >= MAX_ESCALATION:
+                # Auto-snooze for 7 days
+                new_due = now + timedelta(days=7)
+                await reminder_repo.snooze(reminder.id, new_due.isoformat())  # type: ignore[arg-type]
 
-            text = (
-                f"\U0001F514 *Engagement Step Due: {name}*\n\n"
-                f"\U0001F4CB *Step {reminder.step_id}:* {step_desc[:200]}\n\n"
-                f"Use /leads to view details and take action."
-            )
+                # Notify user of auto-snooze
+                name = lead.prospect_name or f"Lead #{lead.id}"
+                await bot.send_message(
+                    chat_id=reminder.telegram_id,
+                    text=(
+                        f"\u23F8 *Auto-snoozed: {name} - Step {reminder.step_id}*\n\n"
+                        f"This step has been automatically snoozed for 7 days "
+                        f"after {MAX_ESCALATION} reminders.\n\n"
+                        f"Use /leads to manage your engagement plans."
+                    ),
+                    parse_mode="Markdown",
+                )
 
-            # Send notification
+                logger.info(
+                    "Auto-snoozed reminder for lead %s step %s (hit MAX_ESCALATION)",
+                    reminder.lead_id,
+                    reminder.step_id,
+                )
+                await asyncio.sleep(0.5)
+                continue
+
+            # Optimistic update BEFORE sending (at-most-once delivery)
+            await reminder_repo.mark_reminded(reminder.id, now_iso)  # type: ignore[arg-type]
+
+            # Get step details from engagement_plan
+            step = None
+            if lead.engagement_plan:
+                for s in lead.engagement_plan:
+                    if s.get("step_id") == reminder.step_id:
+                        step = s
+                        break
+
+            # Build rich message with escalation tone
+            text = _format_reminder_message(lead, reminder, step, reminder_count)
+            keyboard = _reminder_action_keyboard(lead.id, reminder.step_id)  # type: ignore[arg-type]
+
+            # Send notification with inline keyboard
             await bot.send_message(
                 chat_id=reminder.telegram_id,
                 text=text,
                 parse_mode="Markdown",
+                reply_markup=keyboard,
             )
 
             # Update status to sent if still pending
@@ -179,10 +288,11 @@ async def _process_due_plan_reminders(
                 await reminder_repo.update_status(reminder.id, "sent")  # type: ignore[arg-type]
 
             logger.info(
-                "Sent reminder for lead %s step %s to user %s",
+                "Sent reminder for lead %s step %s to user %s (escalation %d)",
                 reminder.lead_id,
                 reminder.step_id,
                 reminder.telegram_id,
+                reminder_count,
             )
 
             # Rate limiting: brief pause between sends
