@@ -95,11 +95,19 @@ export interface ScenarioSeenRow {
 // ---------------------------------------------------------------------------
 // lead_registry
 // ---------------------------------------------------------------------------
+/**
+ * Status for engagement plan steps.
+ * - pending: not yet actioned
+ * - done: completed successfully
+ * - skipped: user decided to skip this step
+ */
+export type PlanStepStatus = 'pending' | 'done' | 'skipped';
+
 export interface EngagementPlanStep {
   step_id: number;
   description: string;
   timing: string;
-  status: 'pending' | 'done';
+  status: PlanStepStatus;
   suggested_text?: string;
   completed_at?: string | null;
 }

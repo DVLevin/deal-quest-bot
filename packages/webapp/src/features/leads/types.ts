@@ -189,7 +189,11 @@ export function parseEngagementPlan(plan: unknown): EngagementPlanStep[] {
       description: parseStringField(item.description, ''),
       timing: parseStringField(item.timing, ''),
       status:
-        item.status === 'done' ? ('done' as const) : ('pending' as const),
+        item.status === 'done'
+          ? ('done' as const)
+          : item.status === 'skipped'
+            ? ('skipped' as const)
+            : ('pending' as const),
       suggested_text:
         typeof item.suggested_text === 'string'
           ? item.suggested_text
