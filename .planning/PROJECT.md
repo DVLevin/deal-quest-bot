@@ -89,17 +89,20 @@ Sales reps can see their progress, practice scenarios, get deal support, and tra
 | Inlined shared types for Railway | Railway `root_dir=packages/webapp` can't access `../shared`; types copied to `webapp/src/types/` | Confirmed |
 | Always push after commits | Railway deploys from remote — local-only commits never reach production. GSD executors must push after plan completion | Lesson learned (Phase 2/3) |
 
-## Current Milestone: v1.1 — Quick & Medium Wins
+## Previous Milestone: v1.1 — Quick & Medium Wins (COMPLETE)
 
-**Goal:** Improve the existing v1.0 app with targeted enhancements across lead management, training experience, error handling & UX, and performance & reliability.
+**Result:** 19/19 requirements delivered across 4 phases (8-11). Lead management, training experience, error handling & UX, and performance & reliability all improved.
+
+## Current Milestone: v2.0 — Sales Co-Pilot
+
+**Goal:** Transform Deal Quest from a training tool into an active sales co-pilot that guides reps through prospect outreach with AI-generated engagement plans, timed reminders, and strategy re-analysis as deals evolve.
 
 **Focus Areas:**
-1. **Lead management** — Stale lead indicators, lead source tracking, complete LeadRegistryModel (missing fields), company grouping
-2. **Training experience** — Dynamic difficulty suggestions, scenario pool improvements, training analytics
-3. **Error handling & UX** — Better error messages with categorization/recovery hints, input validation consistency, retry mechanisms
-4. **Performance & reliability** — Cache playbook/KB at startup, background job reliability, LLM provider compatibility, retry with backoff
+1. **Smart Lead Creation** — Reduce lead creation friction: screenshot/URL → auto-enriched lead with AI analysis, strategy, and engagement plan generated automatically
+2. **Engagement Plan Executor** — THE killer feature: AI generates timed outreach plans, bot pings users for each step until confirmed done, contextual draft messages provided per step, progress tracked in TMA
+3. **Conversational Re-analysis** — Feed prospect responses back into the system, AI re-analyzes and evolves strategy, engagement plan updates dynamically based on new context
 
-**Scope:** Quick wins and medium-effort improvements only. No large architectural rewrites.
+**Scope:** Major new capabilities for the bot + TMA. Bot-side features (reminders, re-analysis pipelines) and TMA-side features (engagement plan UI, lead thread views) coordinated together.
 
 ---
-*Last updated: 2026-02-04 after v1.1 milestone creation*
+*Last updated: 2026-02-05 after v2.0 milestone creation*

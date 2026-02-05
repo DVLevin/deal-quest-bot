@@ -207,7 +207,7 @@
 
 ---
 
-## v1.1 Requirements — Quick & Medium Wins
+## v1.1 Requirements -- Quick & Medium Wins
 
 ### Lead Management
 
@@ -270,5 +270,96 @@
 - Unmapped: 0
 
 ---
+
+## v2.0 Requirements -- Sales Co-Pilot
+
+### Scheduling Infrastructure
+
+- [ ] **SCHED-V20-01**: `scheduled_reminders` table — per-step reminder rows with `lead_id`, `step_id`, `due_at` timestamp, `status` (pending/sent/done/skipped/snoozed), `escalation_level`, and `last_reminded_at` guard
+- [ ] **SCHED-V20-02**: Timing parser — extract `delay_days` integer from engagement plan steps, with regex fallback and 3-day default for unparseable values (e.g., "ASAP", "When ready")
+- [ ] **SCHED-V20-03**: Plan-to-reminders wiring — when an engagement plan is generated or updated, automatically create/update `scheduled_reminders` rows with concrete `due_at` timestamps computed from `delay_days`
+- [ ] **SCHED-V20-04**: Polling scheduler loop — extend existing `followup_scheduler.py` pattern to poll `scheduled_reminders` every 15 minutes, dispatch due reminders, and guard against duplicates via `last_reminded_at` timestamp check
+- [ ] **SCHED-V20-05**: Enhanced engagement plan prompt — update strategist prompt to output `delay_days` integer alongside existing `timing` string for each engagement plan step
+
+### Smart Lead Creation
+
+- [ ] **SLEAD-V20-01**: ExtractionAgent — lightweight agent with focused OCR prompt (no knowledge base injection) that extracts structured prospect data (name, title, company, context) from screenshots
+- [ ] **SLEAD-V20-02**: Two-step extract-then-analyze pipeline — screenshot input routes through ExtractionAgent for OCR, then passes clean extracted text to existing StrategistAgent for full analysis with knowledge base
+- [ ] **SLEAD-V20-03**: ClaudeProvider image fix — fix `ClaudeProvider.complete()` to handle `image_b64` parameter using multipart content array (currently ignores images entirely)
+- [ ] **SLEAD-V20-04**: Image pre-resize — resize uploaded images to 1568px max dimension via Pillow before sending to vision models to reduce token cost
+- [ ] **SLEAD-V20-05**: Input type routing — detect and route text, screenshot, and URL inputs to appropriate pipelines; URLs show "paste the profile text" guidance instead of automated scraping
+
+### Engagement Plan Execution (Bot UX)
+
+- [ ] **EPLAN-V20-01**: Rich reminder messages — bot sends formatted reminder for each due step with lead name, step description, and contextual draft preview
+- [ ] **EPLAN-V20-02**: Inline button interactions — Done/Snooze/Skip buttons on each reminder message; Done marks step complete and logs activity, Snooze delays 24h, Skip marks skipped with reason prompt
+- [ ] **EPLAN-V20-03**: Escalation logic — reminders escalate through levels (initial, gentle nudge, final reminder) before auto-snoozing overdue steps after 3 cycles
+- [ ] **EPLAN-V20-04**: Step-aware draft display — "View Full Draft" button on reminder expands the contextual draft message for that specific engagement step
+- [ ] **EPLAN-V20-05**: Activity logging for step actions — every Done/Snooze/Skip action writes to `lead_activity_log` with `step_execution`, `step_snooze`, or `step_skip` activity type and step metadata
+
+### Conversational Re-analysis
+
+- [ ] **REANA-V20-01**: Context update flow — user can forward a prospect's response, send a voice note, or type meeting notes to a lead in the bot; input is attached as a new activity on that lead
+- [ ] **REANA-V20-02**: ReanalysisStrategistAgent — new agent that receives prior analysis JSON + activity thread + new context and produces an updated strategy with narrative changes summary
+- [ ] **REANA-V20-03**: `lead_analysis_history` table — stores every analysis version with full analysis snapshot and code-computed field-level JSON diff (not LLM self-reports)
+- [ ] **REANA-V20-04**: Enhanced activity types — extend `lead_activity_log` with `prospect_response`, `meeting_notes`, and `re_analysis` activity types plus `metadata` JSONB column
+- [ ] **REANA-V20-05**: Re-analyze trigger — after adding new context to a lead, bot offers "Re-analyze Strategy?" button; re-analysis is user-triggered, never automatic
+
+### TMA Lead Experience & Dashboard
+
+- [ ] **TMAUX-V20-01**: Plan-first LeadDetail layout — restructure lead detail page with three sections: Active Plan (default top, interactive step list), Intelligence (analysis/strategy/tactics), Activity (thread timeline)
+- [ ] **TMAUX-V20-02**: Interactive step completion from TMA — user can mark engagement plan steps as Done/Skip directly from the TMA lead detail page with immediate UI feedback and dual-update (both `scheduled_reminders` and `engagement_plan` JSONB)
+- [ ] **TMAUX-V20-03**: LeadCard enhancements — show overdue step count badge, engagement plan progress bar, and next action preview on each lead card in the list view
+- [ ] **TMAUX-V20-04**: "Today's Actions" dashboard widget — aggregates overdue and due-today engagement steps across all leads into a single actionable list on the Dashboard page
+- [ ] **TMAUX-V20-05**: Bot-TMA deep link coordination — reminder messages include "Open in App" button that deep-links to `/leads/{id}` with step highlighting via query params; TMA auto-scrolls to the relevant step
+
+## v2.0 Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Automated LinkedIn URL scraping | Legal risk (hiQ v. LinkedIn, Proxycurl shutdown); use "paste the text" guidance instead |
+| User timezone support for reminders | Adds complexity without proportional value; deliver windows deferred post-v2.0 |
+| Per-channel draft tailoring (LinkedIn vs email vs phone) | Single draft per step for v2.0; channel-specific drafts are a polish item |
+| InsForge Realtime (WebSocket) for live sync | Smart polling via refetchInterval is sufficient; Realtime adds operational complexity |
+| Automatic re-analysis (no user trigger) | Industry standard (Salesforce, Gong, HubSpot) is user-triggered; auto-rewrite risks trust erosion |
+| Strategy version side-by-side diff in TMA | Polish item; version history stored but visual diff deferred |
+| User-configurable reminder preferences | Fixed cadence for v2.0; preferences add settings complexity |
+
+## v2.0 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SCHED-V20-01 | Phase 12 | Pending |
+| SCHED-V20-02 | Phase 12 | Pending |
+| SCHED-V20-03 | Phase 12 | Pending |
+| SCHED-V20-04 | Phase 12 | Pending |
+| SCHED-V20-05 | Phase 12 | Pending |
+| SLEAD-V20-01 | Phase 13 | Pending |
+| SLEAD-V20-02 | Phase 13 | Pending |
+| SLEAD-V20-03 | Phase 13 | Pending |
+| SLEAD-V20-04 | Phase 13 | Pending |
+| SLEAD-V20-05 | Phase 13 | Pending |
+| EPLAN-V20-01 | Phase 14 | Pending |
+| EPLAN-V20-02 | Phase 14 | Pending |
+| EPLAN-V20-03 | Phase 14 | Pending |
+| EPLAN-V20-04 | Phase 14 | Pending |
+| EPLAN-V20-05 | Phase 14 | Pending |
+| REANA-V20-01 | Phase 15 | Pending |
+| REANA-V20-02 | Phase 15 | Pending |
+| REANA-V20-03 | Phase 15 | Pending |
+| REANA-V20-04 | Phase 15 | Pending |
+| REANA-V20-05 | Phase 15 | Pending |
+| TMAUX-V20-01 | Phase 16 | Pending |
+| TMAUX-V20-02 | Phase 16 | Pending |
+| TMAUX-V20-03 | Phase 16 | Pending |
+| TMAUX-V20-04 | Phase 16 | Pending |
+| TMAUX-V20-05 | Phase 16 | Pending |
+
+**v2.0 Coverage:**
+- v2.0 requirements: 25 total
+- Mapped to phases: 25
+- Unmapped: 0
+
+---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-05 after Phase 11 completion (v1.1 milestone complete)*
+*Last updated: 2026-02-05 after v2.0 milestone requirements created*

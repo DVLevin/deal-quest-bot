@@ -101,8 +101,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 05-01-PLAN.md — Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
-- [x] 05-02-PLAN.md — Lead activity timeline, notes, and Profile settings panel (Wave 2)
+- [x] 05-01-PLAN.md -- Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
+- [x] 05-02-PLAN.md -- Lead activity timeline, notes, and Profile settings panel (Wave 2)
 
 ### Phase 6: Gamification & Admin
 **Goal**: The app rewards engagement with visual celebrations and badge mechanics, and admins can monitor team performance
@@ -117,9 +117,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 06-01-PLAN.md — Badge wall and rarity system (Wave 1)
-- [x] 06-02-PLAN.md — Level-up, XP, and streak animations (Wave 1)
-- [x] 06-03-PLAN.md — Admin dashboard with team analytics and access control (Wave 1)
+- [x] 06-01-PLAN.md -- Badge wall and rarity system (Wave 1)
+- [x] 06-02-PLAN.md -- Level-up, XP, and streak animations (Wave 1)
+- [x] 06-03-PLAN.md -- Admin dashboard with team analytics and access control (Wave 1)
 
 ### Phase 7: Bot Integration
 **Goal**: The existing bot offers smooth transitions into the TMA, letting users jump from chat commands directly into rich app experiences
@@ -132,12 +132,12 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 07-01-PLAN.md — Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
-- [x] 07-02-PLAN.md — TMA deep link routing hook for startParam fallback (Wave 1)
+- [x] 07-01-PLAN.md -- Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
+- [x] 07-02-PLAN.md -- TMA deep link routing hook for startParam fallback (Wave 1)
 
 ---
 
-## Milestone: v1.1 — Quick & Medium Wins
+## Milestone: v1.1 -- Quick & Medium Wins
 
 ### v1.1 Phases
 
@@ -147,7 +147,7 @@ Plans:
 - [x] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
 
 ### Phase 8: Lead Management Enhancements
-**Goal**: Lead pipeline becomes more actionable — stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
+**Goal**: Lead pipeline becomes more actionable -- stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
 **Depends on**: Phase 7 (v1.0 complete)
 **Requirements**: LEAD-V11-01, LEAD-V11-02, LEAD-V11-03, LEAD-V11-04, LEAD-V11-05
 **Success Criteria** (what must be TRUE):
@@ -159,11 +159,11 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 08-01-PLAN.md — lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
-- [x] 08-02-PLAN.md — Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
+- [x] 08-01-PLAN.md -- lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [x] 08-02-PLAN.md -- Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
 
 ### Phase 9: Training Experience
-**Goal**: Users get smarter training recommendations — the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
+**Goal**: Users get smarter training recommendations -- the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
 **Depends on**: Phase 7 (v1.0 complete)
 **Requirements**: TRAIN-V11-01, TRAIN-V11-02, TRAIN-V11-03, TRAIN-V11-04
 **Success Criteria** (what must be TRUE):
@@ -174,11 +174,11 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 09-01-PLAN.md — useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
-- [x] 09-02-PLAN.md — Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
+- [x] 09-01-PLAN.md -- useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
+- [x] 09-02-PLAN.md -- Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
 
 ### Phase 10: Error Handling & UX
-**Goal**: The app handles errors gracefully everywhere — users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
+**Goal**: The app handles errors gracefully everywhere -- users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
 **Depends on**: Phase 7 (v1.0 complete)
 **Requirements**: UX-V11-01, UX-V11-02, UX-V11-03, UX-V11-04, UX-V11-05
 **Success Criteria** (what must be TRUE):
@@ -190,13 +190,13 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [x] 10-01-PLAN.md — Core UI components: ErrorBoundary, ErrorCard, Toast system, EmptyState + wire into App.tsx (Wave 1)
-- [x] 10-02-PLAN.md — ErrorCard integration: replace 18 inline error states with standardized ErrorCard (Wave 2)
-- [x] 10-03-PLAN.md — Toast mutation feedback + empty state upgrades for leads, attempts, support (Wave 2)
-- [x] 10-04-PLAN.md — Bot validation utility: shared validate_user_input() in support/learn/train handlers (Wave 1)
+- [x] 10-01-PLAN.md -- Core UI components: ErrorBoundary, ErrorCard, Toast system, EmptyState + wire into App.tsx (Wave 1)
+- [x] 10-02-PLAN.md -- ErrorCard integration: replace 18 inline error states with standardized ErrorCard (Wave 2)
+- [x] 10-03-PLAN.md -- Toast mutation feedback + empty state upgrades for leads, attempts, support (Wave 2)
+- [x] 10-04-PLAN.md -- Bot validation utility: shared validate_user_input() in support/learn/train handlers (Wave 1)
 
 ### Phase 11: Performance & Reliability
-**Goal**: Production-grade reliability — debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
+**Goal**: Production-grade reliability -- debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
 **Depends on**: Phase 7 (v1.0 complete)
 **Requirements**: PERF-V11-01, PERF-V11-02, PERF-V11-03, PERF-V11-04, PERF-V11-05
 **Success Criteria** (what must be TRUE):
@@ -208,8 +208,80 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 11-01-PLAN.md — TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
-- [x] 11-02-PLAN.md — Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
+- [x] 11-01-PLAN.md -- TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
+- [x] 11-02-PLAN.md -- Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
+
+---
+
+## Milestone: v2.0 -- Sales Co-Pilot
+
+v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. The bot gains the ability to create leads from screenshots with AI extraction, execute timed engagement plans with step-by-step reminders, and re-analyze strategies as deals evolve with new context. The TMA shifts from a passive lead viewer to an action-oriented cockpit with plan-first layout and a "Today's Actions" dashboard. The build progresses bottom-up: scheduling infrastructure and smart lead creation first (independent foundations), then bot-side reminder UX and re-analysis on top, and finally the TMA experience that surfaces the full workflow loop.
+
+### v2.0 Phases
+
+- [ ] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
+- [ ] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
+- [ ] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
+- [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
+- [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
+
+### Phase 12: Scheduling & Reminder Infrastructure
+**Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
+**Depends on**: Phase 11 (v1.1 complete)
+**Requirements**: SCHED-V20-01, SCHED-V20-02, SCHED-V20-03, SCHED-V20-04, SCHED-V20-05
+**Success Criteria** (what must be TRUE):
+  1. When a lead's engagement plan is generated, `scheduled_reminders` rows are automatically created with concrete `due_at` timestamps for each step
+  2. The engagement plan prompt produces `delay_days` integer for each step, and the timing parser correctly computes due dates from plan creation time
+  3. The polling scheduler runs every 15 minutes, finds due reminders, and sends a basic notification to the user (rich UX in Phase 14)
+  4. Duplicate reminders are prevented -- restarting the bot does not re-send reminders that were already dispatched (guarded by `last_reminded_at`)
+**Plans**: TBD
+
+### Phase 13: Smart Lead Creation
+**Goal**: Users can screenshot a LinkedIn profile, email, or business card and get a fully analyzed lead with strategy and engagement plan -- reducing lead creation from minutes of manual typing to a single photo
+**Depends on**: Phase 11 (v1.1 complete)
+**Requirements**: SLEAD-V20-01, SLEAD-V20-02, SLEAD-V20-03, SLEAD-V20-04, SLEAD-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Sending a screenshot to the bot extracts prospect name, title, company, and context via a focused OCR step before running full analysis -- no more garbled names from combined OCR+strategy prompts
+  2. ClaudeProvider correctly processes images (multipart content array) so Claude vision models work for screenshot analysis alongside OpenRouter
+  3. Uploaded images are pre-resized to 1568px max dimension before vision model calls (verified by checking image dimensions in the pipeline)
+  4. Sending a URL shows guidance to paste the profile text instead of attempting automated scraping
+  5. Sending plain text still routes through the existing strategist pipeline with no regression
+**Plans**: TBD
+
+### Phase 14: Engagement Plan Execution
+**Goal**: The bot actively coaches users through their engagement plans -- sending timed reminders with contextual drafts, accepting Done/Snooze/Skip responses, and escalating overdue steps
+**Depends on**: Phase 12 (scheduling infrastructure must exist)
+**Requirements**: EPLAN-V20-01, EPLAN-V20-02, EPLAN-V20-03, EPLAN-V20-04, EPLAN-V20-05
+**Success Criteria** (what must be TRUE):
+  1. When a reminder is due, the bot sends a formatted message with lead name, step description, and a short draft preview
+  2. User can tap Done (marks step complete, logs activity), Snooze (delays 24h), or Skip (marks skipped) via inline buttons on the reminder message
+  3. Overdue reminders escalate through 3 levels (initial, nudge, final) before auto-snoozing -- user is not bombarded indefinitely
+  4. User can tap "View Full Draft" on a reminder to see the full contextual draft message for that engagement step
+  5. Every step action (done, snooze, skip) is recorded in `lead_activity_log` with the step metadata
+**Plans**: TBD
+
+### Phase 15: Conversational Re-analysis
+**Goal**: Users can feed prospect responses and meeting notes back into a lead, and the AI re-analyzes the strategy with full context of how the deal has evolved -- turning Deal Quest into a living co-pilot, not a one-shot analyzer
+**Depends on**: Phase 13 (lead creation quality matters for re-analysis)
+**Requirements**: REANA-V20-01, REANA-V20-02, REANA-V20-03, REANA-V20-04, REANA-V20-05
+**Success Criteria** (what must be TRUE):
+  1. User can forward a prospect's message, send a voice note, or type meeting notes as new context on an existing lead
+  2. After adding context, the bot offers a "Re-analyze Strategy?" button -- re-analysis only happens when the user triggers it
+  3. Re-analysis produces an updated strategy with a narrative summary of what changed, and the prior analysis version is preserved in `lead_analysis_history`
+  4. The activity timeline shows `prospect_response`, `meeting_notes`, and `re_analysis` entries with metadata, creating a readable deal thread
+  5. Field-level diffs between analysis versions are computed in code (JSON diff), not by LLM self-reports
+**Plans**: TBD
+
+### Phase 16: TMA Lead Experience & Dashboard
+**Goal**: The TMA transforms from a passive lead viewer into an action-oriented sales cockpit -- leads open to their engagement plan first, steps are completable from the app, and the dashboard tells users what to do today
+**Depends on**: Phase 12 + Phase 14 + Phase 15 (reminder data, step execution, and re-analysis entries must exist for TMA to display)
+**Requirements**: TMAUX-V20-01, TMAUX-V20-02, TMAUX-V20-03, TMAUX-V20-04, TMAUX-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Opening a lead shows the Active Plan section first (engagement steps with status, due dates, overdue indicators) with Intelligence and Activity available as secondary sections
+  2. User can mark engagement steps as Done or Skip directly from the TMA with immediate UI feedback, and both `scheduled_reminders` and `engagement_plan` JSONB stay in sync
+  3. Lead list cards show overdue step count, engagement plan progress bar, and next action preview -- users can scan their pipeline and see what needs attention
+  4. Dashboard displays a "Today's Actions" widget aggregating overdue and due-today steps across all leads, with tap-to-navigate to the relevant lead
+  5. Bot reminder messages include an "Open in App" button that deep-links to the lead detail with the specific step highlighted
 
 ## Progress
 
@@ -229,7 +301,7 @@ Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Pha
 | 6. Gamification & Admin | 3/3 | Complete | 2026-02-04 |
 | 7. Bot Integration | 2/2 | Complete | 2026-02-04 |
 
-### v1.1 Progress
+### v1.1 Progress (Complete)
 
 **Execution Order:**
 Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any order or in parallel.
@@ -240,3 +312,24 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 | 9. Training Experience | 2/2 | Complete | 2026-02-04 |
 | 10. Error Handling & UX | 4/4 | Complete | 2026-02-04 |
 | 11. Performance & Reliability | 2/2 | Complete | 2026-02-05 |
+
+### v2.0 Progress
+
+**Execution Order:**
+Phases 12 and 13 are independent (both depend only on v1.1 completion) and can execute in either order.
+Phase 14 depends on Phase 12. Phase 15 depends on Phase 13.
+Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
+
+```
+12 (Scheduling) ──> 14 (Reminder UX) ──┐
+                                        ├──> 16 (TMA Experience)
+13 (Smart Lead) ──> 15 (Re-analysis) ──┘
+```
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 12. Scheduling Infrastructure | 0/TBD | Not started | - |
+| 13. Smart Lead Creation | 0/TBD | Not started | - |
+| 14. Engagement Plan Execution | 0/TBD | Not started | - |
+| 15. Conversational Re-analysis | 0/TBD | Not started | - |
+| 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |
