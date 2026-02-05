@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 15.1 (Lead Enhancements)
-Plan: 1 of ? in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-05 -- Completed 15.1-01-PLAN.md (Web Research Versioning)
+Last activity: 2026-02-05 -- Completed 15.1-02-PLAN.md (TMA Plan Step Toggle)
 
 Progress: [##########----------] 12/25 v2.0 requirements (48%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 38
+- Total plans completed: 39
 - Average duration: 3.5m
-- Total execution time: 133m
+- Total execution time: 136m
 
 **By Phase:**
 
@@ -47,7 +47,7 @@ Progress: [##########----------] 12/25 v2.0 requirements (48%)
 | 12. Scheduling & Reminder | 2/2 | 12m | 6m |
 | 13. Smart Lead Creation | 3/3 | 10m | 3.3m |
 | 14. Engagement Plan Execution | 2/2 | 3m | 1.5m |
-| 15.1. Lead Enhancements | 1/? | 3m | 3m |
+| 15.1. Lead Enhancements | 2/3 | 6m | 3m |
 
 **Recent Trend:**
 - Last 5 plans: 3m, 5m, 1m, 2m, 3m
@@ -79,6 +79,7 @@ Recent decisions affecting current work:
 - [14-01]: Callback data format: reminder:{action}:{lead_id}:{step_id}
 - [14-02]: Activity types: step_execution, step_snooze, step_skip for lead_activity_log
 - [14-02]: Dual-update on Done/Skip: update both scheduled_reminders and engagement_plan JSONB
+- [15.1-02]: Status cycles pending -> done -> skipped -> pending on tap (three-state toggle)
 
 ### Pending Todos
 
@@ -103,6 +104,6 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Completed 15.1-01-PLAN.md (Web Research Versioning)
+Stopped at: Completed 15.1-02-PLAN.md (TMA Plan Step Toggle)
 Resume file: None
-Next action: Continue with Phase 15.1 plans or start Phase 16 (TMA Experience)
+Next action: Continue with 15.1-03 (TMA Activity Timeline) or start Phase 16 (TMA Experience)
