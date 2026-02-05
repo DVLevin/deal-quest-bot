@@ -220,7 +220,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 ### v2.0 Phases
 
 - [x] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
-- [ ] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
+- [x] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
 - [ ] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
 - [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
@@ -253,9 +253,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 13-01-PLAN.md -- ClaudeProvider image fix + image pre-resize utility (Wave 1)
-- [ ] 13-02-PLAN.md -- ExtractionAgent with focused OCR prompt (Wave 1)
-- [ ] 13-03-PLAN.md -- Two-step pipeline config + input routing in support.py (Wave 2)
+- [x] 13-01-PLAN.md -- ClaudeProvider image fix + image pre-resize utility (Wave 1)
+- [x] 13-02-PLAN.md -- ExtractionAgent with focused OCR prompt (Wave 1)
+- [x] 13-03-PLAN.md -- Two-step pipeline config + input routing in support.py (Wave 2)
 
 ### Phase 14: Engagement Plan Execution
 **Goal**: The bot actively coaches users through their engagement plans -- sending timed reminders with contextual drafts, accepting Done/Snooze/Skip responses, and escalating overdue steps
@@ -338,7 +338,7 @@ Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
-| 13. Smart Lead Creation | 0/3 | Ready | - |
+| 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
 | 14. Engagement Plan Execution | 0/TBD | Not started | - |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |

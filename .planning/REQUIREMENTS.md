@@ -334,11 +334,11 @@
 | SCHED-V20-03 | Phase 12 | Complete |
 | SCHED-V20-04 | Phase 12 | Complete |
 | SCHED-V20-05 | Phase 12 | Complete |
-| SLEAD-V20-01 | Phase 13 | Pending |
-| SLEAD-V20-02 | Phase 13 | Pending |
-| SLEAD-V20-03 | Phase 13 | Pending |
-| SLEAD-V20-04 | Phase 13 | Pending |
-| SLEAD-V20-05 | Phase 13 | Pending |
+| SLEAD-V20-01 | Phase 13 | Complete |
+| SLEAD-V20-02 | Phase 13 | Complete |
+| SLEAD-V20-03 | Phase 13 | Complete |
+| SLEAD-V20-04 | Phase 13 | Complete |
+| SLEAD-V20-05 | Phase 13 | Complete |
 | EPLAN-V20-01 | Phase 14 | Pending |
 | EPLAN-V20-02 | Phase 14 | Pending |
 | EPLAN-V20-03 | Phase 14 | Pending |
