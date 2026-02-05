@@ -339,11 +339,11 @@
 | SLEAD-V20-03 | Phase 13 | Complete |
 | SLEAD-V20-04 | Phase 13 | Complete |
 | SLEAD-V20-05 | Phase 13 | Complete |
-| EPLAN-V20-01 | Phase 14 | Pending |
-| EPLAN-V20-02 | Phase 14 | Pending |
-| EPLAN-V20-03 | Phase 14 | Pending |
-| EPLAN-V20-04 | Phase 14 | Pending |
-| EPLAN-V20-05 | Phase 14 | Pending |
+| EPLAN-V20-01 | Phase 14 | Complete |
+| EPLAN-V20-02 | Phase 14 | Complete |
+| EPLAN-V20-03 | Phase 14 | Complete |
+| EPLAN-V20-04 | Phase 14 | Complete |
+| EPLAN-V20-05 | Phase 14 | Complete |
 | REANA-V20-01 | Phase 15 | Pending |
 | REANA-V20-02 | Phase 15 | Pending |
 | REANA-V20-03 | Phase 15 | Pending |
