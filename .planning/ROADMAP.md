@@ -301,7 +301,13 @@ Plans:
   3. Re-analysis produces an updated strategy with a narrative summary of what changed, and the prior analysis version is preserved in `lead_analysis_history`
   4. The activity timeline shows `prospect_response`, `meeting_notes`, and `re_analysis` entries with metadata, creating a readable deal thread
   5. Field-level diffs between analysis versions are computed in code (JSON diff), not by LLM self-reports
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 15-01-PLAN.md -- Database foundation: lead_analysis_history table, extended activity types, models (Wave 1)
+- [ ] 15-02-PLAN.md -- Context input flow: FSM states, multimodal handlers (text/voice/photo/forward), activity logging (Wave 1)
+- [ ] 15-03-PLAN.md -- ReanalysisStrategistAgent: agent class, prompt, JSON diff utility (Wave 2)
+- [ ] 15-04-PLAN.md -- Re-analysis trigger: button handlers, history saving, plan update flow, TMA display (Wave 3)
 
 ### Phase 16: TMA Lead Experience & Dashboard
 **Goal**: The TMA transforms from a passive lead viewer into an action-oriented sales cockpit -- leads open to their engagement plan first, steps are completable from the app, and the dashboard tells users what to do today
@@ -363,5 +369,5 @@ Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 | 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
-| 15. Conversational Re-analysis | 0/TBD | Not started | - |
+| 15. Conversational Re-analysis | 0/4 | Not started | - |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |
