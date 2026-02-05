@@ -130,10 +130,10 @@ def _lead_detail_keyboard(
         ))
     buttons.append(research_row)
 
-    # Engagement actions
+    # Engagement actions (context:add routes to new multimodal context_input handler)
     buttons.append([
         InlineKeyboardButton(
-            text="📝 Add Update", callback_data=f"lead:context:{lead_id}"
+            text="📝 Add Context", callback_data=f"context:add:{lead_id}"
         ),
         InlineKeyboardButton(
             text="🧠 Get Advice", callback_data=f"lead:advice:{lead_id}"
