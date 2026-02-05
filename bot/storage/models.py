@@ -113,9 +113,10 @@ class LeadActivityModel(BaseModel):
     id: int | None = None
     lead_id: int
     telegram_id: int
-    activity_type: str  # context_update | screenshot_comment | ai_advice | followup_sent
+    activity_type: str  # context_update | screenshot_comment | ai_advice | followup_sent | prospect_response | meeting_notes | re_analysis
     content: str
     ai_response: str | None = None
+    metadata: dict[str, Any] | None = None
     created_at: str | None = None
 
 
@@ -168,6 +169,19 @@ class ScheduledReminderModel(BaseModel):
     completed_at: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class LeadAnalysisHistoryModel(BaseModel):
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    version_number: int = 1
+    analysis_snapshot: dict[str, Any] = Field(default_factory=dict)
+    changes_summary: str | None = None
+    field_diff: dict[str, Any] | None = None
+    triggered_by: str = "initial"  # 'initial' | 'context_update' | 'manual'
+    triggering_activity_id: int | None = None
+    created_at: str | None = None
 
 
 class PipelineTraceModel(BaseModel):
