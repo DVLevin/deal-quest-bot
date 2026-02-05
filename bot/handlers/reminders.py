@@ -74,7 +74,8 @@ async def on_reminder_done(
             f"{step_desc}\n\nGreat job! Keep the momentum going.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")]
+                [InlineKeyboardButton(text="\U0001F4DD Add Context", callback_data=f"context:add:{lead_id}")],
+                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")],
             ]),
         )
     except Exception:
@@ -122,7 +123,8 @@ async def on_reminder_snooze(
             f"I'll remind you again in 24 hours.\n\nUse /leads to view all your leads.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")]
+                [InlineKeyboardButton(text="\U0001F4DD Add Context", callback_data=f"context:add:{lead_id}")],
+                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")],
             ]),
         )
     except Exception:
@@ -176,7 +178,8 @@ async def on_reminder_skip(
             f"\u23ED *Skipped: {name} - Step {step_id}*\n\nThis step has been marked as skipped.\n\nUse /leads to continue with other steps.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")]
+                [InlineKeyboardButton(text="\U0001F4DD Add Context", callback_data=f"context:add:{lead_id}")],
+                [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")],
             ]),
         )
     except Exception:
@@ -236,6 +239,7 @@ async def on_reminder_draft(
                     InlineKeyboardButton(text="\u2705 Done", callback_data=f"reminder:done:{lead_id}:{step_id}"),
                     InlineKeyboardButton(text="\u23F0 Snooze", callback_data=f"reminder:snooze:{lead_id}:{step_id}"),
                 ],
+                [InlineKeyboardButton(text="\U0001F4DD Add Context", callback_data=f"context:add:{lead_id}")],
                 [InlineKeyboardButton(text="\U0001F4CB View Lead", callback_data=f"lead:view:{lead_id}")],
             ]),
         )
