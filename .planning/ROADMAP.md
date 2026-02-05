@@ -222,6 +222,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
 - [x] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
 - [x] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
+- [ ] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
 - [ ] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 
@@ -272,6 +273,23 @@ Plans:
 Plans:
 - [x] 14-01-PLAN.md -- Scheduler upgrade: snooze() method, rich messages, inline keyboards, escalation logic (Wave 1)
 - [x] 14-02-PLAN.md -- Callback handlers: reminders.py module with Done/Snooze/Skip/ViewDraft, main.py wiring (Wave 2)
+
+### Phase 15.1: Lead Enhancements & Comment Suggestions (INSERTED)
+**Goal**: Users can remake web research with version history, toggle engagement plan steps from TMA, and get AI-generated comment suggestions for LinkedIn post screenshots -- making lead management more flexible and engagement more contextual
+**Depends on**: Phase 14 (engagement plan step execution must exist for TMA toggling)
+**Requirements**: LEAD-V20-01, LEAD-V20-02, LEAD-V20-03
+**Success Criteria** (what must be TRUE):
+  1. User can trigger web research re-generation from bot, optionally providing a URL for more accurate results, and previous research versions are preserved in a JSONB array
+  2. User can delete irrelevant web research versions while keeping useful ones
+  3. User can mark engagement plan steps as Done/Skip directly from TMA lead detail with immediate feedback and dual-table sync (scheduled_reminders + engagement_plan JSONB)
+  4. User can send a LinkedIn POST screenshot to the bot via /comment command and receive contextual comment suggestions based on the post content
+  5. Generated comments can be regenerated with different tone/approach without leaving the conversation
+**Plans**: 3 plans
+
+Plans:
+- [ ] 15.1-01-PLAN.md -- Web research versioning: schema migration, model update, bot re-research flow with URL input (Wave 1)
+- [ ] 15.1-02-PLAN.md -- TMA engagement step mutation: useUpdatePlanStep hook, interactive LeadDetail toggles (Wave 1)
+- [ ] 15.1-03-PLAN.md -- Standalone /comment command: FSM states, prompt, handler module with regeneration (Wave 1)
 
 ### Phase 15: Conversational Re-analysis
 **Goal**: Users can feed prospect responses and meeting notes back into a lead, and the AI re-analyzes the strategy with full context of how the deal has evolved -- turning Deal Quest into a living co-pilot, not a one-shot analyzer
@@ -330,13 +348,13 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 
 **Execution Order:**
 Phases 12 and 13 are independent (both depend only on v1.1 completion) and can execute in either order.
-Phase 14 depends on Phase 12. Phase 15 depends on Phase 13.
-Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
+Phase 14 depends on Phase 12. Phase 15.1 depends on Phase 14. Phase 15 depends on Phase 13.
+Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 
 ```
-12 (Scheduling) ──> 14 (Reminder UX) ──┐
-                                        ├──> 16 (TMA Experience)
-13 (Smart Lead) ──> 15 (Re-analysis) ──┘
+12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
+                                                                ├──> 16 (TMA Experience)
+13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
 ```
 
 | Phase | Plans Complete | Status | Completed |
@@ -344,5 +362,6 @@ Phase 16 depends on Phases 12 + 14 + 15 (all bot-side work complete).
 | 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
 | 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
+| 15.1. Lead Enhancements | 0/3 | Not started | - |
 | 15. Conversational Re-analysis | 0/TBD | Not started | - |
 | 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |
