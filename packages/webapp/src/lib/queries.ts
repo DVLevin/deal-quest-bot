@@ -54,6 +54,7 @@ export const queryKeys = {
     byUser: (telegramId: number) => ['leads', telegramId] as const,
     detail: (leadId: number) => ['leads', 'detail', leadId] as const,
     activities: (leadId: number) => ['leads', 'activities', leadId] as const,
+    reminders: (telegramId: number) => ['leads', 'reminders', telegramId] as const,
   },
   settings: {
     user: (telegramId: number) => ['settings', telegramId] as const,

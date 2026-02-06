@@ -204,6 +204,61 @@ export function parseEngagementPlan(plan: unknown): EngagementPlanStep[] {
 }
 
 // ---------------------------------------------------------------------------
+// Plan progress computation
+// ---------------------------------------------------------------------------
+
+export interface PlanProgress {
+  /** Total number of steps in the engagement plan */
+  total: number;
+  /** Number of steps completed (done or skipped) */
+  completed: number;
+  /** Number of pending steps that are past their due date */
+  overdue: number;
+  /** Description of the first pending step, or null if none */
+  nextAction: string | null;
+}
+
+/**
+ * Compute progress metrics from an engagement plan and its scheduled reminders.
+ *
+ * @param plan - Engagement plan steps (JSONB from lead_registry)
+ * @param remindersDueAt - Map of step_id -> due_at ISO string from scheduled_reminders.
+ *   If null, overdue cannot be computed (set to 0).
+ */
+export function computePlanProgress(
+  plan: EngagementPlanStep[] | null,
+  remindersDueAt: Map<number, string> | null,
+): PlanProgress {
+  if (!plan || plan.length === 0) {
+    return { total: 0, completed: 0, overdue: 0, nextAction: null };
+  }
+
+  const now = new Date();
+  let completed = 0;
+  let overdue = 0;
+  let nextAction: string | null = null;
+
+  for (const step of plan) {
+    if (step.status === 'done' || step.status === 'skipped') {
+      completed++;
+    } else if (step.status === 'pending') {
+      if (!nextAction) {
+        nextAction = step.description;
+      }
+      // Check overdue only if we have reminder data
+      if (remindersDueAt) {
+        const dueAt = remindersDueAt.get(step.step_id);
+        if (dueAt && new Date(dueAt) < now) {
+          overdue++;
+        }
+      }
+    }
+  }
+
+  return { total: plan.length, completed, overdue, nextAction };
+}
+
+// ---------------------------------------------------------------------------
 // Date formatting
 // ---------------------------------------------------------------------------
 

@@ -22,6 +22,7 @@ export type LeadListItem = Pick<
   | 'status'
   | 'photo_url'
   | 'input_type'
+  | 'engagement_plan'
   | 'created_at'
   | 'updated_at'
 >;
@@ -35,7 +36,7 @@ export function useLeads() {
       const { data, error } = await getInsforge()
         .database.from('lead_registry')
         .select(
-          'id, prospect_name, prospect_first_name, prospect_last_name, prospect_company, prospect_title, status, photo_url, input_type, created_at, updated_at',
+          'id, prospect_name, prospect_first_name, prospect_last_name, prospect_company, prospect_title, status, photo_url, input_type, engagement_plan, created_at, updated_at',
         )
         .eq('telegram_id', telegramId!)
         .order('updated_at', { ascending: false })
