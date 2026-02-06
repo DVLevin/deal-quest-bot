@@ -84,7 +84,7 @@ def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarku
         ],
         [
             InlineKeyboardButton(text="🔥 More Aggressive", callback_data="support:aggressive"),
-            InlineKeyboardButton(text="✅ Done", callback_data="support:done"),
+            InlineKeyboardButton(text="✅ Looks Good", callback_data="support:done"),
         ],
     ]
     if lead_id:
@@ -423,9 +423,10 @@ async def _run_support_pipeline(
         elif saved_lead_id:
             response_text += (
                 "\n\n"
-                "💡 _Saved to your leads. Web research & engagement plan "
-                "are generating in the background — tap \"View Lead & Plan\" "
-                "in ~30s to see them._"
+                "💡 _Lead created! Web research & engagement plan "
+                "generating in the background.\n\n"
+                "Tap \"View Lead & Plan\" in ~30s, "
+                "or hit \"Looks Good\" to dismiss._"
             )
         await status_msg.edit_text(
             response_text,
