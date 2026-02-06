@@ -9,3 +9,4 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { ErrorCard, type ErrorCardProps } from './ErrorCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ToastContainer } from './Toast';
+export { CollapsibleSection } from './CollapsibleSection';
