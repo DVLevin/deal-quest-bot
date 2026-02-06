@@ -140,6 +140,11 @@ Recent decisions affecting current work:
 - [18-04]: ModelConfigPanel placed after ActivityFeed on Admin page (config section below analytics)
 - [18-04]: Inline model search requires 2+ chars, capped at 50 results for performance
 - [18-04]: Centralized queryKeys.admin.modelConfigs follows existing factory pattern
+- [quick-004]: All animations CSS-only via keyframes + utility classes (no framer-motion or spring JS libs)
+- [quick-004]: Pipeline colors in both CSS custom properties and inline oklch Tailwind classes
+- [quick-004]: PIPELINE_ACCENT shared constant in leads/types.ts for DRY status color references
+- [quick-004]: Glassmorphic treatment uses inline styles for backdrop-filter (not Tailwind classes)
+- [quick-004]: Rarity ambient glow uses wrapper div pattern (not Card API modification)
 
 ### Pending Todos
 
@@ -151,6 +156,10 @@ Recent decisions affecting current work:
 - [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
 - [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
 - [18-03]: Run migration `insforge/migrations/005_agent_model_config.sql` on InsForge database
+- [quick-004]: Generate custom badge artwork with NanoBanana/Midjourney for each achievement tier
+- [quick-004]: Select and license a display font for score numbers and headlines
+- [quick-004]: Create pipeline stage icon set (distinct visuals per lead stage)
+- [quick-004]: Review motion direction on device before final polish
 
 ### Roadmap Evolution
 
@@ -168,11 +177,12 @@ None currently.
 | 001-bot-button-audit | Task 1/3 done | 87-trigger test matrix generated, awaiting manual testing (Task 2) |
 | 002-lead-company-enrichment | Complete (3/3) | Structured prospect info (first/last name, geography) with enriched web research |
 | 003-tma-bot-deep-actions | Complete (2/2) | TMA-to-bot deep linking for lead actions (reanalyze, context, reresearch, advice) |
+| 004-rebel-design-overhaul | Tasks 1-4/5 done | Direction C visual overhaul: design tokens, animations, dashboard ambient, gamification bleeds, pipeline stages, glassmorphic intel cards (awaiting device review) |
 
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Milestone v2.0 complete. Phase 18 verified (5/5 must-haves).
+Stopped at: Quick task 004 tasks 1-4 complete. Awaiting device visual review (Task 5).
 Resume file: None
-Next action: /gsd:audit-milestone or /gsd:complete-milestone
+Next action: Visual review on device, then merge quick/004-rebel-design-overhaul branch
 Next phase after: New milestone (v3.0)
