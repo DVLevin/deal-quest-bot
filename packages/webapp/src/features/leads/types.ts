@@ -290,3 +290,38 @@ export function formatLeadDate(isoString: string | null): string {
     return '';
   }
 }
+
+// ---------------------------------------------------------------------------
+// Smart defaults: suggested next status & context-aware note placeholders
+// ---------------------------------------------------------------------------
+
+/**
+ * Suggest the next logical pipeline status based on current status.
+ * Follows the pipeline progression order defined in LEAD_STATUS_CONFIG.
+ * Returns null if at the end of the pipeline (closed_won), at a terminal
+ * state (closed_lost), or if the status is unknown.
+ */
+export function suggestNextStatus(currentStatus: string): string | null {
+  const STATUS_ORDER = ['analyzed', 'reached_out', 'meeting_booked', 'in_progress', 'closed_won'];
+  const idx = STATUS_ORDER.indexOf(currentStatus);
+  if (idx >= 0 && idx < STATUS_ORDER.length - 1) {
+    return STATUS_ORDER[idx + 1];
+  }
+  return null;
+}
+
+/**
+ * Return a context-aware placeholder for the notes textarea based on lead status.
+ * Helps users know what kind of note is most useful at each pipeline stage.
+ */
+export function getNotePlaceholder(status: string): string {
+  const PLACEHOLDERS: Record<string, string> = {
+    analyzed: 'What do you know about this prospect? Any mutual connections?',
+    reached_out: 'How did the outreach go? Did they respond?',
+    meeting_booked: 'What topics should you cover? Any prep notes?',
+    in_progress: 'How is the deal progressing? Any blockers?',
+    closed_won: 'What worked? Any lessons for future deals?',
+    closed_lost: 'Why did it fall through? What would you do differently?',
+  };
+  return PLACEHOLDERS[status] ?? 'Add context, reminders, or follow-up notes...';
+}
