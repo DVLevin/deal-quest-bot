@@ -54,8 +54,18 @@ export function ProgressCard() {
     ? nextLevelXP - currentLevelThreshold
     : 0;
 
-  return (
-    <Card>
+  // Rarity ambient glow wrapper based on level
+  const rarityAmbient =
+    user.current_level >= 8
+      ? 'rounded-card bg-gradient-to-br from-rarity-legendary/8 to-transparent p-0.5'
+      : user.current_level >= 6
+        ? 'rounded-card bg-gradient-to-br from-rarity-epic/6 to-transparent p-0.5'
+        : user.current_level >= 4
+          ? 'rounded-card bg-gradient-to-br from-rarity-rare/5 to-transparent p-0.5'
+          : null;
+
+  const card = (
+    <Card padding="lg">
       <div className="flex items-center gap-3">
         <Link to="/profile" className="shrink-0">
           <Avatar
@@ -97,4 +107,10 @@ export function ProgressCard() {
       </div>
     </Card>
   );
+
+  if (rarityAmbient) {
+    return <div className={rarityAmbient}>{card}</div>;
+  }
+
+  return card;
 }

@@ -27,6 +27,13 @@ export default function Dashboard() {
   const { levelUp, dismiss } = useLevelUpDetection();
   const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
 
+  const primaryAction =
+    focus === 'actions-focus'
+      ? '/leads'
+      : focus === 'streak-focus'
+        ? '/train'
+        : '/support';
+
   return (
     <>
       {levelUp && (
@@ -40,14 +47,18 @@ export default function Dashboard() {
         {/* Contextual header based on smart landing focus */}
         {!isReady && <Skeleton className="h-6 w-48" />}
         {isReady && focus === 'actions-focus' && (
-          <p className="text-sm font-medium text-error">
-            You have {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''}
-          </p>
+          <div className="rounded-2xl bg-gradient-to-b from-error/5 to-transparent px-4 pt-4 pb-2 mb-2">
+            <p className="text-overline !text-error">
+              You have {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''}
+            </p>
+          </div>
         )}
         {isReady && focus === 'streak-focus' && (
-          <p className="text-sm font-medium text-accent">
-            Day {streakDays} streak — keep it going!
-          </p>
+          <div className="rounded-2xl bg-gradient-to-b from-warning/5 to-transparent px-4 pt-4 pb-2 mb-2">
+            <p className="text-overline !text-accent">
+              Day {streakDays} streak — keep it going!
+            </p>
+          </div>
         )}
 
         {/* Card layout: actions-focus promotes TodayActionsCard first */}
@@ -55,7 +66,7 @@ export default function Dashboard() {
           <>
             <TodayActionsCard />
             <ProgressCard />
-            <QuickActions />
+            <QuickActions primaryAction={primaryAction} />
             <WeakAreasCard />
             <BadgePreview />
             <LeaderboardWidget />
@@ -64,7 +75,7 @@ export default function Dashboard() {
           <>
             <ProgressCard />
             <TodayActionsCard />
-            <QuickActions />
+            <QuickActions primaryAction={primaryAction} />
             <WeakAreasCard />
             <BadgePreview />
             <LeaderboardWidget />

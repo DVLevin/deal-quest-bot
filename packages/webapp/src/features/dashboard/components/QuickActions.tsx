@@ -31,25 +31,56 @@ const actions: QuickAction[] = [
   { to: '/casebook', label: 'Casebook', icon: BookMarked },
 ];
 
-export function QuickActions() {
+interface QuickActionsProps {
+  primaryAction?: string;
+}
+
+export function QuickActions({ primaryAction }: QuickActionsProps) {
+  const promoted = primaryAction
+    ? actions.find((a) => a.to === primaryAction)
+    : undefined;
+  const rest = promoted
+    ? actions.filter((a) => a.to !== primaryAction)
+    : actions;
+
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {actions.map(({ to, label, icon: Icon }) => (
-        <Link key={to} to={to}>
+    <div className="space-y-3">
+      {/* Promoted full-width CTA */}
+      {promoted && (
+        <Link to={promoted.to}>
           <Card
             className={cn(
-              'flex min-h-[72px] flex-col items-center justify-center gap-1.5',
-              'transition-shadow active:shadow-card-hover',
+              'flex min-h-[56px] flex-row items-center justify-center gap-3',
+              'bg-accent text-accent-text font-semibold shadow-raised',
+              'transition-shadow active:shadow-modal',
             )}
             padding="sm"
           >
-            <Icon className="h-6 w-6 text-accent" />
-            <span className="text-xs font-medium text-text-secondary">
-              {label}
-            </span>
+            <promoted.icon className="h-6 w-6" />
+            <span className="text-sm">{promoted.label}</span>
           </Card>
         </Link>
-      ))}
+      )}
+
+      {/* Remaining actions in 2-col grid */}
+      <div className={cn(promoted ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-3 gap-3')}>
+        {rest.map(({ to, label, icon: Icon }) => (
+          <Link key={to} to={to}>
+            <Card
+              className={cn(
+                'flex min-h-[72px] flex-col items-center justify-center gap-1.5',
+                'transition-shadow active:shadow-card-hover',
+              )}
+              padding="sm"
+            >
+              <Icon className="h-6 w-6 text-accent" />
+              <span className="text-xs font-medium text-text-secondary">
+                {label}
+              </span>
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
