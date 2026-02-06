@@ -239,10 +239,10 @@ export function LeadDetail() {
   const stepMutation = useUpdatePlanStep();
   const { toast } = useToast();
 
-  // Accordion state -- plan section open by default
-  const [activeSection, setActiveSection] = useState<SectionId>('plan');
+  // Accordion state -- plan section open by default, null = all closed
+  const [activeSection, setActiveSection] = useState<SectionId | null>('plan');
   const toggleSection = (id: SectionId) => {
-    setActiveSection(id);
+    setActiveSection((prev) => (prev === id ? null : id));
   };
 
   // Deep link step highlighting
@@ -540,7 +540,17 @@ export function LeadDetail() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-text-hint">No engagement plan yet.</p>
+          <div className="flex flex-col items-center gap-3 py-4">
+            <p className="text-sm text-text-hint">No engagement plan yet.</p>
+            <button
+              type="button"
+              onClick={() => openBotDeepLink(`lead_reanalyze_${lead.id}`)}
+              className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors active:bg-accent/25"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Generate Plan
+            </button>
+          </div>
         )}
       </CollapsibleSection>
 
