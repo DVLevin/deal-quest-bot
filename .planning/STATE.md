@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress (plan 2 of 4 complete).
 
 ## Previous Milestones
 
@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 16 (TMA Lead Experience & Dashboard) -- In progress
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-06 -- Completed 16-01-PLAN.md (LeadCard Engagement Plan Visibility)
+Last activity: 2026-02-06 -- Completed 16-02-PLAN.md (LeadDetail Plan-First Layout)
 
-Progress: [####################..] 21/25 v2.0 requirements (84%)
+Progress: [######################..] 22/25 v2.0 requirements (88%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 45
-- Average duration: 3.4m
-- Total execution time: 151m
+- Total plans completed: 46
+- Average duration: 3.3m
+- Total execution time: 153m
 
 **By Phase:**
 
@@ -50,10 +50,10 @@ Progress: [####################..] 21/25 v2.0 requirements (84%)
 | 15.1. Lead Enhancements | 3/3 | 9m | 3m |
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
-| 16. TMA Lead Experience | 1/4 | 2m | 2m |
+| 16. TMA Lead Experience | 2/4 | 4m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 3m, 3m, 3m, 2m
+- Last 5 plans: 3m, 3m, 3m, 2m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -99,6 +99,10 @@ Recent decisions affecting current work:
 - [16-01]: Batched reminder query in useLeadReminders avoids N+1 (one query for all leads)
 - [16-01]: computePlanProgress accepts nullable remindersDueAt to degrade gracefully when loading
 - [16-01]: Progress section aligned under lead info with pl-13 to match avatar offset
+- [16-02]: Inner Section component changed from Card-wrapped to plain div for nesting inside CollapsibleSection
+- [16-02]: Intelligence section only renders if any sub-content exists
+- [16-02]: Visual highlight clears after 3 seconds via useEffect timer
+- [16-02]: Progress badge shows overdue count (red) when available, otherwise completed/total
 
 ### Pending Todos
 
@@ -128,7 +132,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 16-01-PLAN.md (LeadCard Engagement Plan Visibility)
+Stopped at: Completed 16-02-PLAN.md (LeadDetail Plan-First Layout)
 Resume file: None
-Next action: Execute 16-02-PLAN.md (LeadDetail Restructuring)
+Next action: Execute 16-03-PLAN.md (Dashboard Overview Cards)
 Next phase after: Phase 17 (LazyFlow UX Overhaul)
