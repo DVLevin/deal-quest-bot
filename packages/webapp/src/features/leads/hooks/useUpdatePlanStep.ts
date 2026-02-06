@@ -128,7 +128,7 @@ export function useUpdatePlanStep() {
 
       return { updatedPlan };
     },
-    onMutate: async ({ leadId, stepId, newStatus, telegramId }) => {
+    onMutate: async ({ leadId, stepId, newStatus }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: queryKeys.leads.detail(leadId),
@@ -183,6 +183,14 @@ export function useUpdatePlanStep() {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.leads.activities(leadId),
+      });
+      // Invalidate today's actions so dashboard widget updates
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.leads.todayActions(telegramId),
+      });
+      // Invalidate reminders cache (used by LeadCard progress)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.leads.reminders(telegramId),
       });
     },
   });
