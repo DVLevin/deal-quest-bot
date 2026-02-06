@@ -8,6 +8,7 @@ from typing import Any
 
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import (
+    AgentModelConfigModel,
     AttemptModel,
     CasebookModel,
     GeneratedScenarioModel,
@@ -963,3 +964,56 @@ class TraceRepo:
         if rows and isinstance(rows, list):
             return [PipelineSpanModel(**r) for r in rows]
         return []
+
+
+class AgentModelConfigRepo:
+    """Repository for agent_model_config table."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self._client = client
+        self._table = "agent_model_config"
+
+    async def get_all_active(self) -> list[dict[str, Any]]:
+        """Get all active agent model configs."""
+        rows = await self._client.query(
+            self._table,
+            filters={"is_active": "eq.true"},
+        )
+        if rows and isinstance(rows, list):
+            return rows
+        return []
+
+    async def upsert(self, agent_name: str, model_id: str, set_by: str | None = None) -> dict[str, Any] | None:
+        """Create or update a model config for an agent."""
+        existing = await self._client.query(
+            self._table,
+            filters={"agent_name": agent_name},
+        )
+        if existing and isinstance(existing, list) and len(existing) > 0:
+            return await self._client.update(
+                self._table,
+                filters={"agent_name": agent_name},
+                data={
+                    "model_id": model_id,
+                    "is_active": True,
+                    "set_by": set_by,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+        else:
+            data: dict[str, Any] = {
+                "agent_name": agent_name,
+                "model_id": model_id,
+                "is_active": True,
+            }
+            if set_by is not None:
+                data["set_by"] = set_by
+            return await self._client.create(self._table, data)
+
+    async def deactivate(self, agent_name: str) -> dict[str, Any] | None:
+        """Deactivate (soft delete) a model config."""
+        return await self._client.update(
+            self._table,
+            filters={"agent_name": agent_name},
+            data={"is_active": False, "updated_at": datetime.now(timezone.utc).isoformat()},
+        )

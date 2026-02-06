@@ -212,3 +212,15 @@ class PipelineSpanModel(BaseModel):
     input_data: dict[str, Any] | None = None
     output_data: dict[str, Any] | None = None
     created_at: str | None = None
+
+
+class AgentModelConfigModel(BaseModel):
+    """Per-agent model configuration set by admin."""
+
+    id: int | None = None
+    agent_name: str
+    model_id: str
+    is_active: bool = True
+    set_by: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
