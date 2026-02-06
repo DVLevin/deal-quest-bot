@@ -18,8 +18,9 @@ from aiogram.types import (
 
 from bot.agents.base import AgentInput
 from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
-from bot.services.knowledge import get_knowledge_base
-from bot.services.llm_router import get_llm_for_user
+from bot.services.knowledge import KnowledgeService
+from bot.services.crypto import CryptoService
+from bot.services.llm_router import create_provider
 from bot.services.transcription import TranscriptionService
 from bot.states import ReanalysisState
 from bot.storage.insforge_client import InsForgeClient
@@ -544,7 +545,9 @@ async def on_reanalyze_start(
     activity_repo: LeadActivityRepo,
     user_repo: UserRepo,
     insforge: InsForgeClient,
-    openrouter_api_key: str = "",
+    knowledge: KnowledgeService,
+    crypto: CryptoService,
+    shared_openrouter_key: str = "",
 ) -> None:
     """Execute re-analysis on a lead with accumulated context."""
     lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
@@ -608,8 +611,20 @@ async def on_reanalyze_start(
 
     # Get LLM and knowledge base
     user = await user_repo.get_by_telegram_id(tg_id)
-    llm = await get_llm_for_user(user, openrouter_api_key)
-    knowledge_base = await get_knowledge_base()
+    if not user or not user.encrypted_api_key:
+        await callback.message.reply("Please run /start first.")  # type: ignore[union-attr]
+        await state.clear()
+        return
+
+    api_key = crypto.decrypt(user.encrypted_api_key)
+    if not api_key:
+        await callback.message.reply("Failed to decrypt API key. Please update in /settings.")  # type: ignore[union-attr]
+        await state.clear()
+        return
+
+    model = user.openrouter_model if user.provider == "openrouter" else None
+    llm = create_provider(user.provider, api_key, model)
+    knowledge_base = knowledge.combined
 
     # Load user memory
     memory_repo = UserMemoryRepo(insforge)
