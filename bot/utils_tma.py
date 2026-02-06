@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlencode
 
 from aiogram import Bot
 from aiogram.types import (
@@ -19,16 +20,20 @@ def add_open_in_app_row(
     keyboard: InlineKeyboardMarkup | None,
     tma_url: str,
     path: str = "",
+    query_params: dict[str, str] | None = None,
 ) -> InlineKeyboardMarkup | None:
     """Append an 'Open in App' WebApp button as the last row of a keyboard.
 
     If tma_url is empty/falsy, returns the keyboard unchanged (graceful skip).
     If keyboard is None and tma_url is set, returns a new keyboard with just the button.
+    Optional query_params dict appends ?key=value&... to the URL.
     """
     if not tma_url:
         return keyboard
 
     url = f"{tma_url}/{path}" if path else tma_url
+    if query_params:
+        url = f"{url}?{urlencode(query_params)}"
     new_row = [InlineKeyboardButton(text="Open in App", web_app=WebAppInfo(url=url))]
 
     if keyboard is None:
