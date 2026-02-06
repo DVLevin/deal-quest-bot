@@ -7,7 +7,7 @@ from pathlib import Path
 
 from bot.agents.base import AgentInput, AgentOutput, BaseAgent
 from bot.pipeline.context import PipelineContext
-from bot.tracing import traced_span
+from langfuse import observe
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class ExtractionAgent(BaseAgent):
                 "Use null for fields not visible."
             )
 
-    @traced_span("agent:extraction")
+    @observe(name="agent:extraction")
     async def run(self, input_data: AgentInput, pipeline_ctx: PipelineContext) -> AgentOutput:
         """Extract structured data from a screenshot."""
         try:

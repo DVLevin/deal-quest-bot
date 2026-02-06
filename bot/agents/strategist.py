@@ -9,7 +9,7 @@ from typing import Any
 
 from bot.agents.base import AgentInput, AgentOutput, BaseAgent
 from bot.pipeline.context import PipelineContext
-from bot.tracing import traced_span
+from langfuse import observe
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class StrategistAgent(BaseAgent):
         else:
             logger.warning("Strategist prompt not found: %s", _PROMPT_PATH)
 
-    @traced_span("agent:strategist")
+    @observe(name="agent:strategist")
     async def run(self, input_data: AgentInput, pipeline_ctx: PipelineContext) -> AgentOutput:
         """Run strategist analysis on user's prospect context."""
         try:

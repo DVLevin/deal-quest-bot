@@ -10,7 +10,7 @@ from typing import Any
 from bot.agents.base import AgentInput, AgentOutput, BaseAgent
 from bot.pipeline.context import PipelineContext
 from bot.services.diff_utils import compute_analysis_diff, summarize_diff_for_humans
-from bot.tracing import traced_span
+from langfuse import observe
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class ReanalysisStrategistAgent(BaseAgent):
         else:
             logger.warning("Reanalysis strategist prompt not found: %s", _PROMPT_PATH)
 
-    @traced_span("agent:reanalysis_strategist")
+    @observe(name="agent:reanalysis_strategist")
     async def run(self, input_data: AgentInput, pipeline_ctx: PipelineContext) -> AgentOutput:
         """
         Run re-analysis on a lead with new context.
