@@ -18,7 +18,6 @@ from aiogram.types import (
 
 from bot.agents.base import AgentInput
 from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
-from bot.config import settings
 from bot.services.knowledge import get_knowledge_base
 from bot.services.llm_router import get_llm_for_user
 from bot.services.transcription import TranscriptionService
@@ -544,6 +543,7 @@ async def on_reanalyze_start(
     lead_repo: LeadRegistryRepo,
     activity_repo: LeadActivityRepo,
     user_repo: UserRepo,
+    insforge: InsForgeClient,
     openrouter_api_key: str = "",
 ) -> None:
     """Execute re-analysis on a lead with accumulated context."""
@@ -612,8 +612,7 @@ async def on_reanalyze_start(
     knowledge_base = await get_knowledge_base()
 
     # Load user memory
-    client = InsForgeClient(settings.insforge_url, settings.insforge_service_key)
-    memory_repo = UserMemoryRepo(client)
+    memory_repo = UserMemoryRepo(insforge)
     user_memory_model = await memory_repo.get(tg_id)
     user_memory = user_memory_model.memory_data if user_memory_model else {}
 
