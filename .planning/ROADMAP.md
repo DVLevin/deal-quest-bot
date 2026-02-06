@@ -226,6 +226,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
+- [ ] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -346,6 +347,24 @@ Plans:
 - [x] 17-03-PLAN.md -- Lead smart defaults: next-status suggestion highlight, context-aware note placeholders (Wave 1)
 - [x] 17-04-PLAN.md -- Bot LazyFlow: forwarded message auto-detection in /support, "Looks Good" confirmation framing (Wave 1)
 
+### Phase 18: Agent Observatory & Model Configuration
+**Goal**: Admin gains full visibility into every AI agent's behavior -- see exact prompts, inputs, outputs, token usage, and costs for every pipeline run via Langfuse, and can configure which OpenRouter model each agent uses from a TMA admin panel, enabling rapid iteration on agent quality without code deploys
+**Depends on**: Phase 17 (v2.0 features complete, now optimizing the AI layer)
+**Requirements**: OBS-V20-01, OBS-V20-02, OBS-V20-03, OBS-V20-04, OBS-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Every pipeline run (support, learn, train, re-analysis, comment) produces a full Langfuse trace with hierarchical spans showing each agent's system prompt, user input, LLM output, model used, token count, and cost
+  2. Admin can open the Langfuse dashboard (cloud hobby tier) and drill into any trace to see exactly what each agent saw and produced -- no code access needed to debug agent behavior
+  3. Admin can set per-agent model overrides from the TMA admin page (e.g., strategist uses claude-sonnet, extraction uses gpt-4o-mini, trainer uses deepseek) -- agents that have no override use the user's default model
+  4. Admin model configuration is stored in a database table and takes effect immediately (no bot restart or code deploy needed)
+  5. Langfuse integration is designed for easy migration to self-hosted instance (single environment variable swap from cloud URL to self-hosted URL)
+**Plans**: 4 plans
+
+Plans:
+- [ ] 18-01-PLAN.md -- Langfuse SDK setup, config env vars, LLM provider generation observations (Wave 1)
+- [ ] 18-02-PLAN.md -- Agent @observe decorators, handler trace wiring, model_config PipelineContext pass-through, main.py lifecycle (Wave 2)
+- [ ] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
+- [ ] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
+
 ## Progress
 
 ### v1.0 Progress (Complete)
@@ -383,10 +402,11 @@ Phases 12 and 13 are independent (both depend only on v1.1 completion) and can e
 Phase 14 depends on Phase 12. Phase 15.1 depends on Phase 14. Phase 15 depends on Phase 13.
 Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow optimization).
+Phase 18 depends on Phase 17 (observability layer wraps completed agent features).
 
 ```
 12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
-                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX)
+                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory)
 13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
 ```
 
@@ -399,3 +419,4 @@ Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow opt
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
 | 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
+| 18. Agent Observatory & Model Config | 0/4 | Not Started | - |
