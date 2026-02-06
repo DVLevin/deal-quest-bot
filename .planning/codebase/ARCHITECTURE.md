@@ -1,215 +1,215 @@
 # Architecture
 
-**Analysis Date:** 2026-02-04
+**Analysis Date:** 2026-02-06
 
 ## Pattern Overview
 
-**Overall:** Dual-application monorepo with shared backend infrastructure
+**Overall:** Multi-layered event-driven architecture with pipeline orchestration
 
 **Key Characteristics:**
-- Two independent applications (Python bot, React TMA) sharing the same InsForge PostgreSQL database
-- YAML-driven agent pipeline orchestration with async execution modes (sequential/parallel/background)
-- Repository pattern for data persistence with PostgREST HTTP client
-- Decorator-based distributed tracing with async context propagation
-- Dependency injection via aiogram's workflow_data dictionary
+- Agent-based pipeline execution for AI workflows (sequential/parallel/background modes)
+- Repository pattern for data persistence with async HTTP client
+- Dependency injection via aiogram dispatcher workflow_data
+- Separate TMA (Telegram Mini App) client with shared backend
+- Tracing instrumentation for observability (async context propagation)
 
 ## Layers
 
-**Bot Layer (Python/aiogram):**
-- Purpose: Telegram bot server handling user commands and agent orchestration
-- Location: `bot/`
-- Contains: Command handlers, FSM states, middleware, agent pipeline system
-- Depends on: InsForge client, agent registry, service layer, storage repositories
-- Used by: Telegram API (polling), Railway deployment
+**Presentation Layer (Telegram Bot):**
+- Purpose: Handles user interactions via Telegram bot protocol
+- Location: `bot/handlers/`
+- Contains: Command handlers, callback query handlers, FSM state handlers
+- Depends on: Services, repositories, agents, pipeline runner
+- Used by: Telegram users via aiogram dispatcher
 
-**Agent Layer (Python):**
-- Purpose: AI agent implementations for business logic (strategist, trainer, memory)
-- Location: `bot/agents/`
-- Contains: BaseAgent ABC, concrete agent implementations, agent registry
-- Depends on: LLM router, pipeline context, tracing decorators
-- Used by: Pipeline runner
+**Presentation Layer (TMA Web Client):**
+- Purpose: Rich web interface for bot features via Telegram Mini App
+- Location: `packages/webapp/src/`
+- Contains: React pages, feature components, hooks for data fetching
+- Depends on: InsForge SDK (PostgREST client), Telegram SDK
+- Used by: Telegram users via in-app browser
 
-**Pipeline Layer (Python):**
-- Purpose: YAML-defined workflow orchestration for multi-agent tasks
-- Location: `bot/pipeline/`
-- Contains: PipelineRunner, PipelineContext, YAML config loader
-- Depends on: Agent registry, tracing system
-- Used by: Command handlers
-
-**Service Layer (Python):**
-- Purpose: Reusable business logic (LLM routing, knowledge loading, encryption, transcription)
+**Service Layer:**
+- Purpose: Business logic and external integrations
 - Location: `bot/services/`
-- Contains: LLMProvider abstraction, KnowledgeService, CryptoService, ProgressUpdater, EngagementService
-- Depends on: External APIs (OpenRouter, Claude, AssemblyAI), InsForge repositories
-- Used by: Agents, handlers
+- Contains: LLM routing, knowledge loading, encryption, transcription, scheduling
+- Depends on: Repositories, external APIs (OpenRouter, Claude, AssemblyAI)
+- Used by: Handlers, agents
 
-**Storage Layer (Python):**
-- Purpose: Data persistence abstraction over InsForge PostgREST API
+**Agent Layer:**
+- Purpose: AI-powered workflow steps with typed input/output
+- Location: `bot/agents/`
+- Contains: StrategistAgent, TrainerAgent, MemoryAgent, ExtractionAgent, ReanalysisStrategistAgent
+- Depends on: Services (LLMRouter, KnowledgeService), BaseAgent ABC
+- Used by: PipelineRunner
+
+**Pipeline Orchestration:**
+- Purpose: Execute multi-step AI workflows from YAML definitions
+- Location: `bot/pipeline/`
+- Contains: PipelineRunner (sequential/parallel/background execution), PipelineContext (shared state), config_loader (YAML parser)
+- Depends on: AgentRegistry, agents
+- Used by: Handlers (support, learn, train, context_input)
+
+**Data Access Layer:**
+- Purpose: Abstraction over InsForge PostgREST API
 - Location: `bot/storage/`
-- Contains: InsForgeClient (async HTTP), 11 repository classes, Pydantic models
-- Depends on: httpx, InsForge API
-- Used by: Services, agents, handlers
+- Contains: 12 repository classes (UserRepo, LeadRegistryRepo, SupportSessionRepo, etc.), InsForgeClient (async HTTP), Pydantic models
+- Depends on: InsForgeClient, httpx
+- Used by: Services, handlers, tracing
 
-**Tracing Layer (Python):**
-- Purpose: Pipeline observability with distributed tracing
-- Location: `bot/tracing/`
-- Contains: TraceContext (async context manager), traced_span decorator, TraceCollector (background flush)
-- Depends on: ContextVars, TraceRepo
-- Used by: Handlers (wrap pipelines), agents/LLM (decorators)
-
-**TMA Layer (React/TypeScript):**
-- Purpose: Telegram Mini App frontend for dashboard, support, leads, training
-- Location: `packages/webapp/`
-- Contains: React pages, features (auth, casebook, leads, support, etc.), InsForge SDK client
-- Depends on: @insforge/sdk, Telegram SDK, Zustand, React Query
-- Used by: Telegram WebView
-
-**Edge Functions Layer (Deno):**
-- Purpose: Serverless functions for auth and database proxying
-- Location: `functions/`
-- Contains: verify-telegram (Telegram initData auth + JWT minting), db-proxy (database operations)
-- Depends on: Deno runtime, InsForge secrets
-- Used by: TMA auth flow, TMA data fetching
-
-**Shared Types Layer (TypeScript):**
-- Purpose: Type definitions shared between TMA and edge functions
-- Location: `packages/shared/`
-- Contains: TypeScript interfaces for database models
-- Depends on: None
-- Used by: TMA (inlined into webapp/src/types due to Railway root_dir isolation)
+**Infrastructure Layer:**
+- Purpose: Cross-cutting concerns (auth, tracing, error handling)
+- Location: `bot/middleware.py`, `bot/tracing/`, `bot/task_utils.py`
+- Contains: AuthorizationMiddleware (username allowlist), TraceContext (pipeline observability), background task protection
+- Depends on: aiogram, contextvars
+- Used by: All layers
 
 ## Data Flow
 
-**Bot Command Flow:**
+**Bot Command Execution:**
 
-1. User sends Telegram message → aiogram router → AuthorizationMiddleware (username check)
-2. Handler retrieves user from UserRepo → checks encrypted_api_key
-3. Handler sets FSM state → waits for user input
-4. Handler creates PipelineContext (LLM provider, knowledge base, user memory)
-5. PipelineRunner executes YAML-defined steps (sequential/parallel/background)
-6. Agents call LLM via traced LLMProvider.complete() → OpenRouter/Claude API
-7. Agent updates context.results → next agent reads results
-8. Background MemoryAgent updates user_memory table
-9. Handler formats response → sends to Telegram → updates repositories
-10. TraceCollector flushes trace/span data to InsForge in background
+1. User sends `/support` command to Telegram bot
+2. AuthorizationMiddleware checks username against allowlist
+3. Handler (`bot/handlers/support.py`) receives message via aiogram router
+4. Handler creates PipelineContext with user input + knowledge base
+5. Handler wraps execution in TraceContext for observability
+6. PipelineRunner executes YAML-defined pipeline (`data/pipelines/support.yaml`)
+7. StrategistAgent calls LLMRouter → Claude/OpenRouter → returns strategy JSON
+8. MemoryAgent updates user memory in background (fire-and-forget)
+9. Handler formats response with `bot/utils.py::format_support_response()`
+10. Response sent to Telegram with inline keyboard for actions
 
-**TMA Auth Flow:**
+**TMA Data Fetch:**
 
-1. User opens Mini App → Telegram SDK provides initData
-2. AuthProvider calls verify-telegram Edge Function with initData
-3. Edge Function validates HMAC using TELEGRAM_BOT_TOKEN → mints JWT (HS256)
-4. AuthProvider stores JWT + user metadata in Zustand store
-5. InsForge client created with anon key (custom JWT not used for PostgREST)
-6. All queries filter by telegram_id from auth store (enforced client-side)
+1. TMA opens, `packages/webapp/src/main.tsx` initializes Telegram SDK
+2. AuthProvider (`packages/webapp/src/app/providers/AuthProvider.tsx`) calls `authenticateWithTelegram()`
+3. Edge Function `functions/verify-telegram/` validates HMAC-SHA256, upserts user, mints JWT
+4. TanStack Query hook (e.g., `useLeads()`) fetches data via InsForge SDK
+5. InsForge client makes GET to PostgREST with `telegram_id` filter
+6. RLS policies enforce row-level access (anon role with full access, filters by telegram_id)
+7. Data returned to component, rendered via feature components
 
-**TMA Data Flow:**
+**Pipeline Tracing Flow:**
 
-1. React Query hook calls InsForge SDK → PostgREST query with telegram_id filter
-2. Data rendered in React components
-3. User action → mutation via InsForge SDK → database update
-4. React Query invalidates cache → UI refreshes
+1. Handler creates `async with TraceContext(pipeline_name, telegram_id, user_id)`
+2. TraceContext sets trace_id in ContextVar for async propagation
+3. Agent methods decorated with `@traced_span` capture input/output/timing
+4. Spans pushed to stack, parent_span_id linked for hierarchy
+5. On pipeline completion, TraceContext persists trace via TraceCollector
+6. TraceCollector batches spans, flushes to `pipeline_traces` + `pipeline_spans` tables every 10s
+
+**Lead Re-Analysis Flow (New in Phase 15):**
+
+1. User selects "Add Context" on lead detail (`bot/handlers/leads.py`)
+2. FSM enters ReanalysisState.awaiting_context_input
+3. User sends text/voice/photo → `bot/handlers/context_input.py` collects data
+4. Context stored in LeadActivityModel with type='context_addition'
+5. User triggers "Re-analyze Strategy?" callback
+6. Handler executes `data/pipelines/reanalysis.yaml` pipeline
+7. ReanalysisStrategistAgent fetches all activities, computes diff from original strategy
+8. New strategy persisted to LeadAnalysisHistoryModel, diff saved in activity record
+9. Scheduled reminders updated via `bot/services/plan_scheduler.py`
+
+**Reminder Scheduling Flow:**
+
+1. Lead engagement plan created with timing expressions ("tomorrow 9am", "in 2 days")
+2. `bot/services/plan_scheduler.py::schedule_plan_reminders()` parses timing → due_at timestamps
+3. Reminders stored in `scheduled_reminders` table with status='pending'
+4. Background scheduler polls every 15 minutes for due reminders
+5. When reminder due, bot sends message with inline keyboard (Done/Snooze/Skip/Draft)
+6. `bot/handlers/reminders.py` handles callbacks, updates reminder status
+7. Snooze increments snooze_count, sets new due_at (+1 hour default)
 
 **State Management:**
-- Bot: aiogram FSM (MemoryStorage) + workflow_data for DI + PipelineContext for inter-agent state
-- TMA: Zustand for auth, React Query for server state, component state for UI
+- Bot: aiogram FSM (MemoryStorage) for conversation state (SupportState, LeadEngagementState, ReanalysisState, etc.)
+- TMA: Zustand store for auth state (`packages/webapp/src/features/auth/store.ts`), TanStack Query cache for server state
 
 ## Key Abstractions
 
-**BaseAgent:**
-- Purpose: Polymorphic agent interface for pipeline orchestration
-- Examples: `bot/agents/strategist.py`, `bot/agents/trainer.py`, `bot/agents/memory.py`
-- Pattern: ABC with async run(AgentInput, PipelineContext) → AgentOutput (Pydantic)
-
-**InsForgeClient:**
-- Purpose: Async HTTP abstraction over PostgREST API
-- Examples: `bot/storage/insforge_client.py`
-- Pattern: Methods for query/create/update/upsert/delete with PostgREST filter syntax
+**Agent:**
+- Purpose: Encapsulates a single AI-powered workflow step
+- Examples: `bot/agents/strategist.py`, `bot/agents/trainer.py`, `bot/agents/extraction.py`
+- Pattern: Abstract base class (`BaseAgent`) with `run(AgentInput, PipelineContext) -> AgentOutput`, decorated with `@traced_span`
 
 **Repository:**
-- Purpose: Table-specific data access layer
-- Examples: `UserRepo`, `AttemptRepo`, `LeadRegistryRepo` (11 total in `bot/storage/repositories.py`)
-- Pattern: Class per table with typed methods (get, create, update, delete) returning Pydantic models
+- Purpose: Data access abstraction for InsForge tables
+- Examples: `bot/storage/repositories.py::UserRepo`, `LeadRegistryRepo`, `SupportSessionRepo`, `ScheduledReminderRepo`
+- Pattern: Class with async methods (get, create, update, delete), wraps InsForgeClient HTTP calls
 
-**LLMProvider:**
-- Purpose: Vendor-agnostic LLM completion interface
-- Examples: `ClaudeProvider`, `OpenRouterProvider` in `bot/services/llm_router.py`
-- Pattern: ABC with async complete(system_prompt, user_message) → dict, decorated with @traced_span
+**Pipeline:**
+- Purpose: Declarative multi-step AI workflow
+- Examples: `data/pipelines/support.yaml`, `data/pipelines/reanalysis.yaml`, `data/pipelines/support_photo.yaml`
+- Pattern: YAML config defining agent steps (sequential/parallel/background), input_mapping from context or previous results
 
-**PipelineContext:**
-- Purpose: Shared mutable state container for pipeline execution
-- Examples: `bot/pipeline/context.py`
-- Pattern: Dictionary-like object with LLM, knowledge_base, user_memory, results storage
-
-**ProgressUpdater:**
-- Purpose: Real-time Telegram message updates during long operations
-- Examples: `bot/services/progress.py`
-- Pattern: Async context manager with phase updates and animations
+**Provider:**
+- Purpose: Abstraction for LLM API clients
+- Examples: `bot/services/llm_router.py::ClaudeProvider`, `OpenRouterProvider`
+- Pattern: Abstract base class with `complete()` and `validate_key()` methods, decorated with `@traced_span`
 
 **TraceContext:**
-- Purpose: Async context manager for pipeline-level observability
-- Examples: `bot/tracing/context.py`
-- Pattern: Wraps pipeline execution, sets ContextVar for span propagation, persists trace on exit
+- Purpose: Async context manager for pipeline execution observability
+- Examples: `bot/tracing/context.py::TraceContext`
+- Pattern: Async context manager that sets trace_id in ContextVar, persists trace on exit
+
+**ProgressUpdater:**
+- Purpose: Real-time Telegram message editing during long operations
+- Examples: `bot/services/progress.py::ProgressUpdater`
+- Pattern: Async context manager with phase-based updates, NOT used for tracing (TraceContext is separate)
 
 ## Entry Points
 
 **Bot Entry Point:**
 - Location: `bot/main.py`
-- Triggers: `python3 -m bot.main` (Railway or local)
-- Responsibilities: DI wiring (repos, services, agents), dispatcher setup, router registration, polling start, background scheduler launch
+- Triggers: Python module execution (`python -m bot.main`)
+- Responsibilities: DI wiring (inject repos/services into workflow_data), register handlers, start polling, initialize tracing collector, start background schedulers (followup, plan reminders, scenario generation)
 
 **TMA Entry Point:**
 - Location: `packages/webapp/src/main.tsx`
-- Triggers: Vite dev server or Railway static serve
-- Responsibilities: React root render, provider hierarchy (Auth → Query → Router)
+- Triggers: Vite dev server or Railway static serving
+- Responsibilities: Initialize Telegram SDK, mount React app, setup error boundary
 
-**Pipeline Entry Point:**
-- Location: YAML configs in `data/pipelines/`
-- Triggers: PipelineRunner.run() called from handlers
-- Responsibilities: Define agent sequence, execution mode, input mappings
+**Handler Entry Points (Bot):**
+- Location: `bot/handlers/support.py`, `bot/handlers/leads.py`, `bot/handlers/context_input.py`, `bot/handlers/reminders.py`, etc.
+- Triggers: Telegram commands (`/support`, `/leads`) or callback queries (`lead:view:123`, `reanalyze:start:456`)
+- Responsibilities: Parse input, validate, execute pipeline, format response, manage FSM state
 
-**Edge Function Entry Points:**
-- Location: `functions/verify-telegram/index.ts`, `functions/db-proxy.js`
-- Triggers: HTTP POST from TMA
-- Responsibilities: Telegram auth validation + JWT minting, database proxying
+**Page Entry Points (TMA):**
+- Location: `packages/webapp/src/pages/Dashboard.tsx`, `packages/webapp/src/pages/Leads.tsx`, etc.
+- Triggers: React Router navigation
+- Responsibilities: Compose feature components, trigger data fetching via TanStack Query hooks
 
 ## Error Handling
 
-**Strategy:** Layered error handling with logging, user feedback, and graceful degradation
+**Strategy:** Layered error handling with user-friendly messages
 
 **Patterns:**
-- Handlers: try/except with user-friendly message + logger.error
-- Agents: AgentOutput with success=False + error field
-- LLM calls: Retry logic (3 attempts with exponential backoff) in LLMProvider
-- Pipeline: Continues execution even if background steps fail (fire-and-forget)
-- TMA: React error boundaries (implied by lazy loading), toast notifications for mutations
-- Tracing: Span records error field, trace marks success=False, doesn't suppress exceptions
+- Agent exceptions caught by PipelineRunner, wrapped in `AgentOutput(success=False, error=str(e))`
+- Handler try/except blocks catch pipeline failures, send Telegram error message
+- TMA uses ErrorBoundary (`packages/webapp/src/shared/ui/ErrorBoundary.tsx`) for component-level errors
+- TanStack Query provides error states, components display ErrorCard (`packages/webapp/src/shared/ui/ErrorCard.tsx`)
+- Tracing records failed spans with error message + stack trace sanitized
+- Background tasks wrapped in `bot/task_utils.py::create_background_task()` with exception logging
 
 ## Cross-Cutting Concerns
 
-**Logging:** Python logging module with structured format (timestamp | level | module | message), INFO default level
+**Logging:** Python `logging` module, configured in `bot/main.py::setup_logging()`, structured format with level/name/message
 
-**Validation:** Pydantic models for all data structures (bot/storage/models.py), aiogram FSM for command flow validation
+**Validation:** Input validation utility (`bot/utils_validation.py::validate_user_input()`) checks length limits, profanity, prevents prompt injection
 
 **Authentication:**
-- Bot: Username-based middleware (AuthorizationMiddleware) checking allowed_usernames from env
-- TMA: Telegram initData HMAC validation in verify-telegram Edge Function, anon RLS policies with client-side telegram_id filtering
+- Bot: Username-based allowlist (`bot/middleware.py::AuthorizationMiddleware`)
+- TMA: Telegram initData HMAC validation (`functions/verify-telegram/`) + JWT minting, stored in Zustand auth store
 
-**Authorization:**
-- Bot: admin_usernames list for admin panel access
-- TMA: Client-side filtering by telegram_id (all data scoped to authenticated user)
+**Observability:** Pipeline tracing via TraceContext + traced_span decorator, batched async flush to InsForge (`bot/tracing/collector.py::TraceCollector`)
 
-**Observability:**
-- Bot: TraceContext + traced_span decorators → pipeline_traces and pipeline_spans tables
-- TMA: Not instrumented (frontend only)
+**Background Tasks:** Protected task creation (`bot/task_utils.py::create_background_task()`) with exception logging, prevents silent failures
 
-**Configuration:**
-- Bot: pydantic-settings loading from .env
-- TMA: Vite env vars (VITE_INSFORGE_URL, VITE_INSFORGE_ANON_KEY) baked into bundle
+**Progress Updates:** Real-time Telegram message editing during pipeline execution (`bot/services/progress.py::ProgressUpdater`), phase-based status messages
 
-**Knowledge Management:**
-- Bot: KnowledgeService loads playbook.md + company_knowledge.md into memory, stuffs full text (~70K tokens) into every LLM prompt
-- TMA: Not applicable
+**Image Processing:** Pre-resize utility (`bot/services/image_utils.py::pre_resize_image()`) to reduce token costs before vision API calls
+
+**Diff Computation:** JSON diff utility (`bot/services/diff_utils.py`) for computing strategy changes in re-analysis flow
 
 ---
 
-*Architecture analysis: 2026-02-04*
+*Architecture analysis: 2026-02-06*

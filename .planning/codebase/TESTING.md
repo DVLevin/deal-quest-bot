@@ -1,6 +1,6 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-04
+**Analysis Date:** 2026-02-06
 
 ## Test Framework
 
@@ -51,6 +51,8 @@ Not applicable — no tests exist.
 # If tests existed, they would follow:
 # bot/tests/test_agents.py
 # bot/tests/test_storage.py
+# bot/tests/test_services.py
+# bot/tests/test_handlers.py
 
 import pytest
 from bot.agents.base import AgentInput, AgentOutput
@@ -77,12 +79,18 @@ Not applicable — no tests exist.
 // If tests existed, they would follow Vitest pattern:
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Button } from '@/shared/ui';
+import { ErrorCard } from '@/shared/ui/ErrorCard';
 
-describe('Button', () => {
-  it('renders children correctly', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
+describe('ErrorCard', () => {
+  it('renders error message', () => {
+    render(<ErrorCard message="Failed to load" />);
+    expect(screen.getByText('Failed to load')).toBeInTheDocument();
+  });
+
+  it('shows retry button when onRetry provided', () => {
+    const onRetry = vi.fn();
+    render(<ErrorCard message="Error" onRetry={onRetry} />);
+    expect(screen.getByText('Retry')).toBeInTheDocument();
   });
 });
 ```
@@ -98,6 +106,26 @@ Not applicable — no mocking infrastructure detected.
 - Use `pytest-asyncio` for async test support
 - Fixture factories for Pydantic models
 
+**Example (if implemented):**
+```python
+# bot/tests/conftest.py
+import pytest
+from unittest.mock import AsyncMock
+from bot.storage.insforge_client import InsForgeClient
+
+@pytest.fixture
+def mock_insforge_client():
+    client = AsyncMock(spec=InsForgeClient)
+    client.get.return_value = {"data": [{"id": 1, "telegram_id": 12345}]}
+    return client
+
+@pytest.fixture
+def mock_llm_provider():
+    provider = AsyncMock()
+    provider.complete.return_value = {"analysis": "Test analysis"}
+    return provider
+```
+
 **TypeScript Framework:**
 Not applicable — no mocking detected.
 
@@ -106,6 +134,23 @@ Not applicable — no mocking detected.
 - Mock Telegram SDK: `@telegram-apps/sdk-react`
 - Mock InsForge client responses
 - Mock React Query for data fetching tests
+
+**Example (if implemented):**
+```typescript
+// src/test/mocks/insforge.ts
+import { vi } from 'vitest';
+
+export const mockInsforge = {
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        data: [{ id: 1, telegram_id: 12345 }],
+        error: null,
+      })),
+    })),
+  })),
+};
+```
 
 ## Fixtures and Factories
 
@@ -116,7 +161,7 @@ Not applicable — no fixtures exist.
 ```python
 # bot/tests/fixtures.py (if it existed)
 import pytest
-from bot.storage.models import UserModel
+from bot.storage.models import UserModel, LeadRegistryModel
 
 @pytest.fixture
 def sample_user():
@@ -126,6 +171,16 @@ def sample_user():
         provider="openrouter",
         total_xp=1000,
         current_level=5,
+    )
+
+@pytest.fixture
+def sample_lead():
+    return LeadRegistryModel(
+        telegram_id=12345,
+        prospect_name="John Doe",
+        prospect_company="Acme Corp",
+        prospect_title="VP Sales",
+        status="analyzed",
     )
 ```
 
@@ -142,6 +197,15 @@ export const createMockUser = (overrides = {}) => ({
   provider: 'openrouter',
   total_xp: 1000,
   current_level: 5,
+  ...overrides,
+});
+
+export const createMockLead = (overrides = {}) => ({
+  id: 1,
+  telegram_id: 12345,
+  prospect_name: 'John Doe',
+  prospect_company: 'Acme Corp',
+  status: 'analyzed',
   ...overrides,
 });
 ```
@@ -166,8 +230,8 @@ None enforced — no coverage tooling detected.
 - TypeScript: Not present
 - Expected scope (if implemented):
   - Agent logic (`bot/agents/`)
-  - Utility functions (`bot/utils.py`)
-  - Data transformations (`bot/services/scoring.py`)
+  - Utility functions (`bot/utils.py`, `bot/utils_validation.py`)
+  - Data transformations (`bot/services/scoring.py`, `bot/services/diff_utils.py`)
   - UI components (`packages/webapp/src/shared/ui/`)
 
 **Integration Tests:**
@@ -266,30 +330,44 @@ describe('getInsforge', () => {
 **Critical Untested Areas:**
 
 **Python Bot:**
-- `bot/agents/*` — Zero coverage on AI agent logic
+- `bot/agents/*` — Zero coverage on AI agent logic (including new `extraction.py`, `reanalysis_strategist.py`)
 - `bot/pipeline/runner.py` — Pipeline execution not tested
-- `bot/storage/repositories.py` — Database operations not tested (11 repo classes)
-- `bot/handlers/*` — Command handlers not tested (9 handler modules)
+- `bot/storage/repositories.py` — Database operations not tested (11+ repo classes)
+- `bot/handlers/*` — Command handlers not tested (11+ handler modules including `context_input.py`, `comment.py`, `reminders.py`)
 - `bot/services/llm_router.py` — LLM provider logic not tested
+- `bot/services/plan_scheduler.py` — Reminder scheduling not tested (date parsing, escalation logic)
+- `bot/services/diff_utils.py` — Analysis diff computation not tested
+- `bot/services/image_utils.py` — Image pre-processing not tested
+- `bot/utils_validation.py` — Shared validation logic not tested (fuzzy command matching, context-specific messages)
+- `bot/task_utils.py` — Background task management not tested
 - `bot/tracing/*` — Observability system not tested (spans, traces, collector)
 
 **TypeScript Webapp:**
 - `packages/webapp/src/features/*` — Zero coverage on all features
-- `packages/webapp/src/shared/ui/*` — UI components not tested (8 components)
+- `packages/webapp/src/shared/ui/*` — UI components not tested (11+ components including new `ErrorBoundary`, `ErrorCard`, `EmptyState`, `Toast`)
 - `packages/webapp/src/lib/insforge.ts` — Client initialization not tested
 - `packages/webapp/src/app/providers/*` — Auth and Query providers not tested
 
 **Risk Assessment:**
 - High risk: Agent pipeline execution (complex async flows, external API dependencies)
 - High risk: Database operations (data integrity, error handling)
-- Medium risk: UI components (user-facing, but type-safe)
+- High risk: Reminder scheduling logic (`plan_scheduler.py` — date parsing, escalation, auto-snooze)
+- High risk: Input validation (`utils_validation.py` — fuzzy command matching could have edge cases)
+- High risk: Image processing (`image_utils.py` — dimension calculations, format conversions)
+- Medium risk: UI components (user-facing, but type-safe; ErrorBoundary is critical for error handling)
 - Medium risk: LLM provider abstraction (retry logic, error handling)
+- Medium risk: Background task management (`task_utils.py` — GC prevention, error logging)
 
 **Recommended First Tests:**
-1. Python: Repository unit tests with mocked InsForge client
-2. Python: Agent unit tests with mocked LLM responses
-3. TypeScript: UI component snapshot/render tests
-4. TypeScript: Hook tests with mocked API responses
+1. Python: `utils_validation.py` — Unit tests for `validate_user_input()` and `_check_mistyped_command()` (pure functions, high value)
+2. Python: `diff_utils.py` — Unit tests for `compute_analysis_diff()` and `summarize_diff_for_humans()` (pure functions, complex logic)
+3. Python: `image_utils.py` — Unit tests for `pre_resize_image()` (file I/O, dimension calculations)
+4. Python: `plan_scheduler.py` — Unit tests for `parse_step_due_date()` (complex regex matching, edge cases)
+5. Python: Repository unit tests with mocked InsForge client
+6. Python: Agent unit tests with mocked LLM responses
+7. TypeScript: `ErrorBoundary` — Render tests with error injection
+8. TypeScript: `ErrorCard`, `EmptyState`, `Toast` — Snapshot/render tests
+9. TypeScript: Hook tests with mocked API responses
 
 ## Testing Infrastructure Setup (Recommended)
 
@@ -313,6 +391,7 @@ pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
 pytest-mock>=3.12.0
 httpx-mock>=0.15.0
+Pillow>=10.0.0  # For image_utils tests
 ```
 
 **TypeScript:**
@@ -351,4 +430,4 @@ export default defineConfig({
 
 ---
 
-*Testing analysis: 2026-02-04*
+*Testing analysis: 2026-02-06*

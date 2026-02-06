@@ -1,238 +1,331 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-04
+**Analysis Date:** 2026-02-06
 
 ## Naming Patterns
 
-**Python Files:**
-- Snake_case for modules: `llm_router.py`, `config_loader.py`, `insforge_client.py`
-- Private/internal modules prefixed with underscore: `_safe_serialize`, `_sanitize`
-- Test files: Not present (no testing infrastructure detected)
+**Files (Python):**
+- snake_case for all modules: `bot/utils_validation.py`, `bot/task_utils.py`, `bot/services/plan_scheduler.py`
+- Handler modules: `bot/handlers/context_input.py`, `bot/handlers/comment.py`, `bot/handlers/reminders.py`
+- Agent modules: `bot/agents/extraction.py`, `bot/agents/reanalysis_strategist.py`
+- Utility files prefixed with `utils_`: `utils_validation.py`, `utils_tma.py`
 
-**TypeScript Files:**
-- PascalCase for components: `SettingsPanel.tsx`, `AuthProvider.tsx`, `LeadCard.tsx`
-- camelCase for utilities: `insforge.ts`, `cn.ts`
-- Page components named after route: `Dashboard.tsx`, `Support.tsx`, `Learn.tsx`
+**Files (TypeScript):**
+- PascalCase for React components: `ErrorBoundary.tsx`, `EmptyState.tsx`, `Toast.tsx`, `ErrorCard.tsx`
+- camelCase for utilities: `insforge.ts`
+- Component directories match component names: `features/dashboard/components/ProgressCard.tsx`
 
-**Python Functions:**
-- snake_case: `load_settings()`, `create_provider()`, `get_by_telegram_id()`
-- Private functions prefixed with underscore: `_extract_json()`, `_safe_serialize()`, `_sanitize()`
-- Async functions use `async def` convention consistently
+**Functions (Python):**
+- snake_case for all functions: `validate_user_input()`, `compute_analysis_diff()`, `pre_resize_image()`
+- Async functions: `async def on_context_add_start()`, `async def schedule_plan_reminders()`
+- Private functions prefixed with underscore: `_lead_display_name()`, `_format_value()`, `_check_mistyped_command()`
+- Handler functions named `on_` for callbacks: `on_context_text()`, `on_reminder_done()`
+- Command handlers prefixed `cmd_`: `cmd_support()`, `cmd_comment()`
 
-**TypeScript Functions:**
-- camelCase for functions: `createAuthenticatedClient()`, `useUserSettings()`, `handleProviderChange()`
-- Custom hooks prefixed with `use`: `useUserSettings`, `useUpdateSettings`, `useDebouncedValue`
+**Functions (TypeScript):**
+- camelCase for all functions: `createAuthenticatedClient()`, `getInsforge()`, `useLevelUpDetection()`
+- React components: PascalCase: `ErrorBoundary`, `EmptyState`, `ToastContainer`
+- Hook functions prefixed `use`: `useSupportSessions()`, `useLevelUpDetection()`
 
-**Python Variables:**
-- snake_case: `telegram_id`, `user_repo`, `trace_id`, `api_key`
-- ALL_CAPS for constants: `MAX_MESSAGE_LENGTH`, `MAX_RETRIES`, `RETRY_DELAYS`
-- Private module-level vars with underscore: `_trace_id`, `_span_stack`, `_PROMPT_PATH`
+**Variables (Python):**
+- snake_case: `lead_id`, `telegram_id`, `context_items`, `new_context_items`
+- Constants: UPPER_SNAKE_CASE: `MAX_DIMENSION`, `PLAN_CHECK_INTERVAL`, `DEFAULT_SPACING_DAYS`, `KNOWN_COMMANDS`
+- Module-level constants for patterns: `URL_PATTERN`, `TIMING_PATTERNS`
 
-**TypeScript Variables:**
-- camelCase: `telegramId`, `insforgeAuth`, `botUsername`
-- UPPER_SNAKE_CASE for constants: `INSFORGE_URL`, `INSFORGE_ANON_KEY`, `OPENROUTER_MODELS`
+**Variables (TypeScript):**
+- camelCase: `insforgeAuth`, `message`, `onRetry`
+- Constants: UPPER_SNAKE_CASE: `INSFORGE_URL`, `INSFORGE_ANON_KEY`
+- React props: camelCase with type interfaces: `ErrorCardProps`, `EmptyStateProps`
 
-**Python Types/Classes:**
-- PascalCase for classes: `UserModel`, `TraceContext`, `BaseAgent`, `LLMProvider`
-- Pydantic models suffixed with `Model`: `UserModel`, `AttemptModel`, `PipelineTraceModel`
-- Repo classes suffixed with `Repo`: `UserRepo`, `AttemptRepo`, `TraceRepo`
-- Abstract base classes use ABC pattern: `BaseAgent`, `LLMProvider`
+**Types (Python):**
+- PascalCase with suffix: `ValidationResult`, `AgentInput`, `AgentOutput`, `LeadActivityModel`, `ScheduledReminderModel`
+- Pydantic models end in `Model`: `UserModel`, `LeadRegistryModel`, `PipelineTraceModel`
+- FSM states end in `State`: `ReanalysisState`, `SupportState`, `CommentSupportState`
+- Settings class: `Settings` (BaseSettings)
 
-**TypeScript Types:**
-- PascalCase for interfaces/types: `ButtonProps`, `InsForgeClient`, `TrainScenario`
-- Props interfaces suffixed with `Props`: `ButtonProps`, `CardProps`, `SkeletonProps`
+**Types (TypeScript):**
+- PascalCase: `ErrorBoundaryProps`, `ErrorBoundaryState`, `Toast`
+- Interface names match component name + `Props`: `ErrorCardProps`, `EmptyStateProps`
+- Type imports from SDK: `InsForgeClient`
 
 ## Code Style
 
-**Python Formatting:**
-- No formatter tool detected (no `.black`, `.ruff`, or `pyproject.toml` with formatter config)
-- Manual formatting observed:
-  - 4-space indentation
-  - Line length ~100-120 characters (not strictly enforced)
-  - Type hints used extensively: `str | None`, `dict[str, Any]`, `list[dict[str, Any]]`
-  - Modern union syntax: `str | None` instead of `Optional[str]`
+**Formatting (Python):**
+- No explicit formatter config detected (no `.black`, `.ruff.toml`, or `pyproject.toml` with formatter settings)
+- Consistent 4-space indentation
+- Line length appears to be ~100 characters (soft limit)
+- Type hints used extensively: `def parse_step_due_date(step: dict, base_date: datetime, step_index: int) -> datetime:`
+- Optional types: `str | None` (Python 3.10+ union syntax)
 
-**Python Linting:**
-- No linter config detected (no `.flake8`, `.pylintrc`, or `ruff.toml`)
+**Formatting (TypeScript):**
+- No explicit formatter config detected (no `.prettierrc` or `.eslintrc`)
+- TSConfig enforces strict mode: `"strict": true`
+- 2-space indentation (standard React/Vite default)
+- Single quotes for strings (observed in imports)
+- Trailing commas in multiline (observed in objects)
 
-**TypeScript Formatting:**
-- No explicit formatter config (no `.prettierrc`, `eslint.config.js`)
-- Vite + TypeScript strict mode (`strict: true` in `tsconfig.json`)
-- 2-space indentation
-- Single quotes preferred for strings
-- Semicolons omitted
+**Linting (Python):**
+- Type checking via type hints throughout
+- `from __future__ import annotations` at top of every module for forward references
+- Mypy-style type hints: `def foo(x: int) -> str | None:`
 
-**TypeScript Linting:**
-- TypeScript strict mode enabled:
-  - `noUnusedLocals: true`
-  - `noUnusedParameters: true`
-  - `noFallthroughCasesInSwitch: true`
-  - `forceConsistentCasingInFileNames: true`
+**Linting (TypeScript):**
+- TSConfig strict mode enabled:
+  - `"noUnusedLocals": true`
+  - `"noUnusedParameters": true`
+  - `"noFallthroughCasesInSwitch": true`
+  - `"forceConsistentCasingInFileNames": true`
 
 ## Import Organization
 
-**Python Order:**
-1. `from __future__ import annotations` (always first)
-2. Standard library imports (alphabetically): `asyncio`, `json`, `logging`, `time`, `uuid`
-3. Third-party imports: `httpx`, `aiogram`, `pydantic`
-4. Local imports: `from bot.agents import`, `from bot.services import`
+**Order (Python):**
+1. Future imports: `from __future__ import annotations`
+2. Standard library: `import asyncio`, `import logging`, `import json`, `import re`
+3. Third-party dependencies: `from aiogram import Bot, F, Router`, `from pydantic import BaseModel`
+4. Local project imports:
+   - `from bot.agents.base import AgentInput, AgentOutput`
+   - `from bot.services.crypto import CryptoService`
+   - `from bot.storage.models import LeadActivityModel`
+   - `from bot.storage.repositories import LeadRegistryRepo`
+5. Relative imports for same-package: `from .base import BaseAgent` (rare, absolute preferred)
 
-**Python Path Style:**
-- Absolute imports from `bot.` package: `from bot.agents.base import BaseAgent`
-- No relative imports used
+**Order (TypeScript):**
+1. React core: `import { Component, type ErrorInfo, type ReactNode } from 'react';`
+2. Third-party libraries: `from 'react-router';`, `from 'lucide-react';`
+3. Local imports grouped by domain:
+   - Shared UI: `import { Button } from '@/shared/ui/Button';`
+   - Features: `import { LeadList } from '@/features/leads/components/LeadList';`
+   - Lib/utils: `import { getInsforge } from '@/lib/insforge';`
 
-**TypeScript Order:**
-1. External dependencies: `react`, `react-router`, `@telegram-apps/sdk-react`
-2. Internal UI components: `@/shared/ui`, `@/features/*/components`
-3. Hooks: `@/features/*/hooks`
-4. Types: `@/types`, `@deal-quest/shared`
-5. Utilities: `@/lib/*`
+**Path Aliases (TypeScript):**
+- `@/*` maps to `./src/*`: `@/shared/ui/Button`, `@/features/dashboard/components/ProgressCard`
+- `@deal-quest/shared` maps to `./src/types/index.ts` (shared types package)
 
-**TypeScript Path Aliases:**
-- `@/*` maps to `./src/*`
-- `@deal-quest/shared` maps to `./src/types/index.ts`
-- Path aliases configured in `tsconfig.json` and resolved via `vite-tsconfig-paths`
+**Path Aliases (Python):**
+- Absolute imports from `bot.` package root: `from bot.agents.extraction import ExtractionAgent`
+- No relative imports (all absolute from package root)
 
 ## Error Handling
 
-**Python Patterns:**
-- Try/except blocks wrap external API calls (LLM, database, HTTP)
-- Specific exceptions caught first, broad exceptions as fallback
-- Logging at error level: `logger.error("message: %s", e)`
-- Errors propagated upward, not silently swallowed
-- Custom exceptions: `TranscriptionError` in `bot/services/transcription.py`
-- Return `None` for not-found cases (repository methods)
-- Return `AgentOutput(success=False, error=str(e))` for agent failures
+**Patterns (Python):**
 
-**Python Retry Logic:**
-- Exponential backoff in `llm_router.py`: `MAX_RETRIES = 3`, `RETRY_DELAYS = [1, 3, 8]`
-- Retry on 429, 500, 502, 503 status codes
-- Async sleep: `await asyncio.sleep(RETRY_DELAYS[attempt])`
+**Try-except with logging:**
+```python
+try:
+    result = await agent.run(agent_input, pipeline_ctx)
+except Exception as e:
+    logger.error("ReanalysisStrategistAgent error: %s", e)
+    return AgentOutput(success=False, error=str(e))
+```
 
-**TypeScript Patterns:**
-- Error boundaries not detected (no `ErrorBoundary` component)
-- React Query handles API errors via `isError` state
-- Client-side validation via TypeScript strict mode
-- Throws for uninitialized client: `throw new Error("InsForge client not authenticated")`
-- Environment variable validation at module load:
+**Validation results with typed errors:**
+```python
+@dataclass
+class ValidationResult:
+    is_valid: bool
+    error_message: str | None = None
+    cleaned_input: str | None = None
+```
+
+**Graceful fallbacks:**
+```python
+if not _PROMPT_PATH.exists():
+    logger.warning("Extraction prompt not found: %s", _PROMPT_PATH)
+    # Fallback minimal prompt
+    self._prompt = "Extract visible information..."
+```
+
+**Optimistic updates with error logging:**
+```python
+try:
+    await callback.message.edit_text(...)
+except Exception:
+    pass  # Silent fail for message edits (user may have deleted)
+```
+
+**Patterns (TypeScript):**
+
+**Error boundaries for React tree:**
 ```typescript
-if (!INSFORGE_URL) {
-  throw new Error('VITE_INSFORGE_URL environment variable is not set');
+static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  return { hasError: true, error };
+}
+
+componentDidCatch(error: Error, info: ErrorInfo): void {
+  console.error('[ErrorBoundary]', error, info.componentStack);
+}
+```
+
+**Component-level error states:**
+```typescript
+<ErrorCard
+  message="Failed to load data"
+  onRetry={refetch}
+  compact={false}
+/>
+```
+
+**Client initialization guards:**
+```typescript
+export function getInsforge(): InsForgeClient {
+  if (!insforgeAuth) {
+    throw new Error(
+      'InsForge client not authenticated. Call createAuthenticatedClient first.'
+    );
+  }
+  return insforgeAuth;
 }
 ```
 
 ## Logging
 
-**Python Framework:**
-- Standard library `logging` module
-- Logger per module: `logger = logging.getLogger(__name__)`
-- Centralized setup in `bot/main.py`:
+**Framework (Python):** Standard library `logging`
+
+**Patterns:**
 ```python
-logging.basicConfig(
-    level=getattr(logging, level.upper(), logging.INFO),
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    stream=sys.stdout,
-)
+logger = logging.getLogger(__name__)
+
+logger.info("Scheduled %d reminders for lead %s", count, lead_id)
+logger.warning("Extraction prompt not found: %s", path)
+logger.error("Comment generation failed: %s", e)
+logger.debug("Background task %s was cancelled", task.get_name())
 ```
 
-**Python Patterns:**
-- Info level for flow: `logger.info("Bot initialized. Starting polling...")`
-- Warning for degraded mode: `logger.warning("No OPENROUTER_API_KEY set — engagement features disabled")`
-- Error for failures: `logger.error("Claude API error: %s", e)`
-- Structured messages with trace IDs: `logger.info("Trace started: trace_id=%s pipeline=%s", trace_id, pipeline_name)`
+**When to log:**
+- INFO: Successful operations with key metrics: `"Sent reminder for lead %s step %s"`
+- WARNING: Missing config or degraded functionality: `"Voice transcription not configured"`
+- ERROR: Operation failures with exception details: `"Failed to process reminder %s: %s"`
+- DEBUG: Background task lifecycle events
 
-**TypeScript Framework:**
-- `console.log` / `console.error` (no formal logging framework detected)
-- Minimal logging observed
+**Structured logging:**
+- Use `%s` placeholders: `logger.error("Failed: %s", e)`
+- Include context: lead_id, telegram_id, step_id in messages
+
+**Framework (TypeScript):** `console` API
+
+**Patterns:**
+```typescript
+console.error('[ErrorBoundary]', error, info.componentStack);
+```
+
+**When to log:**
+- Errors in ErrorBoundary catch
+- Client initialization errors (throw instead of log)
+- Environment validation errors (throw at module load)
 
 ## Comments
 
-**Python When to Comment:**
-- Module docstrings: Triple-quoted string at top of every file
-- Function docstrings: Not consistently used (some functions have docstrings, many don't)
-- Inline comments for non-obvious logic: Rare, code mostly self-documenting
-- Type hints used instead of comments for parameter/return documentation
+**When to Comment (Python):**
 
-**Python Docstring Style:**
-- Simple one-liners: `"""Repository classes for database operations."""`
-- No structured docstring format (not Google/NumPy/Sphinx style)
-- Decorators documented in comments: `# @traced_span decorator comment`
+**Docstrings for modules:**
+```python
+"""Handler for collecting context input on leads for re-analysis."""
+```
 
-**TypeScript Comments:**
-- JSDoc for component-level docs:
+**Docstrings for functions:**
+```python
+def parse_step_due_date(step: dict, base_date: datetime, step_index: int) -> datetime:
+    """Parse step timing to compute due_at date.
+
+    Priority:
+    1. delay_days integer field (most reliable, from LLM structured output)
+    2. timing string field (regex patterns)
+    3. Default spacing (step_index + 1) * DEFAULT_SPACING_DAYS
+    """
+```
+
+**Inline comments for non-obvious logic:**
+```python
+# Optimistic update BEFORE sending (at-most-once delivery)
+await reminder_repo.mark_reminded(reminder.id, now_iso)
+```
+
+**Section headers:**
+```python
+# ─── Re-analysis Execution ─────────────────────────────────────────
+```
+
+**When to Comment (TypeScript):**
+
+**JSDoc for exported components and functions:**
 ```typescript
 /**
- * Settings panel for the Profile page.
+ * Standardized error display component for failed queries and operations.
  *
- * Displays:
- * - Provider selector (OpenRouter vs Claude API)
- * - OpenRouter model selector
- * - API key status with deep-link to bot
+ * - Default mode: renders inside a Card with centered icon, message, and optional retry button.
+ * - Compact mode: renders a single inline row with icon, message, and optional retry text link.
  */
+export function ErrorCard({ message, onRetry, compact }: ErrorCardProps) { ... }
 ```
-- Inline comments for configuration: `// Path aliases`, `// Bundler mode`
-- Section separators in components: `// ---------------------------------------------------------------------------`
+
+**Inline comments for critical behavior:**
+```typescript
+// IMPORTANT: We intentionally do NOT call setAuthToken() here.
+// Our Edge Function mints custom JWTs (HS256 with our own secret),
+// but InsForge PostgREST uses a different JWT secret and rejects them
+```
+
+**TSDoc:**
+- Used for exported components/functions
+- `@param` for prop documentation via interface (not inline)
 
 ## Function Design
 
-**Python Size:**
-- Agent methods: 30-60 lines
-- Handler functions: 100-200 lines (long, orchestration-heavy)
-- Utility functions: 5-20 lines
-- No strict size limit enforced
+**Size (Python):**
+- Handlers: 50-200 lines typical (e.g., `on_reanalyze_start()` is 310 lines, but complex flow)
+- Services: 20-80 lines per method (e.g., `compute_analysis_diff()` is 47 lines)
+- Utilities: 10-40 lines (e.g., `pre_resize_image()` is 49 lines)
 
-**Python Parameters:**
-- Keyword-only args after `*`: `async def complete(self, system_prompt: str, user_message: str, *, image_b64: str | None = None)`
-- Dependency injection via function params (no globals)
-- Type hints on all parameters
-- Optional parameters with defaults: `model: str = "claude-sonnet-4-20250514"`
+**Size (TypeScript):**
+- React components: 20-100 lines (e.g., `ErrorCard` is 54 lines, `EmptyState` is 40 lines)
+- Pages: 20-60 lines (composition of smaller components)
+- Hooks: 20-80 lines
 
-**Python Return Values:**
-- Explicit return types in signatures: `-> UserModel | None`, `-> dict[str, Any]`
-- `None` for not-found or error cases
-- Pydantic models for structured data
-- Async functions return coroutines: `async def get(...) -> Model | None`
+**Parameters (Python):**
+- Use dependency injection via handler parameters: `user_repo: UserRepo`, `crypto: CryptoService`
+- Keyword-only parameters for options: `def validate_user_input(text: str, *, min_length: int = 1)`
+- Type hints required for all parameters
 
-**TypeScript Size:**
-- Components: 50-150 lines
-- Hooks: 10-30 lines
-- Utilities: 10-50 lines
+**Parameters (TypeScript):**
+- Props via interface with destructuring: `{ message = 'Failed to load data', onRetry, compact = false }: ErrorCardProps`
+- Optional props with `?`: `onRetry?: () => void`
+- Default values in destructure: `compact = false`
 
-**TypeScript Parameters:**
-- Object destructuring for props: `{ className, variant, size, isLoading, disabled, children, ...props }`
-- Type inference from generics: `forwardRef<HTMLButtonElement, ButtonProps>`
-- Optional parameters with `?`: `isLoading?: boolean`
+**Return Values (Python):**
+- Explicit return type hints: `-> ValidationResult`, `-> datetime`, `-> str | None`
+- Return typed models: `return AgentOutput(success=True, data=parsed)`
+- None for procedures: `async def on_context_done(...) -> None:`
 
-**TypeScript Return Values:**
-- Explicit return types for exported functions: `export function createAuthenticatedClient(_jwt: string): InsForgeClient`
-- Hooks return tuples or objects: `const { data, isLoading } = useQuery(...)`
-- Components return JSX: `export default function App() { return <div>...</div>; }`
+**Return Values (TypeScript):**
+- Inferred types (no explicit annotations)
+- JSX for React components: `return <div>...</div>`
+- Typed via function signature in interface
 
 ## Module Design
 
-**Python Exports:**
-- No explicit `__all__` declarations
-- Public API defined by non-underscore names
-- Package-level exports via `__init__.py`:
-```python
-# bot/tracing/__init__.py
-from bot.tracing.collector import get_collector, init_collector
-from bot.tracing.context import TraceContext, traced_span
-```
+**Exports (Python):**
+- All functions/classes exported implicitly (no `__all__` used)
+- Import what you need: `from bot.services.diff_utils import compute_analysis_diff`
 
-**Python Barrel Files:**
-- Used sparingly: `bot/tracing/__init__.py`, `bot/agents/__init__.py`
-- Most imports are direct: `from bot.agents.strategist import StrategistAgent`
+**Exports (TypeScript):**
+- Named exports for components: `export function ErrorCard() { ... }`
+- Named exports for utilities: `export function getInsforge() { ... }`
+- Default exports for pages: `export default function Dashboard() { ... }`
 
-**TypeScript Exports:**
-- Named exports preferred: `export { Button, type ButtonProps }`
-- Default exports for page components: `export default function Dashboard()`
-- Barrel files used extensively: `@/shared/ui/index.ts` exports all UI components
+**Barrel Files (TypeScript):**
+- Not detected in explored files
+- Direct imports preferred: `import { Button } from '@/shared/ui/Button'`
 
-**TypeScript Barrel Files:**
-- `src/shared/ui/index.ts`: Centralized UI component exports
-- Feature-level barrels not used (direct imports from feature directories)
+**Module Structure (Python):**
+- One primary class/function per module
+- Helper functions prefixed with `_` in same file
+- Constants at module top (after imports)
+
+**Module Structure (TypeScript):**
+- One primary component per file
+- Helper components in same file (e.g., `ToastItem` inside `Toast.tsx`)
+- Types co-located with component
 
 ---
 
-*Convention analysis: 2026-02-04*
+*Convention analysis: 2026-02-06*
