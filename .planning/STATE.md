@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 in progress (2 of 4 plans done).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 in progress (3 of 4 plans done).
 
 ## Previous Milestones
 
@@ -18,16 +18,16 @@ Milestone: v2.0 -- Sales Co-Pilot
 Phase: 17 (LazyFlow UX Overhaul) -- In progress
 Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-06 -- Completed 17-02-PLAN.md (Quick Start Training)
+Last activity: 2026-02-06 -- Completed 17-01-PLAN.md (Smart Landing & Dashboard Context)
 
 Progress: [####------] 2/4 Phase 17 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 49
+- Total plans completed: 50
 - Average duration: 3.2m
-- Total execution time: 158m
+- Total execution time: 160m
 
 **By Phase:**
 
@@ -51,11 +51,11 @@ Progress: [####------] 2/4 Phase 17 plans
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
-| 17. LazyFlow UX Overhaul | 2/4 | 2m | 1m |
+| 17. LazyFlow UX Overhaul | 2/4 | 4m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 2m, 2m, 2m, 1m
-- Trend: stable/accelerating
+- Last 5 plans: 2m, 2m, 2m, 1m, 2m
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -110,6 +110,9 @@ Recent decisions affecting current work:
 - [16-04]: tma_url passed as function parameter through scheduler chain (not imported from config)
 - [16-04]: query_params uses urllib.parse.urlencode for proper URL encoding
 - [16-04]: add_open_in_app_row graceful degradation when tma_url empty (backward compatible)
+- [17-01]: LandingFocus as simple hook composition, not Zustand store
+- [17-01]: Prefetch limited to 3 leads max to prevent API overload on mount
+- [17-01]: 60s staleTime on prefetched queries matches useLead behavior
 - [17-02]: Quick Start reuses handleStart (pool already filtered by auto-selected difficulty)
 - [17-02]: Auto-select only fires when selectedDifficulty is null (user override preserved)
 - [17-02]: Start Training button demoted to secondary variant when Quick Start visible
@@ -142,7 +145,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-02-PLAN.md (Quick Start Training)
+Stopped at: Completed 17-01-PLAN.md (Smart Landing & Dashboard Context)
 Resume file: None
 Next action: Execute 17-03-PLAN.md
 Next phase after: Continue Phase 17 (LazyFlow UX Overhaul)
