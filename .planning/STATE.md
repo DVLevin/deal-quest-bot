@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress (plan 2 of 4 complete).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress (plan 3 of 4 complete).
 
 ## Previous Milestones
 
@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 16 (TMA Lead Experience & Dashboard) -- In progress
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-06 -- Completed 16-02-PLAN.md (LeadDetail Plan-First Layout)
+Last activity: 2026-02-06 -- Completed 16-04-PLAN.md (Open in App Deep Link Button)
 
-Progress: [######################..] 22/25 v2.0 requirements (88%)
+Progress: [#######################.] 23/25 v2.0 requirements (92%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 46
+- Total plans completed: 47
 - Average duration: 3.3m
-- Total execution time: 153m
+- Total execution time: 155m
 
 **By Phase:**
 
@@ -50,10 +50,10 @@ Progress: [######################..] 22/25 v2.0 requirements (88%)
 | 15.1. Lead Enhancements | 3/3 | 9m | 3m |
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
-| 16. TMA Lead Experience | 2/4 | 4m | 2m |
+| 16. TMA Lead Experience | 3/4 | 6m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 3m, 2m, 2m
+- Last 5 plans: 3m, 3m, 2m, 2m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -103,6 +103,9 @@ Recent decisions affecting current work:
 - [16-02]: Intelligence section only renders if any sub-content exists
 - [16-02]: Visual highlight clears after 3 seconds via useEffect timer
 - [16-02]: Progress badge shows overdue count (red) when available, otherwise completed/total
+- [16-04]: tma_url passed as function parameter through scheduler chain (not imported from config)
+- [16-04]: query_params uses urllib.parse.urlencode for proper URL encoding
+- [16-04]: add_open_in_app_row graceful degradation when tma_url empty (backward compatible)
 
 ### Pending Todos
 
@@ -132,7 +135,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 16-02-PLAN.md (LeadDetail Plan-First Layout)
+Stopped at: Completed 16-04-PLAN.md (Open in App Deep Link Button)
 Resume file: None
 Next action: Execute 16-03-PLAN.md (Dashboard Overview Cards)
 Next phase after: Phase 17 (LazyFlow UX Overhaul)
