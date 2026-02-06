@@ -157,8 +157,8 @@ function AnalysisSection({ analysis }: { analysis: SupportAnalysis }) {
         )}
 
         {analysis.key_concern && (
-          <div className="rounded-lg border border-warning/20 bg-warning/5 p-2">
-            <p className="text-xs font-medium text-warning">Key Concern</p>
+          <div className="rounded-xl border-2 border-warning/30 bg-warning/8 p-3 shadow-subtle">
+            <p className="text-xs font-bold uppercase tracking-wide text-warning">Key Concern</p>
             <p className="mt-0.5 text-xs text-text-secondary">
               {analysis.key_concern}
             </p>
@@ -562,7 +562,27 @@ export function LeadDetail() {
           isOpen={activeSection === 'intel'}
           onToggle={() => toggleSection('intel')}
         >
-          <div className="space-y-4">
+          <div
+            className={cn(
+              'space-y-4 rounded-xl p-3',
+              analysis.buying_signal.toLowerCase() === 'high' || analysis.buying_signal.toLowerCase() === 'strong'
+                ? 'border-t-2 border-success'
+                : analysis.buying_signal.toLowerCase() === 'medium' || analysis.buying_signal.toLowerCase() === 'moderate'
+                  ? 'border-t-2 border-warning'
+                  : analysis.buying_signal.toLowerCase() === 'low' || analysis.buying_signal.toLowerCase() === 'weak'
+                    ? 'border-t-2 border-error'
+                    : '',
+            )}
+            style={{
+              background: 'oklch(0.98 0.005 250 / 0.6)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: analysis.buying_signal === 'Unknown' ? '1px solid oklch(0.90 0.01 250 / 0.3)' : undefined,
+              borderLeft: '1px solid oklch(0.90 0.01 250 / 0.3)',
+              borderRight: '1px solid oklch(0.90 0.01 250 / 0.3)',
+              borderBottom: '1px solid oklch(0.90 0.01 250 / 0.3)',
+            }}
+          >
             {/* Analysis */}
             {hasAnalysis && <AnalysisSection analysis={analysis} />}
 
