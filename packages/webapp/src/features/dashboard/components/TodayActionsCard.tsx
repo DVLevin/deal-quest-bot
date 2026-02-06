@@ -3,20 +3,56 @@
  *
  * Aggregates overdue and due-today engagement plan steps using useTodayActions.
  * Each action item navigates to /leads/:id?step=:stepId for quick execution.
+ * Prefetches lead details for the first 3 unique leads so navigation is instant.
  *
  * Follows existing dashboard widget patterns (ProgressCard, WeakAreasCard).
  *
  * TMAUX-V20-04: Dashboard Today's Actions widget
+ * TMAUX-V20-17-01: Lead detail prefetching for instant navigation
  */
 
+import { useEffect } from 'react';
 import { ListTodo, ChevronRight, AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
 import { useTodayActions } from '@/features/leads/hooks/useTodayActions';
+import { useAuthStore } from '@/features/auth/store';
+import { queryKeys } from '@/lib/queries';
+import { getInsforge } from '@/lib/insforge';
 
 export function TodayActionsCard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: actions, isLoading, isError, refetch } = useTodayActions();
+
+  // Prefetch lead details for the first 3 unique leads for instant navigation
+  useEffect(() => {
+    if (!actions || actions.length === 0) return;
+
+    const telegramId = useAuthStore.getState().telegramId;
+    if (!telegramId) return;
+
+    const uniqueLeadIds = [...new Set(actions.slice(0, 5).map((a) => a.lead_id))].slice(0, 3);
+
+    uniqueLeadIds.forEach((leadId) => {
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.leads.detail(leadId),
+        queryFn: async () => {
+          const { data, error } = await getInsforge()
+            .database.from('lead_registry')
+            .select('id, user_id, telegram_id, prospect_name, prospect_first_name, prospect_last_name, prospect_title, prospect_company, prospect_geography, photo_url, photo_key, prospect_analysis, closing_strategy, engagement_tactics, draft_response, status, notes, input_type, web_research, engagement_plan, lead_source, created_at, updated_at')
+            .eq('id', leadId)
+            .eq('telegram_id', telegramId)
+            .limit(1);
+          if (error) throw error;
+          const rows = data ?? [];
+          return rows.length > 0 ? rows[0] : null;
+        },
+        staleTime: 60_000,
+      });
+    });
+  }, [actions, queryClient]);
 
   if (isLoading) {
     return (
