@@ -28,7 +28,7 @@ from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
-from bot.tracing import TraceContext
+from langfuse import get_client, observe
 from bot.states import TrainState
 from bot.storage.models import AttemptModel
 from bot.storage.repositories import (
@@ -45,6 +45,22 @@ from bot.utils_validation import validate_user_input
 logger = logging.getLogger(__name__)
 
 router = Router(name="train")
+
+
+@observe(name="pipeline:train")
+async def _traced_train_run(runner, pipeline_config, ctx, tg_id, user_id):
+    """Run train pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"train_{tg_id}",
+            metadata={"pipeline": "train", "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
+
 
 _SCENARIOS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "scenarios.json"
 
@@ -263,6 +279,7 @@ async def _run_train_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
     generated_scenario_repo: GeneratedScenarioRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Core train scoring logic shared by text and voice handlers."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -295,13 +312,13 @@ async def _run_train_answer(
             user_message=user_response,
             telegram_id=tg_id,
             user_id=user.id or 0,
+            model_config=model_config_service,
         )
 
         pipeline_config = load_pipeline("train")
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="train", telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(status_msg, Phase.EVALUATION):
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.EVALUATION):
+            await _traced_train_run(runner, pipeline_config, ctx, tg_id, user.id or 0)
 
         trainer_result = ctx.get_result("trainer")
         if not trainer_result or not trainer_result.success:
@@ -402,6 +419,7 @@ async def on_train_voice(
     agent_registry: AgentRegistry,
     transcription: TranscriptionService,
     generated_scenario_repo: GeneratedScenarioRepo,
+    model_config_service=None,
 ) -> None:
     """Transcribe voice and score via trainer pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -446,6 +464,7 @@ async def on_train_voice(
         knowledge=knowledge,
         agent_registry=agent_registry,
         generated_scenario_repo=generated_scenario_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -461,6 +480,7 @@ async def on_train_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
     generated_scenario_repo: GeneratedScenarioRepo,
+    model_config_service=None,
 ) -> None:
     """Score the training response."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -505,6 +525,7 @@ async def on_train_answer(
         knowledge=knowledge,
         agent_registry=agent_registry,
         generated_scenario_repo=generated_scenario_repo,
+        model_config_service=model_config_service,
     )
 
 

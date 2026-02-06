@@ -17,6 +17,8 @@ from aiogram.types import (
     Message,
 )
 
+from langfuse import get_client, observe
+
 from bot.services.crypto import CryptoService
 from bot.services.llm_router import create_provider
 from bot.services.image_utils import pre_resize_image
@@ -26,6 +28,22 @@ from bot.storage.repositories import UserRepo
 logger = logging.getLogger(__name__)
 
 router = Router(name="comment")
+
+
+@observe(name="pipeline:comment")
+async def _traced_comment_generate(llm, system_prompt, user_message, image_b64, tg_id):
+    """Run comment generation LLM call with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"comment_{tg_id}",
+            metadata={"pipeline": "comment"},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await llm.complete(system_prompt, user_message, image_b64=image_b64)
+
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
 
@@ -112,7 +130,7 @@ async def on_comment_photo(
         system_prompt = _load_prompt("standalone_comment.md")
         user_message = "Generate comment suggestions for the LinkedIn post shown in this screenshot."
 
-        result = await llm.complete(system_prompt, user_message, image_b64=photo_b64)
+        result = await _traced_comment_generate(llm, system_prompt, user_message, photo_b64, tg_id)
         await llm.close()
 
         # Extract text from result
@@ -199,7 +217,7 @@ async def on_comment_action(
         system_prompt = _load_prompt("standalone_comment.md")
         user_message = f"Generate comment suggestions for the LinkedIn post shown in this screenshot.{modifier}"
 
-        result = await llm.complete(system_prompt, user_message, image_b64=screenshot_b64)
+        result = await _traced_comment_generate(llm, system_prompt, user_message, screenshot_b64, tg_id)
         await llm.close()
 
         if isinstance(result, dict):

@@ -32,7 +32,7 @@ from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider, web_research_call
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
-from bot.tracing import TraceContext
+from langfuse import get_client, observe
 from bot.task_utils import create_background_task
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
@@ -74,6 +74,36 @@ URL_GUIDANCE_MESSAGE = (
 )
 
 router = Router(name="support")
+
+
+@observe(name="pipeline:support")
+async def _traced_support_run(runner, pipeline_config, ctx, tg_id, user_id, pipeline_name="support"):
+    """Run support pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"{pipeline_name}_{tg_id}",
+            metadata={"pipeline": pipeline_name, "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
+
+
+@observe(name="pipeline:support_regen")
+async def _traced_support_regen_run(runner, pipeline_config, ctx, tg_id, user_id):
+    """Run support regen pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"support_regen_{tg_id}",
+            metadata={"pipeline": "support_regen", "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
 
 def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarkup:
     """Build support actions keyboard, optionally including a lead link."""
@@ -144,6 +174,7 @@ async def _run_support_pipeline(
     image_b64: str | None = None,
     reminder_repo: ScheduledReminderRepo | None = None,
     pipeline_name: str = "support",
+    model_config_service=None,
 ) -> None:
     """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -179,14 +210,14 @@ async def _run_support_pipeline(
             telegram_id=tg_id,
             user_id=user.id or 0,
             image_b64=image_b64,
+            model_config=model_config_service,
         )
 
         # Run support pipeline (or support_photo for images)
         pipeline_config = load_pipeline(pipeline_name)
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name=pipeline_name, telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(status_msg, Phase.ANALYSIS):
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.ANALYSIS):
+            await _traced_support_run(runner, pipeline_config, ctx, tg_id, user.id or 0, pipeline_name)
 
         # Get strategist output
         strategist_result = ctx.get_result("strategist")
@@ -671,6 +702,7 @@ async def on_support_photo(
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
     reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Process photo upload in support mode — download, store, analyze."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -733,6 +765,7 @@ async def on_support_photo(
         image_b64=photo_b64,
         reminder_repo=reminder_repo,
         pipeline_name="support_photo",
+        model_config_service=model_config_service,
     )
 
 
@@ -753,6 +786,7 @@ async def on_support_voice(
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
     reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Transcribe voice message and run through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -798,6 +832,7 @@ async def on_support_voice(
         shared_openrouter_key=shared_openrouter_key,
         input_type="voice",
         reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -816,6 +851,7 @@ async def on_support_forward(
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
     reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Handle forwarded messages -- auto-extract sender as prospect info."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -869,6 +905,7 @@ async def on_support_forward(
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
         reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -887,6 +924,7 @@ async def on_support_input(
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
     reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Process text input through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -939,6 +977,7 @@ async def on_support_input(
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
         reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -952,6 +991,7 @@ async def on_support_action(
     knowledge: KnowledgeService,
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
+    model_config_service=None,
 ) -> None:
     """Handle support action buttons (regenerate, shorter, aggressive)."""
     action = callback.data.split(":")[1]  # type: ignore[union-attr]
@@ -1007,13 +1047,13 @@ async def on_support_action(
             user_message=original_input + modifier,
             telegram_id=tg_id,
             user_id=user.id or 0,
+            model_config=model_config_service,
         )
 
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="support_regen", telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
+            await _traced_support_regen_run(runner, pipeline_config, ctx, tg_id, user.id or 0)
 
         strategist_result = ctx.get_result("strategist")
         if strategist_result and strategist_result.success:

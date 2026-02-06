@@ -16,6 +16,8 @@ from aiogram.types import (
     Message,
 )
 
+from langfuse import get_client, observe
+
 from bot.agents.base import AgentInput
 from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
 from bot.services.knowledge import KnowledgeService
@@ -525,7 +527,11 @@ async def on_reanalyze_skip(
 # ─── Re-analysis Execution ─────────────────────────────────────────
 
 class SimplePipelineCtx:
-    """Minimal pipeline context for standalone agent execution."""
+    """Minimal pipeline context for standalone agent execution.
+
+    NOTE: SimplePipelineCtx bypasses PipelineRunner, so per-agent model
+    overrides do not apply here. Re-analysis uses the user's own provider.
+    """
 
     def __init__(self, llm, kb: str, memory: dict) -> None:
         self.llm = llm
@@ -535,6 +541,21 @@ class SimplePipelineCtx:
 
     def get_result(self, name: str):
         return None
+
+
+@observe(name="pipeline:reanalysis")
+async def _traced_reanalysis_run(agent, agent_input, pipeline_ctx, tg_id, user_id):
+    """Run reanalysis agent with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"reanalysis_{tg_id}",
+            metadata={"pipeline": "reanalysis", "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await agent.run(agent_input, pipeline_ctx)
 
 
 @router.callback_query(F.data.startswith("reanalyze:start:"))
@@ -631,6 +652,7 @@ async def on_reanalyze_start(
     user_memory_model = await memory_repo.get(tg_id)
     user_memory = user_memory_model.memory_data if user_memory_model else {}
 
+    # NOTE: SimplePipelineCtx bypasses PipelineRunner, so per-agent model overrides do not apply here.
     pipeline_ctx = SimplePipelineCtx(llm, knowledge_base, user_memory)
 
     # Run the agent
@@ -650,7 +672,7 @@ async def on_reanalyze_start(
         parse_mode="Markdown",
     )
 
-    result = await agent.run(agent_input, pipeline_ctx)
+    result = await _traced_reanalysis_run(agent, agent_input, pipeline_ctx, tg_id, user.id or 0)
 
     if not result.success:
         await status_msg.edit_text(

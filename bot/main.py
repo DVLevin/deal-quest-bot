@@ -50,6 +50,7 @@ from bot.storage.repositories import (
 )
 from bot.tracing import init_collector
 from bot.tracing.collector import get_collector
+from bot.tracing.langfuse_setup import init_langfuse, shutdown_langfuse
 from bot.utils_tma import setup_menu_button
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,11 @@ async def main() -> None:
     cfg = load_settings()
     setup_logging(cfg.log_level)
     logger.info("Starting Deal Quest Bot...")
+
+    # Initialize Langfuse observability
+    langfuse_enabled = init_langfuse(cfg)
+    if langfuse_enabled:
+        logger.info("Langfuse observability enabled")
 
     # Initialize InsForge client
     insforge = InsForgeClient(cfg.insforge_base_url, cfg.insforge_anon_key)
@@ -230,6 +236,8 @@ async def main() -> None:
     try:
         await dp.start_polling(bot)
     finally:
+        shutdown_langfuse()
+        logger.info("Langfuse flushed")
         collector = get_collector()
         if collector:
             await collector.stop()
