@@ -38,7 +38,7 @@ export function ScoreDisplay({
   return (
     <div className="flex flex-col items-center gap-3">
       {/* SVG circle */}
-      <div className="relative h-36 w-36">
+      <div className="relative h-44 w-44">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           {/* Background circle */}
           <circle
@@ -70,12 +70,14 @@ export function ScoreDisplay({
         {/* Center score number */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {animate ? (
-            <span
-              className="score-counter text-3xl font-bold text-text"
-              style={{ ['--score-value' as string]: score }}
-            />
+            <div className="score-drop-in">
+              <span
+                className={`score-counter text-[28px] font-black text-text${score >= 90 ? ' score-gold-flash' : ''}`}
+                style={{ ['--score-value' as string]: score }}
+              />
+            </div>
           ) : (
-            <span className="text-3xl font-bold text-text">{score}</span>
+            <span className={`text-[28px] font-black text-text${score >= 90 ? ' score-gold-flash' : ''}`}>{score}</span>
           )}
           <span className="text-xs text-text-hint">/100</span>
         </div>
@@ -83,7 +85,9 @@ export function ScoreDisplay({
 
       {/* XP earned indicator */}
       {animate ? (
-        <XPGainAnimation xpEarned={xpEarned} />
+        <div className="xp-float-up">
+          <XPGainAnimation xpEarned={xpEarned} />
+        </div>
       ) : (
         <Badge variant={passed ? 'success' : 'warning'} size="md">
           +{xpEarned} XP

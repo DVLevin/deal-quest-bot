@@ -78,6 +78,7 @@ export function BadgeCard({ badge, earned, rarity }: BadgeCardProps) {
             'flex h-14 w-14 items-center justify-center rounded-full border-2 bg-surface-secondary',
             rarityBorder[rarity],
             rarityGlow[rarity],
+            'badge-earned-pulse',
           )}
         >
           <Icon className={cn('h-6 w-6', rarityText[rarity])} />

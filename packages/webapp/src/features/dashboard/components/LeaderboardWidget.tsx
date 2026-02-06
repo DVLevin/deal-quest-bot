@@ -30,9 +30,24 @@ function LeaderboardRow({
       className={cn(
         'flex items-center gap-3 rounded-lg px-2 py-2',
         isCurrentUser && 'bg-brand-50',
+        position === 1 && 'border border-rarity-legendary/40',
+        position === 2 && 'border border-rarity-epic/30',
+        position === 3 && 'border border-rarity-rare/30',
       )}
+      style={position === 1 ? { boxShadow: '0 0 6px oklch(0.70 0.22 65 / 0.2)' } : undefined}
     >
-      <span className="w-5 text-center text-sm font-semibold text-text-hint">
+      <span
+        className={cn(
+          'w-5 text-center text-sm font-semibold',
+          position === 1
+            ? 'font-bold text-rarity-legendary'
+            : position === 2
+              ? 'font-bold text-rarity-epic'
+              : position === 3
+                ? 'font-bold text-rarity-rare'
+                : 'text-text-hint',
+        )}
+      >
         {position}
       </span>
       <Avatar

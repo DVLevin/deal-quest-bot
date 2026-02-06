@@ -36,7 +36,7 @@ export function LevelUpOverlay({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="mx-6 flex max-w-sm flex-col items-center gap-4 rounded-2xl bg-surface p-8 shadow-card">
+      <div className="spring-in mx-6 flex max-w-sm flex-col items-center gap-4 rounded-2xl bg-surface p-8 shadow-modal">
         <span className="text-5xl">&#127942;</span>
 
         <h2 className="text-2xl font-bold text-text-primary">Level Up!</h2>
