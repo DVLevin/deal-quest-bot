@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 15 complete.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 15 (Conversational Re-analysis) -- COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-05 -- Completed 15-04-PLAN.md (ReanalysisHandler Integration)
+Phase: 16 (TMA Lead Experience & Dashboard) -- In progress
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-06 -- Completed 16-01-PLAN.md (LeadCard Engagement Plan Visibility)
 
-Progress: [####################] 20/25 v2.0 requirements (80%)
+Progress: [####################..] 21/25 v2.0 requirements (84%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44
+- Total plans completed: 45
 - Average duration: 3.4m
-- Total execution time: 149m
+- Total execution time: 151m
 
 **By Phase:**
 
@@ -50,8 +50,10 @@ Progress: [####################] 20/25 v2.0 requirements (80%)
 | 15.1. Lead Enhancements | 3/3 | 9m | 3m |
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
+| 16. TMA Lead Experience | 1/4 | 2m | 2m |
+
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 2m, 3m, 3m
+- Last 5 plans: 2m, 3m, 3m, 3m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -94,6 +96,9 @@ Recent decisions affecting current work:
 - [15-04]: SimplePipelineCtx class for standalone agent execution without full pipeline runner
 - [15-04]: changes_summary handles both dict and string formats from LLM
 - [15-04]: re_analysis activity logged with headline and changes_count metadata
+- [16-01]: Batched reminder query in useLeadReminders avoids N+1 (one query for all leads)
+- [16-01]: computePlanProgress accepts nullable remindersDueAt to degrade gracefully when loading
+- [16-01]: Progress section aligned under lead info with pl-13 to match avatar offset
 
 ### Pending Todos
 
@@ -104,6 +109,10 @@ Recent decisions affecting current work:
 - [12-01]: Run migration `insforge/migrations/002_scheduled_reminders.sql` on InsForge database
 - [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
 - [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
+
+### Roadmap Evolution
+
+- Phase 17 added: LazyFlow UX Overhaul — zero-click workflows, smart defaults, predictive navigation, effort-eliminating interactions
 
 ### Blockers/Concerns
 
@@ -118,7 +127,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-05
-Stopped at: Completed 15-04-PLAN.md (ReanalysisHandler Integration) -- Phase 15 complete
+Last session: 2026-02-06
+Stopped at: Completed 16-01-PLAN.md (LeadCard Engagement Plan Visibility)
 Resume file: None
-Next action: Plan and execute Phase 16 (TMA Experience)
+Next action: Execute 16-02-PLAN.md (LeadDetail Restructuring)
+Next phase after: Phase 17 (LazyFlow UX Overhaul)
