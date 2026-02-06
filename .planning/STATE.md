@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 17 (LazyFlow UX Overhaul) -- In progress
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-06 -- Completed 17-01-PLAN.md (Smart Landing & Dashboard Context)
+Last activity: 2026-02-06 -- Completed 17-03-PLAN.md (Smart Defaults for Lead Management)
 
-Progress: [####------] 2/4 Phase 17 plans
+Progress: [#######---] 3/4 Phase 17 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 50
+- Total plans completed: 51
 - Average duration: 3.2m
-- Total execution time: 160m
+- Total execution time: 162m
 
 **By Phase:**
 
@@ -51,10 +51,10 @@ Progress: [####------] 2/4 Phase 17 plans
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
-| 17. LazyFlow UX Overhaul | 2/4 | 4m | 2m |
+| 17. LazyFlow UX Overhaul | 3/4 | 6m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 2m, 2m, 1m, 2m
+- Last 5 plans: 2m, 2m, 1m, 2m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -116,6 +116,10 @@ Recent decisions affecting current work:
 - [17-02]: Quick Start reuses handleStart (pool already filtered by auto-selected difficulty)
 - [17-02]: Auto-select only fires when selectedDifficulty is null (user override preserved)
 - [17-02]: Start Training button demoted to secondary variant when Quick Start visible
+- [17-03]: Pipeline progression: analyzed -> reached_out -> meeting_booked -> in_progress -> closed_won
+- [17-03]: closed_lost is terminal with no suggested next status
+- [17-03]: Visual-only suggestion (ring-2 ring-accent/40) -- no forced selection
+- [17-03]: Backward-compatible optional status prop on LeadNotes
 
 ### Pending Todos
 
@@ -145,7 +149,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-01-PLAN.md (Smart Landing & Dashboard Context)
+Stopped at: Completed 17-03-PLAN.md (Smart Defaults for Lead Management)
 Resume file: None
-Next action: Execute 17-03-PLAN.md
+Next action: Execute 17-04-PLAN.md
 Next phase after: Continue Phase 17 (LazyFlow UX Overhaul)
