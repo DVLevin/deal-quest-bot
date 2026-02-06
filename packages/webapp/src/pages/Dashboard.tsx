@@ -4,6 +4,10 @@
  * Displays user progress (XP, level, rank, streak), recent badges,
  * leaderboard, and quick-action navigation buttons.
  *
+ * Smart landing: uses useSmartLanding to detect urgency and reorder
+ * cards accordingly. Overdue actions promote TodayActionsCard to first
+ * position; active streaks show encouragement header.
+ *
  * All data fetching is handled inside the feature components via
  * their own TanStack Query hooks.
  */
@@ -16,9 +20,12 @@ import { WeakAreasCard } from '@/features/dashboard/components/WeakAreasCard';
 import { TodayActionsCard } from '@/features/dashboard/components/TodayActionsCard';
 import { useLevelUpDetection } from '@/features/gamification/hooks/useLevelUpDetection';
 import { LevelUpOverlay } from '@/features/gamification/components/LevelUpOverlay';
+import { useSmartLanding } from '@/features/dashboard/hooks/useSmartLanding';
+import { Skeleton } from '@/shared/ui';
 
 export default function Dashboard() {
   const { levelUp, dismiss } = useLevelUpDetection();
+  const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
 
   return (
     <>
@@ -30,12 +37,39 @@ export default function Dashboard() {
         />
       )}
       <div className="space-y-4 px-4 pt-4">
-        <ProgressCard />
-        <TodayActionsCard />
-        <QuickActions />
-        <WeakAreasCard />
-        <BadgePreview />
-        <LeaderboardWidget />
+        {/* Contextual header based on smart landing focus */}
+        {!isReady && <Skeleton className="h-6 w-48" />}
+        {isReady && focus === 'actions-focus' && (
+          <p className="text-sm font-medium text-error">
+            You have {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''}
+          </p>
+        )}
+        {isReady && focus === 'streak-focus' && (
+          <p className="text-sm font-medium text-accent">
+            Day {streakDays} streak — keep it going!
+          </p>
+        )}
+
+        {/* Card layout: actions-focus promotes TodayActionsCard first */}
+        {focus === 'actions-focus' ? (
+          <>
+            <TodayActionsCard />
+            <ProgressCard />
+            <QuickActions />
+            <WeakAreasCard />
+            <BadgePreview />
+            <LeaderboardWidget />
+          </>
+        ) : (
+          <>
+            <ProgressCard />
+            <TodayActionsCard />
+            <QuickActions />
+            <WeakAreasCard />
+            <BadgePreview />
+            <LeaderboardWidget />
+          </>
+        )}
       </div>
     </>
   );
