@@ -148,11 +148,12 @@ None currently.
 |------|--------|---------|
 | 001-bot-button-audit | Task 1/3 done | 87-trigger test matrix generated, awaiting manual testing (Task 2) |
 | 002-lead-company-enrichment | Complete (3/3) | Structured prospect info (first/last name, geography) with enriched web research |
+| 003-tma-bot-deep-actions | Complete (2/2) | TMA-to-bot deep linking for lead actions (reanalyze, context, reresearch, advice) |
 
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-04-PLAN.md (Forward Auto-Detection & Looks Good Framing) -- Phase 17 complete
+Stopped at: Completed quick-003 (TMA-Bot Deep Actions)
 Resume file: None
 Next action: Milestone v2.0 audit
 Next phase after: None (v2.0 complete)
