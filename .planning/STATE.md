@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 18 (Agent Observatory & Model Configuration) -- In Progress
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase (18-01, 18-03 complete)
 Status: In progress
-Last activity: 2026-02-06 -- Completed 18-01-PLAN.md (Langfuse SDK & LLM Generation Observations)
+Last activity: 2026-02-06 -- Completed 18-03-PLAN.md (Per-Agent Model Configuration)
 
-Progress: [######--------------------] 1/4 Phase 18 plans
+Progress: [#############-------------] 2/4 Phase 18 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 53
+- Total plans completed: 54
 - Average duration: 3.2m
-- Total execution time: 167m
+- Total execution time: 171m
 
 **By Phase:**
 
@@ -52,10 +52,10 @@ Progress: [######--------------------] 1/4 Phase 18 plans
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
-| 18. Agent Observatory | 1/4 | 3m | 3m |
+| 18. Agent Observatory | 2/4 | 7m | 3.5m |
 
 **Recent Trend:**
-- Last 5 plans: 1m, 2m, 2m, 2m, 3m
+- Last 5 plans: 2m, 2m, 2m, 3m, 4m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -128,6 +128,11 @@ Recent decisions affecting current work:
 - [18-01]: Input truncated to 500 chars, output to 2000 chars to prevent Langfuse storage explosion
 - [18-01]: Langfuse env vars set via os.environ in init_langfuse() for SDK auto-config
 - [18-01]: OpenRouter cost_details conditionally included when usage.cost present
+- [18-03]: Admin model overrides always use shared OpenRouter key (no provider column)
+- [18-03]: 60s TTL cache with provider instance caching for model config
+- [18-03]: PipelineContext.llm property/setter for backward compat, default_llm as backing store
+- [18-03]: Save-restore pattern in PipelineRunner for per-agent LLM swap
+- [18-03]: Parallel agents pre-resolve overrides before asyncio.gather
 
 ### Pending Todos
 
@@ -138,6 +143,7 @@ Recent decisions affecting current work:
 - [12-01]: Run migration `insforge/migrations/002_scheduled_reminders.sql` on InsForge database
 - [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
 - [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
+- [18-03]: Run migration `insforge/migrations/005_agent_model_config.sql` on InsForge database
 
 ### Roadmap Evolution
 
@@ -159,7 +165,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 18-01-PLAN.md (Langfuse SDK & LLM Generation Observations)
+Stopped at: Completed 18-03-PLAN.md (Per-Agent Model Configuration)
 Resume file: None
-Next action: Execute 18-02, 18-03, 18-04 (remaining Phase 18 plans)
+Next action: Execute 18-02, 18-04 (remaining Phase 18 plans)
 Next phase after: Phase 18 completion
