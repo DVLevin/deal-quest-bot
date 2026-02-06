@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 18 (Agent Observatory & Model Configuration) -- In Progress
-Plan: 3 of 4 in current phase (18-01, 18-03, 18-04 complete)
-Status: In progress
-Last activity: 2026-02-06 -- Completed 18-04-PLAN.md (TMA Model Config Admin UI)
+Phase: 18 (Agent Observatory & Model Configuration) -- COMPLETE
+Plan: 4 of 4 in current phase (18-01, 18-02, 18-03, 18-04 complete)
+Status: Phase complete
+Last activity: 2026-02-06 -- Completed 18-02-PLAN.md (Langfuse Handler Integration & Model Config Wiring)
 
-Progress: [###################-------] 3/4 Phase 18 plans
+Progress: [##########################] 4/4 Phase 18 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 55
+- Total plans completed: 56
 - Average duration: 3.2m
-- Total execution time: 174m
+- Total execution time: 181m
 
 **By Phase:**
 
@@ -52,10 +52,10 @@ Progress: [###################-------] 3/4 Phase 18 plans
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
-| 18. Agent Observatory | 3/4 | 10m | 3.3m |
+| 18. Agent Observatory | 4/4 | 17m | 4.3m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 2m, 3m, 4m, 3m
+- Last 5 plans: 2m, 3m, 4m, 3m, 7m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -133,6 +133,10 @@ Recent decisions affecting current work:
 - [18-03]: PipelineContext.llm property/setter for backward compat, default_llm as backing store
 - [18-03]: Save-restore pattern in PipelineRunner for per-agent LLM swap
 - [18-03]: Parallel agents pre-resolve overrides before asyncio.gather
+- [18-02]: @observe wrapper functions at module level for proper Langfuse trace naming
+- [18-02]: ProgressUpdater kept outside @observe wrappers (Telegram editing not part of trace span)
+- [18-02]: SimplePipelineCtx skips model_config (re-analysis bypasses PipelineRunner, documented)
+- [18-02]: model_config_service=None default on handler signatures for graceful DI degradation
 - [18-04]: ModelConfigPanel placed after ActivityFeed on Admin page (config section below analytics)
 - [18-04]: Inline model search requires 2+ chars, capped at 50 results for performance
 - [18-04]: Centralized queryKeys.admin.modelConfigs follows existing factory pattern
@@ -168,7 +172,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 18-04-PLAN.md (TMA Model Config Admin UI)
+Stopped at: Completed 18-02-PLAN.md (Langfuse Handler Integration & Model Config Wiring)
 Resume file: None
-Next action: Execute 18-02 (remaining Phase 18 plan)
-Next phase after: Phase 18 completion
+Next action: Phase 18 complete. All 4 plans done.
+Next phase after: TBD (new phase planning)
