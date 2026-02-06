@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 import httpx
 from aiogram import F, Router
@@ -17,9 +18,9 @@ from aiogram.types import (
 
 from bot.services.crypto import CryptoService
 from bot.services.llm_router import create_provider
-from bot.states import OnboardingState, TrainState
+from bot.states import LeadEngagementState, OnboardingState, ReanalysisState, SupportState, TrainState
 from bot.storage.models import UserModel
-from bot.storage.repositories import ScenariosSeenRepo, TrackProgressRepo, UserMemoryRepo, UserRepo
+from bot.storage.repositories import LeadRegistryRepo, ScenariosSeenRepo, TrackProgressRepo, UserMemoryRepo, UserRepo
 
 logger = logging.getLogger(__name__)
 
@@ -79,14 +80,160 @@ ONBOARDING_COMPLETE_KEYBOARD = InlineKeyboardMarkup(
 )
 
 
+# --- Deep link pattern for lead actions ---
+_LEAD_DEEP_LINK_RE = re.compile(r"^lead_(reanalyze|context|reresearch|advice)_(\d+)$")
+
+
+async def _handle_lead_deep_link(
+    message: Message,
+    state: FSMContext,
+    action: str,
+    lead_id: int,
+    lead_repo: LeadRegistryRepo,
+) -> None:
+    """Route a lead deep link to the correct FSM state or inline button."""
+    from bot.handlers.leads import _lead_display_name
+
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await message.answer(
+            "Lead not found. Use /leads to see your pipeline.",
+        )
+        return
+
+    if lead.telegram_id != tg_id:
+        await message.answer("This lead doesn't belong to you.")
+        return
+
+    name = _lead_display_name(lead)
+
+    if action == "reanalyze":
+        await state.set_state(ReanalysisState.collecting_context)
+        await state.update_data(context_lead_id=lead_id, context_items=[])
+        from bot.utils import _sanitize
+        await message.answer(
+            f"*Add Context -- {_sanitize(name)}*\n\n"
+            "Send me any updates about this lead:\n\n"
+            "  *Text* -- Type your notes or updates\n"
+            "  *Forward* -- Forward a prospect's message\n"
+            "  *Voice* -- Record a voice note (I'll transcribe it)\n"
+            "  *Photo* -- Screenshot of conversation or email\n\n"
+            "When done, tap *Done* below, or I'll offer to re-analyze after each input.\n\n"
+            "_Send /cancel to go back._",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Done Adding Context", callback_data=f"context:done:{lead_id}")],
+                [InlineKeyboardButton(text="Back to Lead", callback_data=f"lead:view:{lead_id}")],
+            ]),
+        )
+
+    elif action == "context":
+        await state.set_state(LeadEngagementState.adding_context)
+        await state.update_data(active_lead_id=lead_id)
+        from bot.utils import _sanitize
+        await message.answer(
+            f"📝 *Add Update -- {_sanitize(name)}*\n\n"
+            "Type your update about this lead. For example:\n"
+            "- They accepted my connection request\n"
+            "- Had a call, they're interested in X\n"
+            "- They went cold, no response in 2 weeks\n\n"
+            "I'll save it and give you AI-powered advice.\n\n"
+            "_Send /cancel to go back._",
+            parse_mode="Markdown",
+        )
+
+    elif action == "reresearch":
+        await state.set_state(LeadEngagementState.reresearch_input)
+        await state.update_data(active_lead_id=lead_id)
+        from bot.utils import _sanitize
+        await message.answer(
+            f"🔬 *Re-research: {_sanitize(name)}*\n\n"
+            "Running web research again for this lead.\n\n"
+            "Optionally, provide a URL (LinkedIn profile, company page) "
+            "for more accurate results.\n\n"
+            "Or send `go` to re-run with existing info.\n\n"
+            "_Send /cancel to go back._",
+            parse_mode="Markdown",
+        )
+
+    elif action == "advice":
+        from bot.utils import _sanitize
+        await message.answer(
+            f"🧠 *AI Advice -- {_sanitize(name)}*\n\n"
+            f"Tap below to generate fresh advice for this lead.",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Get Fresh AI Advice",
+                    callback_data=f"lead:advice:{lead_id}",
+                )],
+                [InlineKeyboardButton(
+                    text="◀️ Back to Lead",
+                    callback_data=f"lead:view:{lead_id}",
+                )],
+            ]),
+        )
+
+
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext, user_repo: UserRepo) -> None:
-    """Handle /start — begin onboarding."""
+async def cmd_start(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    lead_repo: LeadRegistryRepo | None = None,
+) -> None:
+    """Handle /start — begin onboarding or route deep link."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
 
     # Check if user already exists and is set up
     existing = await user_repo.get_by_telegram_id(tg_id)
     if existing and existing.encrypted_api_key:
+        # Parse deep link payload
+        parts = (message.text or "").split()
+        payload = parts[1] if len(parts) > 1 else ""
+
+        if payload:
+            # Lead action deep links
+            match = _LEAD_DEEP_LINK_RE.match(payload)
+            if match and lead_repo:
+                action = match.group(1)
+                lead_id = int(match.group(2))
+                await _handle_lead_deep_link(message, state, action, lead_id, lead_repo)
+                return
+
+            # TMA deep links: support, support_photo, settings
+            if payload == "support":
+                await state.set_state(SupportState.waiting_input)
+                await message.answer(
+                    "💼 *Deal Support Mode*\n\n"
+                    "Describe your prospect situation:\n"
+                    "• Who they are (role, company)\n"
+                    "• What they said or asked\n"
+                    "• Any context you have\n\n"
+                    "You can also send a screenshot or voice message.\n\n"
+                    "I'll give you a full strategy + draft response.",
+                    parse_mode="Markdown",
+                )
+                return
+
+            if payload == "support_photo":
+                await state.set_state(SupportState.waiting_input)
+                await message.answer(
+                    "📸 *Screenshot Analysis*\n\n"
+                    "Send a screenshot of your prospect's message, "
+                    "email, or LinkedIn profile.\n\n"
+                    "I'll analyze it and give you a full strategy.",
+                    parse_mode="Markdown",
+                )
+                return
+
+            if payload == "settings":
+                from bot.handlers.settings import cmd_settings
+                await cmd_settings(message, state, user_repo)
+                return
+
         await message.answer(
             "👋 *Welcome back!*\n\n"
             "You're all set up and ready to go.\n\n"
