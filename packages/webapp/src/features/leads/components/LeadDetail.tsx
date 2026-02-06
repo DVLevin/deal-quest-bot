@@ -568,7 +568,7 @@ export function LeadDetail() {
         <div className="space-y-4">
           {/* Notes */}
           <Section icon={StickyNote} title="Notes">
-            <LeadNotes leadId={lead.id} currentNote={lead.notes} />
+            <LeadNotes leadId={lead.id} currentNote={lead.notes} status={lead.status} />
           </Section>
 
           {/* Activity timeline */}

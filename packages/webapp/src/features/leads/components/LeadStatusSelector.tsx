@@ -8,7 +8,7 @@
  */
 
 import { cn } from '@/shared/lib/cn';
-import { LEAD_STATUS_CONFIG } from '../types';
+import { LEAD_STATUS_CONFIG, suggestNextStatus } from '../types';
 import type { LeadStatus } from '@/types/enums';
 
 interface LeadStatusSelectorProps {
@@ -26,6 +26,8 @@ export function LeadStatusSelector({
   onStatusChange,
   isUpdating,
 }: LeadStatusSelectorProps) {
+  const suggestedNext = suggestNextStatus(currentStatus);
+
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
       {orderedStatuses.map(([status, config]) => {
@@ -40,7 +42,9 @@ export function LeadStatusSelector({
               'min-h-[44px] shrink-0 rounded-full px-4 text-xs font-medium transition-all',
               isActive
                 ? 'bg-accent text-white shadow-sm'
-                : 'bg-surface-secondary text-text-secondary active:bg-surface-secondary/70',
+                : status === suggestedNext
+                  ? 'ring-2 ring-accent/40 bg-accent/10 text-accent active:bg-accent/20'
+                  : 'bg-surface-secondary text-text-secondary active:bg-surface-secondary/70',
               isUpdating && 'opacity-50',
             )}
           >

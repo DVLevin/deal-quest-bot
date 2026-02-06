@@ -11,13 +11,15 @@ import { Card } from '@/shared/ui';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { useAddLeadNote } from '../hooks/useAddLeadNote';
+import { getNotePlaceholder } from '../types';
 
 interface LeadNotesProps {
   leadId: number;
   currentNote: string | null;
+  status?: string;
 }
 
-export function LeadNotes({ leadId, currentNote }: LeadNotesProps) {
+export function LeadNotes({ leadId, currentNote, status }: LeadNotesProps) {
   const telegramId = useAuthStore((s) => s.telegramId);
   const mutation = useAddLeadNote();
   const { toast } = useToast();
@@ -60,7 +62,7 @@ export function LeadNotes({ leadId, currentNote }: LeadNotesProps) {
         <textarea
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Add context, reminders, or follow-up notes..."
+          placeholder={getNotePlaceholder(status ?? '')}
           rows={3}
           className="w-full resize-none rounded-xl border border-surface-secondary bg-surface px-3 py-2.5 text-sm text-text placeholder:text-text-hint focus:border-accent focus:outline-none"
         />
