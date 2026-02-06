@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 complete (4 of 4 plans done).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 in progress (2 of 4 plans done).
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 16 (TMA Lead Experience & Dashboard) -- Complete
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-06 -- Completed Phase 16 (TMA Lead Experience & Dashboard) -- all 4 plans verified
+Phase: 17 (LazyFlow UX Overhaul) -- In progress
+Plan: 2 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-06 -- Completed 17-02-PLAN.md (Quick Start Training)
 
-Progress: [#########################] 25/25 v2.0 requirements (100%)
+Progress: [####------] 2/4 Phase 17 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 48
-- Average duration: 3.3m
-- Total execution time: 157m
+- Total plans completed: 49
+- Average duration: 3.2m
+- Total execution time: 158m
 
 **By Phase:**
 
@@ -51,10 +51,11 @@ Progress: [#########################] 25/25 v2.0 requirements (100%)
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
+| 17. LazyFlow UX Overhaul | 2/4 | 2m | 1m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 2m, 2m, 2m, 2m
-- Trend: stable
+- Last 5 plans: 2m, 2m, 2m, 2m, 1m
+- Trend: stable/accelerating
 
 *Updated after each plan completion*
 
@@ -109,6 +110,9 @@ Recent decisions affecting current work:
 - [16-04]: tma_url passed as function parameter through scheduler chain (not imported from config)
 - [16-04]: query_params uses urllib.parse.urlencode for proper URL encoding
 - [16-04]: add_open_in_app_row graceful degradation when tma_url empty (backward compatible)
+- [17-02]: Quick Start reuses handleStart (pool already filtered by auto-selected difficulty)
+- [17-02]: Auto-select only fires when selectedDifficulty is null (user override preserved)
+- [17-02]: Start Training button demoted to secondary variant when Quick Start visible
 
 ### Pending Todos
 
@@ -138,7 +142,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 16-03-PLAN.md (Dashboard Today's Actions Widget) -- Phase 16 complete
+Stopped at: Completed 17-02-PLAN.md (Quick Start Training)
 Resume file: None
-Next action: Phase 17 planning (LazyFlow UX Overhaul)
-Next phase after: Phase 17 (LazyFlow UX Overhaul)
+Next action: Execute 17-03-PLAN.md
+Next phase after: Continue Phase 17 (LazyFlow UX Overhaul)
