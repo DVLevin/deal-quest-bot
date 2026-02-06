@@ -52,12 +52,45 @@
   --radius-badge: 8px;
   --radius-full: 9999px;
 
-  /* Shadows */
+  /* Shadows (4-level elevation scale) */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-card-hover: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: var(--shadow-raised);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
 
   /* Toast animation */
   --animate-toast-slide-in: toast-slide-in 0.2s ease-out;
+
+  /* Motion tokens */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-dramatic: 1000ms;
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Pipeline status colors */
+  --color-pipeline-analyzed: oklch(0.70 0.15 250);
+  --color-pipeline-reached-out: oklch(0.75 0.16 80);
+  --color-pipeline-meeting-booked: oklch(0.72 0.19 150);
+  --color-pipeline-in-progress: oklch(0.60 0.20 300);
+  --color-pipeline-closed-won: oklch(0.75 0.18 85);
+  --color-pipeline-closed-lost: oklch(0.55 0.08 15);
+
+  /* Glassmorphic tokens */
+  --glass-bg: oklch(0.98 0.005 250 / 0.6);
+  --glass-blur: 12px;
+  --glass-border: oklch(0.90 0.01 250 / 0.3);
+
+  /* Typography scale */
+  --text-display: 28px;
+  --text-heading-1: 20px;
+  --text-heading-2: 16px;
+  --text-body: 15px;
+  --text-caption: 13px;
+  --text-overline: 11px;
 }
 
 /* Base styles */
@@ -68,6 +101,7 @@ html, body, #root {
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -152,4 +186,99 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Design overhaul keyframes & utility classes (Direction C: Rebel)
+ * ------------------------------------------------------------------------- */
+
+/* Streak fire shimmer animation */
+@keyframes fireShimmer {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 4px oklch(0.80 0.18 85 / 0.6)); }
+}
+
+.streak-fire-shimmer {
+  animation: fireShimmer 2s ease-in-out infinite;
+}
+
+/* Badge earned pulse animation (runs once) */
+@keyframes badgeEarnedPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50% { transform: scale(1.08); box-shadow: 0 0 12px 2px currentColor; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+
+.badge-earned-pulse {
+  animation: badgeEarnedPulse 0.6s ease-out;
+}
+
+/* Score drop-in animation with spring physics */
+@keyframes scoreDrop {
+  0% { opacity: 0; transform: translateY(-24px) scale(0.8); }
+  60% { opacity: 1; transform: translateY(4px) scale(1.02); }
+  80% { transform: translateY(-2px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.score-drop-in {
+  animation: scoreDrop var(--duration-slow, 500ms) var(--ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) forwards;
+}
+
+/* XP float up animation */
+@keyframes xpFloat {
+  0% { opacity: 0; transform: translateY(8px); }
+  40% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.xp-float-up {
+  animation: xpFloat var(--duration-normal, 300ms) var(--ease-spring) 0.3s both;
+}
+
+/* Score gold flash for >=90 */
+@keyframes goldFlash {
+  0%, 100% { color: inherit; }
+  30% { color: oklch(0.70 0.22 65); }
+  60% { color: oklch(0.80 0.20 75); }
+}
+
+.score-gold-flash {
+  animation: goldFlash 0.8s ease-out 1.2s;
+}
+
+/* LevelUp spring entrance */
+@keyframes springIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  70% { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.spring-in {
+  animation: springIn var(--duration-slow, 500ms) var(--ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) forwards;
+}
+
+/* NavBar active pill slide indicator */
+@keyframes navPillFadeIn {
+  from { opacity: 0; transform: scaleX(0.5); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+/* Pipeline stage pulse ring for active status */
+@keyframes stagePulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50% { box-shadow: 0 0 0 3px currentColor; }
+}
+
+.stage-pulse {
+  animation: stagePulse 2s ease-in-out infinite;
+}
+
+/* Overline utility class */
+.text-overline {
+  font-size: var(--text-overline, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-hint);
 }
