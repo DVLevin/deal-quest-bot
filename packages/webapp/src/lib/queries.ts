@@ -69,5 +69,6 @@ export const queryKeys = {
     leaderboard: ['admin', 'leaderboard'] as const,
     weakAreas: ['admin', 'weakAreas'] as const,
     recentActivity: ['admin', 'recentActivity'] as const,
+    modelConfigs: ['admin', 'modelConfigs'] as const,
   },
 } as const;
