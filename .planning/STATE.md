@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 18 (Agent Observatory & Model Configuration) -- In Progress
-Plan: 2 of 4 in current phase (18-01, 18-03 complete)
+Plan: 3 of 4 in current phase (18-01, 18-03, 18-04 complete)
 Status: In progress
-Last activity: 2026-02-06 -- Completed 18-03-PLAN.md (Per-Agent Model Configuration)
+Last activity: 2026-02-06 -- Completed 18-04-PLAN.md (TMA Model Config Admin UI)
 
-Progress: [#############-------------] 2/4 Phase 18 plans
+Progress: [###################-------] 3/4 Phase 18 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
+- Total plans completed: 55
 - Average duration: 3.2m
-- Total execution time: 171m
+- Total execution time: 174m
 
 **By Phase:**
 
@@ -52,10 +52,10 @@ Progress: [#############-------------] 2/4 Phase 18 plans
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
-| 18. Agent Observatory | 2/4 | 7m | 3.5m |
+| 18. Agent Observatory | 3/4 | 10m | 3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 2m, 2m, 3m, 4m
+- Last 5 plans: 2m, 2m, 3m, 4m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -133,6 +133,9 @@ Recent decisions affecting current work:
 - [18-03]: PipelineContext.llm property/setter for backward compat, default_llm as backing store
 - [18-03]: Save-restore pattern in PipelineRunner for per-agent LLM swap
 - [18-03]: Parallel agents pre-resolve overrides before asyncio.gather
+- [18-04]: ModelConfigPanel placed after ActivityFeed on Admin page (config section below analytics)
+- [18-04]: Inline model search requires 2+ chars, capped at 50 results for performance
+- [18-04]: Centralized queryKeys.admin.modelConfigs follows existing factory pattern
 
 ### Pending Todos
 
@@ -165,7 +168,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 18-03-PLAN.md (Per-Agent Model Configuration)
+Stopped at: Completed 18-04-PLAN.md (TMA Model Config Admin UI)
 Resume file: None
-Next action: Execute 18-02, 18-04 (remaining Phase 18 plans)
+Next action: Execute 18-02 (remaining Phase 18 plan)
 Next phase after: Phase 18 completion
