@@ -226,7 +226,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
-- [ ] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
+- [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -360,10 +360,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 18-01-PLAN.md -- Langfuse SDK setup, config env vars, LLM provider generation observations (Wave 1)
-- [ ] 18-02-PLAN.md -- Agent @observe decorators, handler trace wiring, model_config PipelineContext pass-through, main.py lifecycle (Wave 2)
-- [ ] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
-- [ ] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
+- [x] 18-01-PLAN.md -- Langfuse SDK setup, config env vars, LLM provider generation observations (Wave 1)
+- [x] 18-02-PLAN.md -- Agent @observe decorators, handler trace wiring, model_config PipelineContext pass-through, main.py lifecycle (Wave 2)
+- [x] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
+- [x] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
 
 ## Progress
 
@@ -419,4 +419,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
 | 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
-| 18. Agent Observatory & Model Config | 0/4 | Not Started | - |
+| 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
