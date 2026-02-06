@@ -26,6 +26,7 @@ from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.engagement import EngagementService
 from bot.services.followup_scheduler import start_followup_scheduler
+from bot.services.model_config import ModelConfigService
 from bot.services.plan_scheduler import start_plan_scheduler
 from bot.services.knowledge import KnowledgeService
 from bot.services.scenario_generator import ScenarioGeneratorService
@@ -33,6 +34,7 @@ from bot.services.transcription import TranscriptionService
 from bot.storage.insforge_client import InsForgeClient
 from bot.task_utils import create_background_task
 from bot.storage.repositories import (
+    AgentModelConfigRepo,
     AttemptRepo,
     CasebookRepo,
     GeneratedScenarioRepo,
@@ -83,6 +85,7 @@ async def main() -> None:
     generated_scenario_repo = GeneratedScenarioRepo(insforge)
     trace_repo = TraceRepo(insforge)
     reminder_repo = ScheduledReminderRepo(insforge)
+    model_config_repo = AgentModelConfigRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -104,6 +107,13 @@ async def main() -> None:
         logger.info("Scenario generator service initialized")
     else:
         logger.warning("No OPENROUTER_API_KEY set — engagement features disabled")
+
+    # Initialize model config service (per-agent model overrides)
+    model_config_service = ModelConfigService(model_config_repo, cfg.openrouter_api_key or "")
+    if cfg.openrouter_api_key:
+        logger.info("Model config service initialized (per-agent overrides enabled)")
+    else:
+        logger.info("Model config service initialized (no shared key, overrides will be no-op)")
 
     # Initialize agent registry
     agent_registry = AgentRegistry()
@@ -165,6 +175,7 @@ async def main() -> None:
             "shared_openrouter_key": cfg.openrouter_api_key,
             "transcription": transcription,
             "engagement_service": engagement_service,
+            "model_config_service": model_config_service,
             "analytics_service": analytics_service,
             "admin_usernames": cfg.admin_list,
             "tma_url": cfg.tma_url,
@@ -223,6 +234,7 @@ async def main() -> None:
         if collector:
             await collector.stop()
             logger.info("Trace collector stopped")
+        await model_config_service.close()
         await insforge.close()
         logger.info("Bot stopped.")
 

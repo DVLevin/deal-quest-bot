@@ -8,9 +8,10 @@ from typing import Any
 
 from bot.agents.base import AgentInput, AgentOutput, BaseAgent
 from bot.agents.registry import AgentRegistry
-from bot.task_utils import create_background_task
 from bot.pipeline.config_loader import PipelineConfig, StepConfig
 from bot.pipeline.context import PipelineContext
+from bot.services.llm_router import LLMProvider
+from bot.task_utils import create_background_task
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +57,18 @@ class PipelineRunner:
         return ctx.results
 
     async def _run_step(self, step: StepConfig, ctx: PipelineContext) -> AgentOutput:
-        """Execute a single agent step."""
+        """Execute a single agent step with per-agent model resolution."""
         agent = self.registry.get(step.agent)
         agent_input = self._build_input(step, ctx)
 
         logger.info("Running agent: %s (sequential)", step.agent)
+
+        # Resolve per-agent model override
+        original_llm = ctx.default_llm
         try:
+            override_llm = await ctx.get_llm_for_agent(step.agent)
+            ctx.default_llm = override_llm  # Temporarily swap so agent sees override via ctx.llm
+
             output = await agent.run(agent_input, ctx)
             ctx.set_result(step.agent, output)
             logger.info("Agent %s completed: success=%s", step.agent, output.success)
@@ -71,31 +78,49 @@ class PipelineRunner:
             error_output = AgentOutput(success=False, error=str(e))
             ctx.set_result(step.agent, error_output)
             return error_output
+        finally:
+            ctx.default_llm = original_llm  # Restore default
 
     async def _run_parallel(self, steps: list[StepConfig], ctx: PipelineContext) -> None:
-        """Execute multiple agents concurrently."""
+        """Execute multiple agents concurrently with per-agent model resolution."""
         logger.info("Running %d agents in parallel", len(steps))
+
+        # Pre-resolve per-agent overrides before launching tasks
+        agent_llms: dict[str, LLMProvider] = {}
+        for step in steps:
+            agent_llms[step.agent] = await ctx.get_llm_for_agent(step.agent)
 
         async def _run_one(step: StepConfig) -> tuple[str, AgentOutput]:
             agent = self.registry.get(step.agent)
             agent_input = self._build_input(step, ctx)
+
+            # Each parallel task uses its own resolved LLM
+            original_llm = ctx.default_llm
             try:
+                ctx.default_llm = agent_llms[step.agent]
                 output = await agent.run(agent_input, ctx)
                 return step.agent, output
             except Exception as e:
                 logger.error("Parallel agent %s failed: %s", step.agent, e)
                 return step.agent, AgentOutput(success=False, error=str(e))
+            finally:
+                ctx.default_llm = original_llm
 
         results = await asyncio.gather(*[_run_one(s) for s in steps])
         for agent_name, output in results:
             ctx.set_result(agent_name, output)
 
     def _run_background(self, step: StepConfig, ctx: PipelineContext) -> None:
-        """Fire-and-forget an agent as a background task."""
+        """Fire-and-forget an agent as a background task with per-agent model resolution."""
         logger.info("Starting background agent: %s", step.agent)
 
         async def _bg_task() -> None:
+            # Resolve per-agent model override
+            original_llm = ctx.default_llm
             try:
+                override_llm = await ctx.get_llm_for_agent(step.agent)
+                ctx.default_llm = override_llm
+
                 agent = self.registry.get(step.agent)
                 agent_input = self._build_input(step, ctx)
                 output = await agent.run(agent_input, ctx)
@@ -103,6 +128,8 @@ class PipelineRunner:
                 logger.info("Background agent %s completed", step.agent)
             except Exception as e:
                 logger.error("Background agent %s failed: %s", step.agent, e)
+            finally:
+                ctx.default_llm = original_llm
 
         create_background_task(_bg_task(), name=f"bg_agent_{step.agent}")
 
