@@ -25,9 +25,14 @@ import {
   Circle,
   SkipForward,
   Brain,
+  RefreshCw,
+  MessageCirclePlus,
+  Search,
+  Lightbulb,
 } from 'lucide-react';
 import { Card, Badge, Skeleton, ErrorCard, CollapsibleSection } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
+import { openBotDeepLink } from '@/shared/lib/deepLink';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
@@ -183,6 +188,31 @@ function AnalysisSection({ analysis }: { analysis: SupportAnalysis }) {
         )}
       </div>
     </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ActionChip for bot deep links
+// ---------------------------------------------------------------------------
+
+function ActionChip({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex shrink-0 items-center gap-1.5 rounded-full border border-surface-secondary bg-surface-secondary/40 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors active:bg-surface-secondary/70 active:scale-[0.97]"
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
   );
 }
 
@@ -424,6 +454,30 @@ export function LeadDetail() {
         onStatusChange={handleStatusChange}
         isUpdating={mutation.isPending}
       />
+
+      {/* Quick actions -- deep link to bot */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <ActionChip
+          icon={RefreshCw}
+          label="Re-analyze"
+          onClick={() => openBotDeepLink(`lead_reanalyze_${lead.id}`)}
+        />
+        <ActionChip
+          icon={MessageCirclePlus}
+          label="Add Context"
+          onClick={() => openBotDeepLink(`lead_context_${lead.id}`)}
+        />
+        <ActionChip
+          icon={Search}
+          label="Re-research"
+          onClick={() => openBotDeepLink(`lead_reresearch_${lead.id}`)}
+        />
+        <ActionChip
+          icon={Lightbulb}
+          label="Get Advice"
+          onClick={() => openBotDeepLink(`lead_advice_${lead.id}`)}
+        />
+      </div>
 
       {/* SECTION 1: Active Plan (expanded by default) */}
       <CollapsibleSection
