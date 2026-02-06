@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 in progress (plan 3 of 4 complete).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 16 complete (4 of 4 plans done).
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 16 (TMA Lead Experience & Dashboard) -- In progress
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-06 -- Completed 16-04-PLAN.md (Open in App Deep Link Button)
+Phase: 16 (TMA Lead Experience & Dashboard) -- Complete
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-06 -- Completed 16-03-PLAN.md (Dashboard Today's Actions Widget)
 
-Progress: [#######################.] 23/25 v2.0 requirements (92%)
+Progress: [########################] 24/25 v2.0 requirements (96%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 47
+- Total plans completed: 48
 - Average duration: 3.3m
-- Total execution time: 155m
+- Total execution time: 157m
 
 **By Phase:**
 
@@ -50,10 +50,10 @@ Progress: [#######################.] 23/25 v2.0 requirements (92%)
 | 15.1. Lead Enhancements | 3/3 | 9m | 3m |
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
-| 16. TMA Lead Experience | 3/4 | 6m | 2m |
+| 16. TMA Lead Experience | 4/4 | 8m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 2m, 2m, 2m
+- Last 5 plans: 3m, 2m, 2m, 2m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -103,6 +103,9 @@ Recent decisions affecting current work:
 - [16-02]: Intelligence section only renders if any sub-content exists
 - [16-02]: Visual highlight clears after 3 seconds via useEffect timer
 - [16-02]: Progress badge shows overdue count (red) when available, otherwise completed/total
+- [16-03]: 60-second refetch interval for todayActions dashboard polling
+- [16-03]: Max 5 actions in widget with "View all" link to /leads
+- [16-03]: Step navigation via query param /leads/:id?step=:stepId
 - [16-04]: tma_url passed as function parameter through scheduler chain (not imported from config)
 - [16-04]: query_params uses urllib.parse.urlencode for proper URL encoding
 - [16-04]: add_open_in_app_row graceful degradation when tma_url empty (backward compatible)
@@ -135,7 +138,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 16-04-PLAN.md (Open in App Deep Link Button)
+Stopped at: Completed 16-03-PLAN.md (Dashboard Today's Actions Widget) -- Phase 16 complete
 Resume file: None
-Next action: Execute 16-03-PLAN.md (Dashboard Overview Cards)
+Next action: Phase 17 planning (LazyFlow UX Overhaul)
 Next phase after: Phase 17 (LazyFlow UX Overhaul)
