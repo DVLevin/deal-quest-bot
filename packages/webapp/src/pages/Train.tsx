@@ -13,7 +13,7 @@
  * branching scenarios are added to the pool).
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button, Skeleton } from '@/shared/ui';
 import { DifficultyFilter } from '@/features/train/components/DifficultyFilter';
 import { DifficultyRecommendation } from '@/features/train/components/DifficultyRecommendation';
@@ -38,6 +38,13 @@ export default function Train() {
   );
 
   const stats = useTrainingStats();
+
+  // Auto-select recommended difficulty when stats load (LazyFlow smart default)
+  useEffect(() => {
+    if (selectedDifficulty === null && stats.recommendedDifficulty !== null) {
+      setSelectedDifficulty(stats.recommendedDifficulty);
+    }
+  }, [stats.recommendedDifficulty, selectedDifficulty]);
 
   const { data: pool, isLoading } = useScenarioPool(
     selectedDifficulty ?? undefined,
@@ -181,6 +188,19 @@ export default function Train() {
         Select a difficulty level and practice random sales scenarios.
       </p>
 
+      {/* Quick Start -- one-tap training with smart defaults */}
+      {stats.recommendedDifficulty !== null && !isLoading && (
+        <Button
+          variant="primary"
+          size="lg"
+          className="w-full"
+          onClick={handleStart}
+          disabled={poolSize === 0}
+        >
+          Quick Start
+        </Button>
+      )}
+
       <DifficultyRecommendation
         recommendedDifficulty={stats.recommendedDifficulty}
         avgScoreByDifficulty={stats.avgScoreByDifficulty}
@@ -206,7 +226,7 @@ export default function Train() {
           />
 
           <Button
-            variant="primary"
+            variant={stats.recommendedDifficulty !== null ? 'secondary' : 'primary'}
             size="lg"
             className="w-full"
             onClick={handleStart}
