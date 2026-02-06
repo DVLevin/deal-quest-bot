@@ -224,7 +224,8 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
 - [x] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
 - [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
-- [ ] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
+- [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
+- [ ] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -322,10 +323,25 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 16-01-PLAN.md -- LeadCard enhancements: computePlanProgress utility, useLeadReminders hook, progress bar and overdue badge (Wave 1)
-- [ ] 16-02-PLAN.md -- LeadDetail plan-first layout: CollapsibleSection component, three-section restructure, deep link step highlighting (Wave 1)
-- [ ] 16-03-PLAN.md -- Today's Actions dashboard widget: useTodayActions hook, TodayActionsCard component, cache invalidation wiring (Wave 2)
-- [ ] 16-04-PLAN.md -- Bot deep link enhancement: add_open_in_app_row query_params support, reminder message Open in App button (Wave 2)
+- [x] 16-01-PLAN.md -- LeadCard enhancements: computePlanProgress utility, useLeadReminders hook, progress bar and overdue badge (Wave 1)
+- [x] 16-02-PLAN.md -- LeadDetail plan-first layout: CollapsibleSection component, three-section restructure, deep link step highlighting (Wave 1)
+- [x] 16-03-PLAN.md -- Today's Actions dashboard widget: useTodayActions hook, TodayActionsCard component, cache invalidation wiring (Wave 2)
+- [x] 16-04-PLAN.md -- Bot deep link enhancement: add_open_in_app_row query_params support, reminder message Open in App button (Wave 2)
+
+### Phase 17: LazyFlow UX Overhaul
+**Goal**: Apply LazyFlow principles across the entire experience -- zero-click workflows that auto-detect user intent, mind-reading defaults that pre-populate everything, one-tap completions that collapse multi-step processes, and invisible intelligence that handles complexity in the background so users feel like the system reads their minds
+**Depends on**: Phase 16 (TMA experience must be complete before optimizing UX across it)
+**Requirements**: TBD (to be derived during planning)
+**Success Criteria** (what must be TRUE):
+  1. Opening the TMA auto-detects context and surfaces the most relevant view -- no navigation needed for the primary daily task (Today's Actions, overdue leads, or training streak)
+  2. Bot /support flow pre-populates prospect info from forwarded messages and screenshots with zero manual typing -- user only confirms or tweaks edge cases
+  3. Lead creation from screenshot requires exactly 1 user action (send photo) → AI extracts, analyzes, generates strategy, creates lead, schedules plan -- user taps "Looks good"
+  4. Every TMA form and input uses smart defaults with 95%+ accuracy based on user history, context, and patterns -- empty fields are eliminated
+  5. Complex workflows (re-analysis, comment generation, training scenario selection) are condensed to single-tap completions with ambient background processing
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 17 to break down)
 
 ## Progress
 
@@ -363,10 +379,11 @@ Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any or
 Phases 12 and 13 are independent (both depend only on v1.1 completion) and can execute in either order.
 Phase 14 depends on Phase 12. Phase 15.1 depends on Phase 14. Phase 15 depends on Phase 13.
 Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
+Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow optimization).
 
 ```
 12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
-                                                                ├──> 16 (TMA Experience)
+                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX)
 13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
 ```
 
@@ -377,4 +394,5 @@ Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
-| 16. TMA Lead Experience & Dashboard | 0/4 | Not started | - |
+| 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
+| 17. LazyFlow UX Overhaul | 0/0 | Not planned | - |
