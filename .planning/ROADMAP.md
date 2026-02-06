@@ -331,17 +331,20 @@ Plans:
 ### Phase 17: LazyFlow UX Overhaul
 **Goal**: Apply LazyFlow principles across the entire experience -- zero-click workflows that auto-detect user intent, mind-reading defaults that pre-populate everything, one-tap completions that collapse multi-step processes, and invisible intelligence that handles complexity in the background so users feel like the system reads their minds
 **Depends on**: Phase 16 (TMA experience must be complete before optimizing UX across it)
-**Requirements**: TBD (to be derived during planning)
+**Requirements**: LAZY-01, LAZY-02, LAZY-03, LAZY-04, LAZY-05
 **Success Criteria** (what must be TRUE):
   1. Opening the TMA auto-detects context and surfaces the most relevant view -- no navigation needed for the primary daily task (Today's Actions, overdue leads, or training streak)
   2. Bot /support flow pre-populates prospect info from forwarded messages and screenshots with zero manual typing -- user only confirms or tweaks edge cases
-  3. Lead creation from screenshot requires exactly 1 user action (send photo) → AI extracts, analyzes, generates strategy, creates lead, schedules plan -- user taps "Looks good"
+  3. Lead creation from screenshot requires exactly 1 user action (send photo) -> AI extracts, analyzes, generates strategy, creates lead, schedules plan -- user taps "Looks good"
   4. Every TMA form and input uses smart defaults with 95%+ accuracy based on user history, context, and patterns -- empty fields are eliminated
   5. Complex workflows (re-analysis, comment generation, training scenario selection) are condensed to single-tap completions with ambient background processing
-**Plans**: 0 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 17 to break down)
+- [ ] 17-01-PLAN.md -- Smart landing: useSmartLanding hook, contextual headers, card reordering, lead detail prefetching (Wave 1)
+- [ ] 17-02-PLAN.md -- Training Quick Start: auto-select recommended difficulty, one-tap Quick Start button (Wave 1)
+- [ ] 17-03-PLAN.md -- Lead smart defaults: next-status suggestion highlight, context-aware note placeholders (Wave 1)
+- [ ] 17-04-PLAN.md -- Bot LazyFlow: forwarded message auto-detection in /support, "Looks Good" confirmation framing (Wave 1)
 
 ## Progress
 
@@ -395,4 +398,4 @@ Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow opt
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
-| 17. LazyFlow UX Overhaul | 0/0 | Not planned | - |
+| 17. LazyFlow UX Overhaul | 0/4 | Planned | - |
