@@ -13,6 +13,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.storage.models import LeadRegistryModel, ScheduledReminderModel
 from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, ScheduledReminderRepo
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -163,9 +164,11 @@ def _format_reminder_message(
     )
 
 
-def _reminder_action_keyboard(lead_id: int, step_id: int) -> InlineKeyboardMarkup:
-    """Build inline keyboard for reminder actions."""
-    return InlineKeyboardMarkup(inline_keyboard=[
+def _reminder_action_keyboard(
+    lead_id: int, step_id: int, tma_url: str = "",
+) -> InlineKeyboardMarkup:
+    """Build inline keyboard for reminder actions with optional Open in App button."""
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
                 text="\u2705 Done",
@@ -193,6 +196,12 @@ def _reminder_action_keyboard(lead_id: int, step_id: int) -> InlineKeyboardMarku
             ),
         ],
     ])
+    return add_open_in_app_row(
+        keyboard,
+        tma_url,
+        path=f"leads/{lead_id}",
+        query_params={"step": str(step_id)},
+    )
 
 
 async def _process_due_plan_reminders(
@@ -200,6 +209,7 @@ async def _process_due_plan_reminders(
     reminder_repo: ScheduledReminderRepo,
     lead_repo: LeadRegistryRepo,
     activity_repo: LeadActivityRepo,
+    tma_url: str = "",
 ) -> None:
     """Find and process reminders that are due."""
     now = datetime.now(timezone.utc)
@@ -273,7 +283,7 @@ async def _process_due_plan_reminders(
 
             # Build rich message with escalation tone
             text = _format_reminder_message(lead, reminder, step, reminder_count)
-            keyboard = _reminder_action_keyboard(lead.id, reminder.step_id)  # type: ignore[arg-type]
+            keyboard = _reminder_action_keyboard(lead.id, reminder.step_id, tma_url)  # type: ignore[arg-type]
 
             # Send notification with inline keyboard
             await bot.send_message(
@@ -312,13 +322,14 @@ async def start_plan_scheduler(
     reminder_repo: ScheduledReminderRepo,
     lead_repo: LeadRegistryRepo,
     activity_repo: LeadActivityRepo,
+    tma_url: str = "",
 ) -> None:
     """Background loop that checks for due plan step reminders every 15 minutes."""
     logger.info("Plan scheduler started (interval: %ds)", PLAN_CHECK_INTERVAL)
 
     while True:
         try:
-            await _process_due_plan_reminders(bot, reminder_repo, lead_repo, activity_repo)
+            await _process_due_plan_reminders(bot, reminder_repo, lead_repo, activity_repo, tma_url)
         except Exception as e:
             logger.error("Plan scheduler error: %s", e)
 

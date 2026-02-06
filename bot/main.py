@@ -197,7 +197,7 @@ async def main() -> None:
 
         # Start plan step reminder scheduler in background
         create_background_task(
-            start_plan_scheduler(bot, reminder_repo, lead_repo, activity_repo),
+            start_plan_scheduler(bot, reminder_repo, lead_repo, activity_repo, cfg.tma_url),
             name="plan_scheduler",
         )
         logger.info("Plan scheduler started (15-minute interval)")
