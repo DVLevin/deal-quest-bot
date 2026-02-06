@@ -800,6 +800,77 @@ async def on_support_voice(
     )
 
 
+@router.message(SupportState.waiting_input, F.forward_date)
+async def on_support_forward(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    casebook_service: CasebookService,
+    agent_registry: AgentRegistry,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
+) -> None:
+    """Handle forwarded messages -- auto-extract sender as prospect info."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+    forward_text = message.text or message.caption or ""
+
+    # Extract forward sender metadata
+    forward_from = None
+    if message.forward_from:
+        fn = message.forward_from.first_name or ""
+        ln = message.forward_from.last_name or ""
+        forward_from = f"{fn} {ln}".strip() or (
+            message.forward_from.username or None
+        )
+    elif message.forward_sender_name:
+        forward_from = message.forward_sender_name
+
+    # Enrich input with forward metadata for better prospect extraction
+    if forward_from:
+        user_input = (
+            f"Prospect name: {forward_from}\n\n"
+            f"Their message:\n{forward_text}"
+        )
+    else:
+        user_input = forward_text
+
+    if not user_input.strip():
+        await message.answer(
+            "The forwarded message appears empty. "
+            "Please forward a text message or paste the content."
+        )
+        return
+
+    status_msg = await message.answer(
+        f"Analyzing forwarded message"
+        f"{f' from {forward_from}' if forward_from else ''}..."
+    )
+
+    await _run_support_pipeline(
+        user_input=user_input,
+        tg_id=tg_id,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        session_repo=session_repo,
+        lead_repo=lead_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        casebook_service=casebook_service,
+        agent_registry=agent_registry,
+        status_msg=status_msg,
+        state=state,
+        engagement_service=engagement_service,
+        shared_openrouter_key=shared_openrouter_key,
+        reminder_repo=reminder_repo,
+    )
+
+
 @router.message(SupportState.waiting_input)
 async def on_support_input(
     message: Message,
