@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 in progress (3 of 4 plans done).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 complete (4 of 4 plans done).
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 17 (LazyFlow UX Overhaul) -- In progress
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-06 -- Completed 17-03-PLAN.md (Smart Defaults for Lead Management)
+Phase: 17 (LazyFlow UX Overhaul) -- Complete
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-06 -- Completed Phase 17 (LazyFlow UX Overhaul) -- all 4 plans verified
 
-Progress: [#######---] 3/4 Phase 17 plans
+Progress: [##########] 4/4 Phase 17 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 51
+- Total plans completed: 52
 - Average duration: 3.2m
-- Total execution time: 162m
+- Total execution time: 164m
 
 **By Phase:**
 
@@ -51,10 +51,10 @@ Progress: [#######---] 3/4 Phase 17 plans
 | 15. Conversational Re-analysis | 4/4 | 10m | 2.5m |
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
-| 17. LazyFlow UX Overhaul | 3/4 | 6m | 2m |
+| 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 2m, 1m, 2m, 2m
+- Last 5 plans: 2m, 1m, 2m, 2m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -120,6 +120,9 @@ Recent decisions affecting current work:
 - [17-03]: closed_lost is terminal with no suggested next status
 - [17-03]: Visual-only suggestion (ring-2 ring-accent/40) -- no forced selection
 - [17-03]: Backward-compatible optional status prop on LeadNotes
+- [17-04]: Handler registration order (forward before generic) instead of negative filter
+- [17-04]: Forward sender name prepended as "Prospect name: {name}" prefix to pipeline input
+- [17-04]: Button text "Looks Good" replaces "Done", callback_data unchanged for backward compat
 
 ### Pending Todos
 
@@ -149,7 +152,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 17-03-PLAN.md (Smart Defaults for Lead Management)
+Stopped at: Completed 17-04-PLAN.md (Forward Auto-Detection & Looks Good Framing) -- Phase 17 complete
 Resume file: None
-Next action: Execute 17-04-PLAN.md
-Next phase after: Continue Phase 17 (LazyFlow UX Overhaul)
+Next action: Phase 18 planning
+Next phase after: TBD
