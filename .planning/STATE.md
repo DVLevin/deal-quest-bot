@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 17 complete (4 of 4 plans done).
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 18 added (Agent Observatory & Model Configuration).
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 17 (LazyFlow UX Overhaul) -- Complete
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-06 -- Completed Phase 17 (LazyFlow UX Overhaul) -- all 4 plans verified
+Phase: 18 (Agent Observatory & Model Configuration) -- In Progress
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-06 -- Completed 18-01-PLAN.md (Langfuse SDK & LLM Generation Observations)
 
-Progress: [#########################] 30/30 v2.0 requirements (100%)
+Progress: [######--------------------] 1/4 Phase 18 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 52
+- Total plans completed: 53
 - Average duration: 3.2m
-- Total execution time: 164m
+- Total execution time: 167m
 
 **By Phase:**
 
@@ -52,9 +52,10 @@ Progress: [#########################] 30/30 v2.0 requirements (100%)
 
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
+| 18. Agent Observatory | 1/4 | 3m | 3m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 1m, 2m, 2m, 2m
+- Last 5 plans: 1m, 2m, 2m, 2m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -123,6 +124,10 @@ Recent decisions affecting current work:
 - [17-04]: Handler registration order (forward before generic) instead of negative filter
 - [17-04]: Forward sender name prepended as "Prospect name: {name}" prefix to pipeline input
 - [17-04]: Button text "Looks Good" replaces "Done", callback_data unchanged for backward compat
+- [18-01]: Use update_current_generation() (not update_current_observation) for Langfuse v3
+- [18-01]: Input truncated to 500 chars, output to 2000 chars to prevent Langfuse storage explosion
+- [18-01]: Langfuse env vars set via os.environ in init_langfuse() for SDK auto-config
+- [18-01]: OpenRouter cost_details conditionally included when usage.cost present
 
 ### Pending Todos
 
@@ -137,6 +142,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 17 added: LazyFlow UX Overhaul — zero-click workflows, smart defaults, predictive navigation, effort-eliminating interactions
+- Phase 18 added: Agent Observatory & Model Configuration — Langfuse tracing (cloud hobby, self-host ready), per-agent model selection via TMA admin UI, full prompt/I-O/cost visibility
 
 ### Blockers/Concerns
 
@@ -153,7 +159,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed quick-003 (TMA-Bot Deep Actions)
+Stopped at: Completed 18-01-PLAN.md (Langfuse SDK & LLM Generation Observations)
 Resume file: None
-Next action: Milestone v2.0 audit
-Next phase after: None (v2.0 complete)
+Next action: Execute 18-02, 18-03, 18-04 (remaining Phase 18 plans)
+Next phase after: Phase 18 completion
