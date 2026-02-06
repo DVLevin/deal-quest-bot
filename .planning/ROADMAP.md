@@ -319,6 +319,13 @@ Plans:
   3. Lead list cards show overdue step count, engagement plan progress bar, and next action preview -- users can scan their pipeline and see what needs attention
   4. Dashboard displays a "Today's Actions" widget aggregating overdue and due-today steps across all leads, with tap-to-navigate to the relevant lead
   5. Bot reminder messages include an "Open in App" button that deep-links to the lead detail with the specific step highlighted
+**Plans**: 4 plans
+
+Plans:
+- [ ] 16-01-PLAN.md -- LeadCard enhancements: computePlanProgress utility, useLeadReminders hook, progress bar and overdue badge (Wave 1)
+- [ ] 16-02-PLAN.md -- LeadDetail plan-first layout: CollapsibleSection component, three-section restructure, deep link step highlighting (Wave 1)
+- [ ] 16-03-PLAN.md -- Today's Actions dashboard widget: useTodayActions hook, TodayActionsCard component, cache invalidation wiring (Wave 2)
+- [ ] 16-04-PLAN.md -- Bot deep link enhancement: add_open_in_app_row query_params support, reminder message Open in App button (Wave 2)
 
 ## Progress
 
@@ -370,4 +377,4 @@ Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 | 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
-| 16. TMA Lead Experience & Dashboard | 0/TBD | Not started | - |
+| 16. TMA Lead Experience & Dashboard | 0/4 | Not started | - |
