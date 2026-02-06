@@ -225,7 +225,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
 - [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
 - [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
-- [ ] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
+- [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -341,10 +341,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 17-01-PLAN.md -- Smart landing: useSmartLanding hook, contextual headers, card reordering, lead detail prefetching (Wave 1)
-- [ ] 17-02-PLAN.md -- Training Quick Start: auto-select recommended difficulty, one-tap Quick Start button (Wave 1)
-- [ ] 17-03-PLAN.md -- Lead smart defaults: next-status suggestion highlight, context-aware note placeholders (Wave 1)
-- [ ] 17-04-PLAN.md -- Bot LazyFlow: forwarded message auto-detection in /support, "Looks Good" confirmation framing (Wave 1)
+- [x] 17-01-PLAN.md -- Smart landing: useSmartLanding hook, contextual headers, card reordering, lead detail prefetching (Wave 1)
+- [x] 17-02-PLAN.md -- Training Quick Start: auto-select recommended difficulty, one-tap Quick Start button (Wave 1)
+- [x] 17-03-PLAN.md -- Lead smart defaults: next-status suggestion highlight, context-aware note placeholders (Wave 1)
+- [x] 17-04-PLAN.md -- Bot LazyFlow: forwarded message auto-detection in /support, "Looks Good" confirmation framing (Wave 1)
 
 ## Progress
 
@@ -398,4 +398,4 @@ Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow opt
 | 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
 | 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
-| 17. LazyFlow UX Overhaul | 0/4 | Planned | - |
+| 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
