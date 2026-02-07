@@ -1,7 +1,7 @@
 /**
  * Train page with step-based state machine: filter -> scenario -> results.
  *
- * Step 'filter': DifficultyFilter + "Start Training" button.
+ * Step 'filter': Arena-style difficulty selection + dramatic "Quick Start" CTA.
  * Step 'scenario': ScenarioCard + TimerInput + optional ABBranching + View Results.
  * Step 'results': ScoreResults with quick action buttons (TRAIN-05).
  *
@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { Swords, ArrowLeft } from 'lucide-react';
 import { Button, Skeleton } from '@/shared/ui';
 import { DifficultyFilter } from '@/features/train/components/DifficultyFilter';
 import { DifficultyRecommendation } from '@/features/train/components/DifficultyRecommendation';
@@ -120,12 +121,12 @@ export default function Train() {
   if (step === 'results' && currentScenario) {
     return (
       <div className="space-y-4 px-4 pt-4 pb-24">
-        {/* Back link */}
         <button
           onClick={() => setStep('scenario')}
-          className="min-h-[44px] text-sm font-medium text-accent"
+          className="flex min-h-[44px] items-center gap-1 text-sm font-medium text-accent"
         >
-          &larr; Back to scenario
+          <ArrowLeft className="h-4 w-4" />
+          Back to scenario
         </button>
 
         <ScoreResults
@@ -144,61 +145,67 @@ export default function Train() {
   if (step === 'scenario' && currentScenario) {
     return (
       <div className="space-y-4 px-4 pt-4 pb-24">
-        {/* Back link */}
         <button
           onClick={handleBack}
-          className="min-h-[44px] text-sm font-medium text-accent"
+          className="flex min-h-[44px] items-center gap-1 text-sm font-medium text-accent"
         >
-          &larr; Back to filters
+          <ArrowLeft className="h-4 w-4" />
+          Back to arena
         </button>
 
-        <ScenarioCard scenario={currentScenario} />
-        <TimerInput scenarioId={currentScenario.id} />
+        <div className="card-slide-up space-y-4">
+          <ScenarioCard scenario={currentScenario} />
+          <TimerInput scenarioId={currentScenario.id} />
 
-        {/* TRAIN-06: A/B branching when scenario has branchingOptions */}
-        {currentScenario.branchingOptions && branchingHandlers && (
-          <ABBranching
-            optionA={branchingHandlers.optionA}
-            optionB={branchingHandlers.optionB}
-          />
-        )}
+          {/* TRAIN-06: A/B branching when scenario has branchingOptions */}
+          {currentScenario.branchingOptions && branchingHandlers && (
+            <ABBranching
+              optionA={branchingHandlers.optionA}
+              optionB={branchingHandlers.optionB}
+            />
+          )}
 
-        {/* View Results button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full"
-          onClick={handleViewResults}
-        >
-          View Results
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={handleViewResults}
+          >
+            View Results
+          </Button>
+        </div>
       </div>
     );
   }
 
   // -------------------------------------------------------------------------
-  // Render: Filter step (default)
+  // Render: Filter step (default) — The Arena
   // -------------------------------------------------------------------------
 
   return (
-    <div className="space-y-4 px-4 pt-4">
-      <h1 className="text-xl font-bold text-text">Train</h1>
+    <div className="space-y-5 px-4 pt-4 pb-24">
+      {/* Arena header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
+          <Swords className="h-5 w-5 text-accent" />
+        </div>
+        <div>
+          <p className="text-overline">Training Arena</p>
+          <h1 className="text-lg font-bold text-text">Pick Your Challenge</h1>
+        </div>
+      </div>
 
-      <p className="text-sm text-text-secondary">
-        Select a difficulty level and practice random sales scenarios.
-      </p>
-
-      {/* Quick Start -- one-tap training with smart defaults */}
+      {/* Quick Start -- dramatic one-tap CTA with pulse */}
       {stats.recommendedDifficulty !== null && !isLoading && (
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full"
+        <button
+          type="button"
           onClick={handleStart}
           disabled={poolSize === 0}
+          className="arena-pulse w-full rounded-2xl bg-accent py-4 text-center font-bold text-accent-text shadow-raised transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+          style={{ animationPlayState: poolSize === 0 ? 'paused' : 'running' }}
         >
-          Quick Start
-        </Button>
+          <span className="text-base tracking-wide">Quick Start</span>
+        </button>
       )}
 
       <DifficultyRecommendation

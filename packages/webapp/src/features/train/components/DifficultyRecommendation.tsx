@@ -1,15 +1,15 @@
 /**
- * Card showing recommended difficulty with average score context.
+ * Arena-style recommended difficulty card with average score context.
  *
- * Displays when the user has enough training data (>= MIN_ATTEMPTS at any
- * difficulty level). Shows the recommended difficulty label, the average
- * score that triggered the recommendation, and a "Try it" button.
+ * Displays when the user has enough training data. Shows the recommended
+ * tier with a bold visual call-to-action.
  *
  * Returns null when recommendedDifficulty is null (insufficient data).
  */
 
 import { TrendingUp } from 'lucide-react';
-import { Card, Button } from '@/shared/ui';
+import { Card } from '@/shared/ui';
+import { cn } from '@/shared/lib/cn';
 import { DIFFICULTY_LABELS } from '@/types/constants';
 
 interface DifficultyRecommendationProps {
@@ -17,6 +17,12 @@ interface DifficultyRecommendationProps {
   avgScoreByDifficulty: Record<number, { avg: number; count: number }>;
   onSelectDifficulty: (difficulty: number) => void;
 }
+
+const TIER_COLORS: Record<number, { text: string; bg: string; accent: string }> = {
+  1: { text: 'text-success', bg: 'bg-success/10', accent: 'oklch(0.72 0.19 150)' },
+  2: { text: 'text-warning', bg: 'bg-warning/10', accent: 'oklch(0.80 0.18 85)' },
+  3: { text: 'text-error', bg: 'bg-error/10', accent: 'oklch(0.65 0.22 25)' },
+};
 
 export function DifficultyRecommendation({
   recommendedDifficulty,
@@ -26,11 +32,8 @@ export function DifficultyRecommendation({
   if (recommendedDifficulty === null) return null;
 
   const recommendedLabel = DIFFICULTY_LABELS[recommendedDifficulty] ?? `Level ${recommendedDifficulty}`;
+  const tier = TIER_COLORS[recommendedDifficulty];
 
-  // Find the difficulty that triggered this recommendation (context for subtitle)
-  // If promoting (recommended > some diff), show the score at the difficulty below
-  // If demoting (recommended < some diff), show the score at the difficulty above
-  // If staying, show the score at the recommended difficulty
   const contextDifficulty = findContextDifficulty(recommendedDifficulty, avgScoreByDifficulty);
   const contextStats = contextDifficulty !== null ? avgScoreByDifficulty[contextDifficulty] : null;
   const contextLabel = contextDifficulty !== null
@@ -38,14 +41,23 @@ export function DifficultyRecommendation({
     : null;
 
   return (
-    <Card padding="sm" className="flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
-        <TrendingUp size={18} />
+    <Card
+      padding="sm"
+      className={cn('flex items-center gap-3 border-l-4')}
+      style={{ borderLeftColor: tier?.accent ?? 'var(--color-accent)' }}
+    >
+      <div
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+          tier?.bg ?? 'bg-accent/15',
+        )}
+      >
+        <TrendingUp size={18} className={tier?.text ?? 'text-accent'} />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-text">
-          Recommended: {recommendedLabel}
+        <p className={cn('text-sm font-bold', tier?.text ?? 'text-accent')}>
+          Ready for {recommendedLabel}
         </p>
         {contextStats && contextLabel && (
           <p className="text-xs text-text-secondary">
@@ -54,30 +66,24 @@ export function DifficultyRecommendation({
         )}
       </div>
 
-      <Button
-        variant="secondary"
-        size="sm"
-        className="shrink-0"
+      <button
+        type="button"
         onClick={() => onSelectDifficulty(recommendedDifficulty)}
+        className={cn(
+          'shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition-all active:scale-95',
+        )}
+        style={{ backgroundColor: tier?.accent ?? 'var(--color-accent)' }}
       >
         Try it
-      </Button>
+      </button>
     </Card>
   );
 }
 
-/**
- * Determine which difficulty to show as context for the recommendation.
- *
- * - If recommended is higher than the highest difficulty with data -> show that difficulty (promote)
- * - If recommended is lower than the highest difficulty with data -> show that difficulty (demote)
- * - If recommended equals the highest difficulty with data -> show that difficulty (stay)
- */
 function findContextDifficulty(
   _recommended: number,
   avgByDifficulty: Record<number, { avg: number; count: number }>,
 ): number | null {
-  // Find highest difficulty with data
   for (const diff of [3, 2, 1] as const) {
     if (avgByDifficulty[diff]) {
       return diff;

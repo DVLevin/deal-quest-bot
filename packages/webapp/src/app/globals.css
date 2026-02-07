@@ -282,3 +282,64 @@ body {
   letter-spacing: 0.08em;
   color: var(--color-text-hint);
 }
+
+/* ---------------------------------------------------------------------------
+ * Training Arena keyframes & utility classes
+ * ------------------------------------------------------------------------- */
+
+/* Arena timer ring depletion animation */
+@property --timer-progress {
+  syntax: '<number>';
+  initial-value: 1;
+  inherits: false;
+}
+
+@keyframes timerDrain {
+  from { --timer-progress: 1; }
+  to { --timer-progress: 0; }
+}
+
+/* Arena pulse for the Quick Start CTA */
+@keyframes arenaPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-accent); }
+  50% { box-shadow: 0 0 20px 4px oklch(0.65 0.15 250 / 0.25); }
+}
+
+.arena-pulse {
+  animation: arenaPulse 2s ease-in-out infinite;
+}
+
+/* Difficulty tier card glow on selection */
+@keyframes tierGlow {
+  0%, 100% { box-shadow: 0 0 8px 0 var(--tier-color, var(--color-accent)); }
+  50% { box-shadow: 0 0 16px 2px var(--tier-color, var(--color-accent)); }
+}
+
+.tier-glow {
+  animation: tierGlow 2s ease-in-out infinite;
+}
+
+/* Scenario card enter animation */
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-slide-up {
+  animation: cardSlideUp var(--duration-normal, 300ms) var(--ease-spring) forwards;
+}
+
+/* Timer urgency shake */
+@keyframes urgencyShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.timer-urgent {
+  animation: urgencyShake 0.3s ease-in-out;
+}
+
+/* Scrollbar hide utility */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
