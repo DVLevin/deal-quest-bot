@@ -410,10 +410,10 @@ export function LeadDetail() {
               { leadId: lead.id, stepId, newStatus: 'pending', telegramId, proofUrl: publicUrl },
               {
                 onSuccess: () => {
-                  toast({ type: 'success', message: 'Proof uploaded!' });
+                  toast({ type: 'success', message: 'Screenshot attached!' });
                 },
                 onError: () => {
-                  toast({ type: 'error', message: 'Proof saved but failed to update step' });
+                  toast({ type: 'error', message: 'Screenshot saved but failed to update step' });
                 },
               },
             );
@@ -619,7 +619,7 @@ export function LeadDetail() {
                         </span>
                       )}
                       {step.proof_url && (
-                        <span className="text-xs text-success">Proof attached</span>
+                        <span className="text-xs text-success">Screenshot attached</span>
                       )}
                       {step.cant_perform_reason && (
                         <span className="text-xs text-warning">Can&apos;t perform</span>

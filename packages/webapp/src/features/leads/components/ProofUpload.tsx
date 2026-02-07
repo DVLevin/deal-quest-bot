@@ -2,9 +2,9 @@
  * ProofUpload -- screenshot upload with progress and preview.
  *
  * Three visual states:
- * 1. No proof, not uploading -- dashed upload area with camera icon
+ * 1. No screenshot, not uploading -- dashed upload area with camera icon
  * 2. Uploading -- spinner with "Uploading..." text
- * 3. Proof exists -- green success bar with thumbnail and replace option
+ * 3. Screenshot exists -- green success bar with thumbnail and replace option
  *
  * Uses <input type="file" accept="image/*"> without capture="camera"
  * (breaks on some Telegram Android WebView versions).
@@ -65,11 +65,11 @@ export function ProofUpload({
         <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 p-3">
           <CheckCircle className="h-5 w-5 shrink-0 text-success" />
           <span className="flex-1 text-sm font-medium text-success">
-            Proof uploaded
+            Screenshot attached
           </span>
           <img
             src={existingProofUrl}
-            alt="Proof screenshot"
+            alt="Attached screenshot"
             className="h-10 w-10 rounded object-cover"
           />
           <button
@@ -91,7 +91,7 @@ export function ProofUpload({
         >
           <Camera className="h-6 w-6 text-accent/60" />
           <span className="text-sm font-medium text-accent/80">
-            Upload Proof Screenshot
+            Attach Screenshot
           </span>
         </button>
       )}

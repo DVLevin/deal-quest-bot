@@ -89,7 +89,7 @@ export function LeadCard({ lead, progress, onClick }: LeadCardProps) {
               {progress.proofCount > 0 && (
                 <span className="flex items-center gap-1 text-xs text-success">
                   <Camera className="h-3 w-3" />
-                  {progress.proofCount} proof{progress.proofCount > 1 ? 's' : ''}
+                  {progress.proofCount} screenshot{progress.proofCount > 1 ? 's' : ''}
                 </span>
               )}
             </div>

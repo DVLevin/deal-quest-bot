@@ -5,7 +5,7 @@
  * - Step header with number, description, timing, and close button
  * - Lead context mini-card (name + company)
  * - Draft copy card (if suggested text exists)
- * - Proof upload section
+ * - Screenshot upload section
  * - Done / Skip action buttons
  * - Can't-perform flow (progressive disclosure)
  *
@@ -81,7 +81,7 @@ export function StepActionScreen({
           {step.proof_url && (
             <img
               src={step.proof_url}
-              alt="Proof"
+              alt="Screenshot"
               className="h-10 w-10 rounded object-cover"
             />
           )}
@@ -215,7 +215,7 @@ export function StepActionScreen({
         </p>
       )}
 
-      {/* Proof section */}
+      {/* Screenshot section */}
       <ProofUpload
         onUpload={onUploadProof}
         existingProofUrl={step.proof_url}
