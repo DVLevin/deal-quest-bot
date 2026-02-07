@@ -21,6 +21,10 @@ interface UpdatePlanStepVars {
   stepId: number;
   newStatus: PlanStepStatus;
   telegramId: number;
+  /** URL of uploaded proof screenshot (set when completing a step with proof) */
+  proofUrl?: string;
+  /** Reason the user can't perform this step (set when skipping) */
+  cantPerformReason?: string;
 }
 
 /**
@@ -49,6 +53,8 @@ export function useUpdatePlanStep() {
       stepId,
       newStatus,
       telegramId,
+      proofUrl,
+      cantPerformReason,
     }: UpdatePlanStepVars) => {
       // 1. Fetch current lead's engagement_plan
       const { data: leadData, error: fetchError } = await getInsforge()
@@ -71,6 +77,8 @@ export function useUpdatePlanStep() {
               newStatus === 'done' || newStatus === 'skipped'
                 ? new Date().toISOString()
                 : null,
+            ...(proofUrl !== undefined && { proof_url: proofUrl }),
+            ...(cantPerformReason !== undefined && { cant_perform_reason: cantPerformReason }),
           };
         }
         return step;
@@ -104,12 +112,9 @@ export function useUpdatePlanStep() {
       }
 
       // 5. Insert activity log entry
-      const statusLabel =
-        newStatus === 'done'
-          ? 'Done'
-          : newStatus === 'skipped'
-            ? 'Skipped'
-            : 'Pending';
+      const activityContent = cantPerformReason
+        ? `Step ${stepId} can't perform: ${cantPerformReason}`
+        : `Step ${stepId} marked as ${newStatus === 'done' ? 'Done' : newStatus === 'skipped' ? 'Skipped' : 'Pending'}`;
       const { error: activityError } = await getInsforge()
         .database.from('lead_activity_log')
         .insert({
@@ -121,14 +126,14 @@ export function useUpdatePlanStep() {
               : newStatus === 'skipped'
                 ? 'step_skip'
                 : 'step_reset',
-          content: `Step ${stepId} marked as ${statusLabel}`,
+          content: activityContent,
         });
 
       if (activityError) throw activityError;
 
       return { updatedPlan };
     },
-    onMutate: async ({ leadId, stepId, newStatus }) => {
+    onMutate: async ({ leadId, stepId, newStatus, proofUrl, cantPerformReason }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: queryKeys.leads.detail(leadId),
@@ -151,6 +156,8 @@ export function useUpdatePlanStep() {
                 newStatus === 'done' || newStatus === 'skipped'
                   ? new Date().toISOString()
                   : null,
+              ...(proofUrl !== undefined && { proof_url: proofUrl }),
+              ...(cantPerformReason !== undefined && { cant_perform_reason: cantPerformReason }),
             };
           }
           return step;
