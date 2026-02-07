@@ -301,10 +301,15 @@ export function LeadDetail() {
           toast({ type: 'success', message: 'Status updated' });
         },
         onError: (err: unknown) => {
-          const msg = err instanceof Error ? err.message : String(err);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : typeof err === 'object' && err !== null
+                ? JSON.stringify(err)
+                : String(err);
           toast({
             type: 'error',
-            message: `Failed to update status: ${msg}`,
+            message: `Status error: ${msg}`,
             action: { label: 'Retry', onClick: () => mutation.mutate(vars) },
           });
         },
