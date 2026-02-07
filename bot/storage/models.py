@@ -239,3 +239,15 @@ class DraftRequestModel(BaseModel):
     result: dict[str, Any] | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class PlanRequestModel(BaseModel):
+    """Engagement plan generation request (TMA -> Bot async message bus)."""
+
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    status: str = "pending"
+    result: dict[str, Any] | None = None
+    created_at: str | None = None
+    updated_at: str | None = None

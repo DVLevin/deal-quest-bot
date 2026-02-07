@@ -18,6 +18,7 @@ from bot.storage.models import (
     LeadRegistryModel,
     PipelineSpanModel,
     PipelineTraceModel,
+    PlanRequestModel,
     ScenarioSeenModel,
     ScheduledReminderModel,
     SupportSessionModel,
@@ -1047,6 +1048,82 @@ class DraftRequestRepo:
         if not result:
             return None
         return DraftRequestModel(**result)
+
+    async def complete(self, request_id: int, result: dict[str, Any]) -> None:
+        """Mark a request as completed with the generation result."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "completed",
+                "result": result,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def fail(self, request_id: int, error: str) -> None:
+        """Mark a request as failed with error details."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "failed",
+                "result": {"error": error},
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def reset_stale_processing(self, max_age_minutes: int = 2) -> int:
+        """Reset processing requests older than max_age_minutes back to pending."""
+        cutoff = datetime.now(timezone.utc)
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.processing"},
+        )
+        if not rows or not isinstance(rows, list):
+            return 0
+
+        count = 0
+        for row in rows:
+            updated_at = datetime.fromisoformat(row["updated_at"].replace("Z", "+00:00"))
+            age_minutes = (cutoff - updated_at).total_seconds() / 60
+            if age_minutes > max_age_minutes:
+                await self.client.update(
+                    self.table,
+                    filters={"id": row["id"]},
+                    data={"status": "pending", "updated_at": cutoff.isoformat()},
+                )
+                count += 1
+        return count
+
+
+class PlanRequestRepo:
+    """Repository for engagement plan generation request queue."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "plan_requests"
+
+    async def claim_next_pending(self) -> PlanRequestModel | None:
+        """Atomically claim the oldest pending request by setting status to 'processing'."""
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.pending"},
+            order="created_at.asc",
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return None
+
+        row = rows[0]
+        result = await self.client.update(
+            self.table,
+            filters={"id": row["id"], "status": "pending"},
+            data={"status": "processing", "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+        if not result:
+            return None
+        return PlanRequestModel(**result)
 
     async def complete(self, request_id: int, result: dict[str, Any]) -> None:
         """Mark a request as completed with the generation result."""
