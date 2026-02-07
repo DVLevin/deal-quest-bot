@@ -166,6 +166,7 @@ Recent decisions affecting current work:
 - [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
 - [18-03]: Run migration `insforge/migrations/005_agent_model_config.sql` on InsForge database
 - [19-04]: Run migration `insforge/migrations/006_draft_requests.sql` on InsForge database
+- [quick-006]: Run migration `insforge/migrations/007_plan_requests.sql` on InsForge database
 
 ### Roadmap Evolution
 
@@ -184,11 +185,12 @@ None currently.
 | 001-bot-button-audit | Task 1/3 done | 87-trigger test matrix generated, awaiting manual testing (Task 2) |
 | 002-lead-company-enrichment | Complete (3/3) | Structured prospect info (first/last name, geography) with enriched web research |
 | 003-tma-bot-deep-actions | Complete (2/2) | TMA-to-bot deep linking for lead actions (reanalyze, context, reresearch, advice) |
+| 006-tma-plan-generation-message-bus | Complete (3/3) | In-app plan generation via plan_requests DB message bus |
 
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 19-04. Bot-side draft generation pipeline built.
+Stopped at: Completed quick-006 (TMA plan generation message bus)
 Resume file: None
-Next action: Continue Phase 19 plans (19-05+)
+Next action: Continue Phase 19 plans or next quick task
 Next phase after: Continue Phase 19 plans
