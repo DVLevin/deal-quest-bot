@@ -227,6 +227,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
+- [ ] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -365,6 +366,23 @@ Plans:
 - [x] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
 - [x] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
 
+### Phase 19: Active Engagement Execution
+**Goal**: Sales reps can execute engagement plan steps directly from the TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders -- turning the plan from a checklist into guided step-by-step action screens
+**Depends on**: Phase 18
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Opening an engagement step shows a full action screen with lead context, step instructions, and draft copy ready to use
+  2. User can upload a screenshot as proof-of-action (e.g., screenshot of posted LinkedIn comment) directly from the TMA
+  3. User can mark a step as "can't perform" with a reason, triggering an alternative action suggestion or skip
+  4. Draft copy for each step is displayed inline and copyable with one tap
+  5. Bot reminder deep links open the specific step's action screen in the TMA with full context pre-loaded
+**Plans**: 3 plans
+
+Plans:
+- [ ] 19-01-PLAN.md -- Extend EngagementPlanStep types, parser, useUpdatePlanStep, and create useUploadProof hook (Wave 1)
+- [ ] 19-02-PLAN.md -- StepActionScreen, DraftCopyCard, ProofUpload, CantPerformFlow components (Wave 1)
+- [ ] 19-03-PLAN.md -- LeadDetail integration: wire action screen, deep link auto-expand, proof indicators (Wave 2)
+
 ## Progress
 
 ### v1.0 Progress (Complete)
@@ -403,10 +421,11 @@ Phase 14 depends on Phase 12. Phase 15.1 depends on Phase 14. Phase 15 depends o
 Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
 Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow optimization).
 Phase 18 depends on Phase 17 (observability layer wraps completed agent features).
+Phase 19 depends on Phase 18 (action screens build on top of completed TMA + bot infrastructure).
 
 ```
 12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
-                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory)
+                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory) ──> 19 (Action Screens)
 13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
 ```
 
@@ -420,3 +439,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
 | 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
 | 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
+| 19. Active Engagement Execution | 0/3 | Planned | - |
