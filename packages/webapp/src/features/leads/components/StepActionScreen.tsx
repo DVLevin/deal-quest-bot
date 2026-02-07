@@ -4,9 +4,9 @@
  * Replaces the compact step row with a guided action experience showing:
  * - Step header with number, description, timing, and close button
  * - Lead context mini-card (name + company)
- * - Draft copy card (if suggested text exists)
+ * - Draft copy card with tabbed options (or legacy text fallback)
  * - Screenshot upload section
- * - Done / Skip action buttons
+ * - Done / Skip action buttons with post-copy nudge
  * - Can't-perform flow (progressive disclosure)
  *
  * Also renders completed/skipped state banners for non-pending steps.
@@ -14,8 +14,11 @@
  * Pure presentational -- accepts all callbacks from the parent (LeadDetail).
  */
 
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Check, SkipForward, Clock, RotateCcw, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import type { EngagementPlanStep } from '@/types/tables';
+import { useToast } from '@/shared/stores/toastStore';
+import type { DraftResult } from '../hooks/useGenerateDraft';
 import { DraftCopyCard } from './DraftCopyCard';
 import { ProofUpload } from './ProofUpload';
 import { CantPerformFlow } from './CantPerformFlow';
@@ -36,6 +39,9 @@ interface StepActionScreenProps {
   isUpdating: boolean;
   isUploading: boolean;
   isGeneratingDraft: boolean;
+  draftResult?: DraftResult | null;
+  previousDraftResult?: DraftResult | null;
+  onUndoRegenerate?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,7 +60,52 @@ export function StepActionScreen({
   isUpdating,
   isUploading,
   isGeneratingDraft,
+  draftResult,
+  previousDraftResult,
+  onUndoRegenerate,
 }: StepActionScreenProps) {
+  const { toast } = useToast();
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const handleDraftCopy = useCallback((_text: string) => {
+    setHasCopied(true);
+    toast({
+      type: 'success',
+      message: 'Draft copied to clipboard!',
+      action: {
+        label: 'Done -- I posted it',
+        onClick: onComplete,
+      },
+      duration: 8000,
+    });
+  }, [toast, onComplete]);
+
+  const handleRegenerate = useCallback(() => {
+    onGenerateDraft();
+  }, [onGenerateDraft]);
+
+  // Undo toast on regeneration completion
+  const prevDraftResultRef = useRef(draftResult);
+
+  useEffect(() => {
+    if (
+      draftResult &&
+      previousDraftResult &&
+      draftResult !== prevDraftResultRef.current
+    ) {
+      toast({
+        type: 'info',
+        message: 'Draft regenerated',
+        action: {
+          label: 'Undo',
+          onClick: () => onUndoRegenerate?.(),
+        },
+        duration: 6000,
+      });
+    }
+    prevDraftResultRef.current = draftResult;
+  }, [draftResult, previousDraftResult, toast, onUndoRegenerate]);
+
   // -------------------------------------------------------------------------
   // Completed state banner
   // -------------------------------------------------------------------------
@@ -223,8 +274,19 @@ export function StepActionScreen({
             <div className="h-3 w-3/5 animate-pulse rounded bg-surface-secondary" />
           </div>
         </div>
+      ) : draftResult?.options ? (
+        <DraftCopyCard
+          options={draftResult.options}
+          platform={draftResult.platform}
+          onCopy={handleDraftCopy}
+          onRegenerate={step.proof_url ? handleRegenerate : undefined}
+          isRegenerating={isGeneratingDraft}
+        />
       ) : step.suggested_text ? (
-        <DraftCopyCard draftText={step.suggested_text} />
+        <DraftCopyCard
+          draftText={step.suggested_text}
+          onCopy={handleDraftCopy}
+        />
       ) : (
         <p className="text-center text-xs text-text-hint">
           No draft available for this step
@@ -254,7 +316,7 @@ export function StepActionScreen({
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              {step.suggested_text ? 'Regenerate from Screenshot' : 'Generate Draft from Screenshot'}
+              {draftResult || step.suggested_text ? 'Regenerate from Screenshot' : 'Generate Draft from Screenshot'}
             </>
           )}
         </button>
@@ -266,10 +328,12 @@ export function StepActionScreen({
           type="button"
           onClick={onComplete}
           disabled={isUpdating}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-success px-3 py-2.5 text-sm font-semibold text-white transition-colors active:scale-95 disabled:opacity-50"
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-success px-3 py-2.5 text-sm font-semibold text-white transition-colors active:scale-95 disabled:opacity-50 ${
+            hasCopied ? 'ring-2 ring-success/40 animate-pulse' : ''
+          }`}
         >
           <Check className="h-4 w-4" />
-          {isUpdating ? 'Updating...' : 'Mark Done'}
+          {isUpdating ? 'Updating...' : hasCopied ? 'Done -- I posted it' : 'Mark Done'}
         </button>
         <button
           type="button"

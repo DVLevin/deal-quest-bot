@@ -41,7 +41,7 @@ import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
 import { useUploadProof } from '../hooks/useUploadProof';
-import { useGenerateDraft } from '../hooks/useGenerateDraft';
+import { useGenerateDraft, type DraftResult } from '../hooks/useGenerateDraft';
 import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -247,6 +247,10 @@ export function LeadDetail() {
   // Active step for the StepActionScreen (null = all collapsed)
   const [activeStepId, setActiveStepId] = useState<number | null>(null);
 
+  // Draft result state for tabbed options and undo
+  const [activeDraftResult, setActiveDraftResult] = useState<DraftResult | null>(null);
+  const [previousDraftResult, setPreviousDraftResult] = useState<DraftResult | null>(null);
+
   // Accordion state -- plan section open by default, null = all closed
   const [activeSection, setActiveSection] = useState<SectionId | null>('plan');
   const toggleSection = (id: SectionId) => {
@@ -283,6 +287,13 @@ export function LeadDetail() {
       return () => clearTimeout(timer);
     }
   }, [visualHighlight]);
+
+  // Sync mutation data to activeDraftResult
+  useEffect(() => {
+    if (draftMutation.data) {
+      setActiveDraftResult(draftMutation.data);
+    }
+  }, [draftMutation.data]);
 
   const [copied, setCopied] = useState(false);
 
@@ -436,10 +447,17 @@ export function LeadDetail() {
       const step = plan.find((s) => s.step_id === stepId);
       if (!step?.proof_url) return;
 
+      // Store current draft result before regeneration (for undo)
+      if (activeDraftResult) {
+        setPreviousDraftResult(activeDraftResult);
+      }
+
       draftMutation.mutate(
         {
           proofUrl: step.proof_url,
           leadId: lead.id,
+          stepId,
+          telegramId,
           leadName: lead.prospect_first_name && lead.prospect_last_name
             ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
             : lead.prospect_name ?? undefined,
@@ -449,19 +467,8 @@ export function LeadDetail() {
           webResearch: lead.web_research,
         },
         {
-          onSuccess: (draft) => {
-            // Persist the generated draft to the step's suggested_text
-            stepMutation.mutate(
-              { leadId: lead.id, stepId, newStatus: step.status, telegramId, suggestedText: draft },
-              {
-                onSuccess: () => {
-                  toast({ type: 'success', message: 'Draft generated!' });
-                },
-                onError: () => {
-                  toast({ type: 'error', message: 'Draft generated but failed to save' });
-                },
-              },
-            );
+          onSuccess: () => {
+            toast({ type: 'success', message: 'Draft generated!' });
           },
           onError: () => {
             toast({ type: 'error', message: 'Failed to generate draft' });
@@ -469,8 +476,16 @@ export function LeadDetail() {
         },
       );
     },
-    [lead, telegramId, draftMutation, stepMutation, toast],
+    [lead, telegramId, activeDraftResult, draftMutation, toast],
   );
+
+  const handleUndoRegenerate = useCallback(() => {
+    if (previousDraftResult) {
+      setActiveDraftResult(previousDraftResult);
+      setPreviousDraftResult(null);
+      toast({ type: 'success', message: 'Previous draft restored' });
+    }
+  }, [previousDraftResult, toast]);
 
   if (Number.isNaN(numericId)) {
     return <Navigate to="/leads" replace />;
@@ -633,6 +648,9 @@ export function LeadDetail() {
                       isUpdating={stepMutation.isPending}
                       isUploading={uploadMutation.isPending}
                       isGeneratingDraft={draftMutation.isPending}
+                      draftResult={activeDraftResult}
+                      previousDraftResult={previousDraftResult}
+                      onUndoRegenerate={handleUndoRegenerate}
                     />
                   </div>
                 );
