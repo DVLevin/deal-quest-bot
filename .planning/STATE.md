@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. COMPLETE. All 18 phases across 3 milestones done.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 19 (Active Engagement Execution) in progress.
 
 ## Previous Milestones
 
@@ -14,20 +14,20 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 ## Current Position
 
-Milestone: v2.0 -- Sales Co-Pilot -- COMPLETE
-Phase: 18 (Agent Observatory & Model Configuration) -- COMPLETE (verified 5/5 must-haves)
-Plan: 4 of 4 in current phase (18-01, 18-02, 18-03, 18-04 complete)
-Status: Milestone v2.0 complete. All 7 phases verified.
-Last activity: 2026-02-06 -- Phase 18 verified, milestone complete
+Milestone: v2.0 -- Sales Co-Pilot
+Phase: 19 (Active Engagement Execution) -- In progress
+Plan: 1 of N in current phase (19-01 complete)
+Status: In progress
+Last activity: 2026-02-07 -- Completed 19-01-PLAN.md
 
-Progress: [##########################] 7/7 v2.0 phases
+Progress: [##########################-] 7/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 56
+- Total plans completed: 57
 - Average duration: 3.2m
-- Total execution time: 181m
+- Total execution time: 185m
 
 **By Phase:**
 
@@ -53,9 +53,10 @@ Progress: [##########################] 7/7 v2.0 phases
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
+| 19. Active Engagement Execution | 1/N | 4m | 4m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 3m, 4m, 3m, 7m
+- Last 5 plans: 3m, 4m, 3m, 7m, 4m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -140,6 +141,10 @@ Recent decisions affecting current work:
 - [18-04]: ModelConfigPanel placed after ActivityFeed on Admin page (config section below analytics)
 - [18-04]: Inline model search requires 2+ chars, capped at 50 results for performance
 - [18-04]: Centralized queryKeys.admin.modelConfigs follows existing factory pattern
+- [19-01]: getPublicUrl returns string directly (InsForge SDK), not {data: {publicUrl}} (Supabase pattern)
+- [19-01]: Can't-perform modeled as 'skipped' status with cant_perform_reason set (no new PlanStepStatus)
+- [19-01]: Image resize uses canvas with 1200px max dimension and JPEG 0.85 quality
+- [19-01]: Proof files stored in existing prospect-photos bucket with proof/ key prefix
 
 ### Pending Todos
 
@@ -156,6 +161,7 @@ Recent decisions affecting current work:
 
 - Phase 17 added: LazyFlow UX Overhaul — zero-click workflows, smart defaults, predictive navigation, effort-eliminating interactions
 - Phase 18 added: Agent Observatory & Model Configuration — Langfuse tracing (cloud hobby, self-host ready), per-agent model selection via TMA admin UI, full prompt/I-O/cost visibility
+- Phase 19 added: Active Engagement Execution — step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders
 
 ### Blockers/Concerns
 
@@ -171,8 +177,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Milestone v2.0 complete. Phase 18 verified (5/5 must-haves).
+Last session: 2026-02-07
+Stopped at: Completed 19-01-PLAN.md (types & hooks foundation for active engagement)
 Resume file: None
-Next action: /gsd:audit-milestone or /gsd:complete-milestone
-Next phase after: New milestone (v3.0)
+Next action: Execute 19-02-PLAN.md (action screen UI components)
+Next phase after: Continue Phase 19 plans
