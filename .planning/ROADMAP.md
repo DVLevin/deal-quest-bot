@@ -227,6 +227,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
+- [ ] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -365,6 +366,24 @@ Plans:
 - [x] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
 - [x] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
 
+### Phase 19: Active Engagement Execution
+**Goal**: Users execute engagement plan steps through guided action screens in TMA -- with screenshot upload, AI-powered multi-platform draft generation via bot agent pipeline, tabbed draft options, post-copy completion nudge, and async TMA-to-bot communication via DB message bus
+**Depends on**: Phase 18 (agent infrastructure must exist for CommentGeneratorAgent)
+**Success Criteria** (what must be TRUE):
+  1. User can open a step in the TMA and see a guided action screen with lead context, draft display, screenshot upload, and action buttons
+  2. Uploading a screenshot and tapping "Generate Draft" produces multi-platform draft options (auto-detects LinkedIn, email, Twitter/X, Slack, DM, etc.) displayed in a tabbed segmented control
+  3. Admin can configure which model the comment_generator agent uses via the TMA admin panel (ModelConfigService)
+  4. Copying a draft triggers a "Done -- I posted it" nudge toast and the Mark Done button pulses and changes label
+  5. Bot-side draft generation appears in Langfuse traces with full observability
+**Plans**: 5 plans
+
+Plans:
+- [x] 19-01-PLAN.md -- Types & hooks foundation: extended EngagementPlanStep, useUploadProof, useUpdatePlanStep enhancements (Wave 1)
+- [x] 19-02-PLAN.md -- Step action screen components: DraftCopyCard, ProofUpload, CantPerformFlow, StepActionScreen (Wave 1)
+- [x] 19-03-PLAN.md -- Wire StepActionScreen into LeadDetail with deep link auto-expand and proof indicators (Wave 2)
+- [ ] 19-04-PLAN.md -- Bot backend: draft_requests migration, CommentGeneratorAgent, multi-platform prompt, draft poller, main.py wiring (Wave 1)
+- [ ] 19-05-PLAN.md -- TMA migration: DB message bus hook, tabbed DraftCopyCard, post-copy nudge, edge function removal (Wave 2)
+
 ## Progress
 
 ### v1.0 Progress (Complete)
@@ -406,7 +425,7 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 
 ```
 12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
-                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory)
+                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory) ──> 19 (Active Engagement)
 13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
 ```
 
@@ -420,3 +439,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
 | 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
 | 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
+| 19. Active Engagement Execution | 3/5 | In Progress | — |
