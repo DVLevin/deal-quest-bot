@@ -26,6 +26,7 @@ from bot.services.analytics import TeamAnalyticsService
 from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.draft_poller import start_draft_request_poller
+from bot.services.plan_poller import start_plan_request_poller
 from bot.services.engagement import EngagementService
 from bot.services.followup_scheduler import start_followup_scheduler
 from bot.services.model_config import ModelConfigService
@@ -41,6 +42,7 @@ from bot.storage.repositories import (
     CasebookRepo,
     DraftRequestRepo,
     GeneratedScenarioRepo,
+    PlanRequestRepo,
     LeadActivityRepo,
     LeadRegistryRepo,
     ScheduledReminderRepo,
@@ -96,6 +98,7 @@ async def main() -> None:
     reminder_repo = ScheduledReminderRepo(insforge)
     model_config_repo = AgentModelConfigRepo(insforge)
     draft_request_repo = DraftRequestRepo(insforge)
+    plan_request_repo = PlanRequestRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -235,6 +238,18 @@ async def main() -> None:
             name="draft_request_poller",
         )
         logger.info("Draft request poller started (3-second interval)")
+
+        # Start plan request poller for TMA plan generation
+        create_background_task(
+            start_plan_request_poller(
+                engagement_service,
+                plan_request_repo,
+                lead_repo,
+                reminder_repo,
+            ),
+            name="plan_request_poller",
+        )
+        logger.info("Plan request poller started (3-second interval)")
 
     # Start background scenario generation loop
     if scenario_generator:
