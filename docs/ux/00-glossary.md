@@ -1,16 +1,21 @@
-# Deal Quest Bot — UX Documentation Glossary
+# Deal Quest — UX Documentation Glossary
+
+> **NOTE (2026-02-08):** These UX docs were written for v1.0 bot flows. The product now includes
+> a **Telegram Mini App (TMA)** with full UI pages, engagement plan execution, draft generation,
+> and smart landing. See `docs/pm-audit/05-UX-DOC-ALIGNMENT.md` for the gap analysis and proposed
+> restructuring plan.
 
 ## Quick Navigation
 
-| File | Mini-Product | Core User Need |
-|------|-------------|----------------|
-| [01-support-flow.md](01-support-flow.md) | `/support` | "Analyze my prospect and tell me how to close" |
-| [02-leads-flow.md](02-leads-flow.md) | `/leads` | "Track my pipeline and get ongoing advice" |
-| [03-learn-flow.md](03-learn-flow.md) | `/learn` | "Teach me to sell GetDeal.ai step by step" |
-| [04-train-flow.md](04-train-flow.md) | `/train` | "Test my skills with random challenges" |
-| [05-stats-flow.md](05-stats-flow.md) | `/stats` | "Show me how I'm doing" |
-| [06-settings-flow.md](06-settings-flow.md) | `/settings` | "Manage my account" |
-| [07-onboarding-flow.md](07-onboarding-flow.md) | `/start` | "Get me set up fast" |
+| File | Surface | Core User Need |
+|------|---------|----------------|
+| [01-support-flow.md](01-support-flow.md) | Bot `/support` | "Analyze my prospect and tell me how to close" |
+| [02-leads-flow.md](02-leads-flow.md) | Bot `/leads` + TMA | "Track my pipeline and execute engagement plans" |
+| [03-learn-flow.md](03-learn-flow.md) | Bot `/learn` + TMA | "Teach me to sell GetDeal.ai step by step" |
+| [04-train-flow.md](04-train-flow.md) | Bot `/train` + TMA | "Test my skills with random challenges" |
+| [05-stats-flow.md](05-stats-flow.md) | Bot `/stats` + TMA Dashboard | "Show me how I'm doing" |
+| [06-settings-flow.md](06-settings-flow.md) | Bot `/settings` + TMA Profile | "Manage my account" |
+| [07-onboarding-flow.md](07-onboarding-flow.md) | Bot `/start` | "Get me set up fast" |
 
 ---
 
@@ -74,3 +79,11 @@ Every flow document follows this structure:
 | **Pipeline** | The collection of leads organized by status (analyzed → reached out → meeting → closed) |
 | **Casebook** | Library of past successful sales interactions used as reference |
 | **Playbook** | GetDeal.ai's proven sales methodology and messaging |
+| **TMA** | Telegram Mini App — the React/TypeScript web app embedded inside Telegram |
+| **Smart Landing** | Dashboard auto-detects urgency (overdue actions, streak) and reorders content |
+| **Step Action Screen** | TMA screen for executing an engagement plan step (proof upload, draft gen) |
+| **Draft Generation** | AI-generated multi-platform message drafts via CommentGeneratorAgent |
+| **Message Bus** | Async DB-based communication between TMA and Bot (draft_requests, plan_requests) |
+| **Deep Link** | URL parameters that open specific TMA pages/states from bot messages |
+| **Model Config** | Per-agent LLM model overrides managed from admin panel |
+| **Pipeline Velocity** | Rate at which leads progress through pipeline stages (North Star metric) |
