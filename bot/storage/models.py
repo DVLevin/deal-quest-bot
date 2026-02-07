@@ -224,3 +224,18 @@ class AgentModelConfigModel(BaseModel):
     set_by: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class DraftRequestModel(BaseModel):
+    """Draft generation request (TMA -> Bot async message bus)."""
+
+    id: int | None = None
+    lead_id: int
+    step_id: int
+    telegram_id: int
+    proof_url: str
+    lead_context: dict[str, Any] = {}
+    status: str = "pending"
+    result: dict[str, Any] | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
