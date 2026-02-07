@@ -11,6 +11,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from bot.agents.comment_generator import CommentGeneratorAgent
 from bot.agents.extraction import ExtractionAgent
 from bot.agents.memory import MemoryAgent
 from bot.agents.reanalysis_strategist import ReanalysisStrategistAgent
@@ -24,6 +25,7 @@ from bot.pipeline.config_loader import load_all_pipelines
 from bot.services.analytics import TeamAnalyticsService
 from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
+from bot.services.draft_poller import start_draft_request_poller
 from bot.services.engagement import EngagementService
 from bot.services.followup_scheduler import start_followup_scheduler
 from bot.services.model_config import ModelConfigService
@@ -37,6 +39,7 @@ from bot.storage.repositories import (
     AgentModelConfigRepo,
     AttemptRepo,
     CasebookRepo,
+    DraftRequestRepo,
     GeneratedScenarioRepo,
     LeadActivityRepo,
     LeadRegistryRepo,
@@ -92,6 +95,7 @@ async def main() -> None:
     trace_repo = TraceRepo(insforge)
     reminder_repo = ScheduledReminderRepo(insforge)
     model_config_repo = AgentModelConfigRepo(insforge)
+    draft_request_repo = DraftRequestRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -128,6 +132,7 @@ async def main() -> None:
     agent_registry.register(TrainerAgent())
     agent_registry.register(MemoryAgent())
     agent_registry.register(ReanalysisStrategistAgent())
+    agent_registry.register(CommentGeneratorAgent())
 
     # Load pipeline configs (validates YAML at startup)
     pipelines = load_all_pipelines()
@@ -218,6 +223,18 @@ async def main() -> None:
             name="plan_scheduler",
         )
         logger.info("Plan scheduler started (15-minute interval)")
+
+        # Start draft request poller for TMA draft generation
+        create_background_task(
+            start_draft_request_poller(
+                agent_registry,
+                model_config_service,
+                draft_request_repo,
+                cfg.openrouter_api_key,
+            ),
+            name="draft_request_poller",
+        )
+        logger.info("Draft request poller started (3-second interval)")
 
     # Start background scenario generation loop
     if scenario_generator:
