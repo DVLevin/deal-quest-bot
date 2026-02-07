@@ -12,6 +12,7 @@
  * their own TanStack Query hooks.
  */
 
+import { Link } from 'react-router';
 import { ProgressCard } from '@/features/dashboard/components/ProgressCard';
 import { BadgePreview } from '@/features/dashboard/components/BadgePreview';
 import { LeaderboardWidget } from '@/features/dashboard/components/LeaderboardWidget';
@@ -21,11 +22,15 @@ import { TodayActionsCard } from '@/features/dashboard/components/TodayActionsCa
 import { useLevelUpDetection } from '@/features/gamification/hooks/useLevelUpDetection';
 import { LevelUpOverlay } from '@/features/gamification/components/LevelUpOverlay';
 import { useSmartLanding } from '@/features/dashboard/hooks/useSmartLanding';
+import { useUserProgress } from '@/features/dashboard/hooks/useUserProgress';
+import { isAdminUsername } from '@/features/admin/lib/adminAccess';
 import { Skeleton } from '@/shared/ui';
 
 export default function Dashboard() {
   const { levelUp, dismiss } = useLevelUpDetection();
   const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
+  const { data: user } = useUserProgress();
+  const showAdmin = isAdminUsername(user?.username);
 
   const primaryAction =
     focus === 'actions-focus'
@@ -80,6 +85,16 @@ export default function Dashboard() {
             <BadgePreview />
             <LeaderboardWidget />
           </>
+        )}
+
+        {showAdmin && (
+          <Link
+            to="/admin"
+            className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-muted/20 bg-surface/60 px-4 py-3 text-sm text-muted transition-colors active:bg-surface"
+          >
+            <span className="text-xs opacity-60">&#9881;</span>
+            Admin Panel
+          </Link>
         )}
       </div>
     </>
