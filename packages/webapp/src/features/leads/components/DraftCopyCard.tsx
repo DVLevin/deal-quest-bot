@@ -1,12 +1,16 @@
 /**
- * DraftCopyCard -- displays draft message text with one-tap copy to clipboard.
+ * DraftCopyCard -- displays AI-generated draft options in a tabbed view.
  *
- * Uses the same clipboard fallback pattern as LeadDetail.tsx to handle
- * Telegram WebView clipboard restrictions (textarea + execCommand fallback).
+ * Supports two modes:
+ * 1. Structured options (DraftOption[]) -- tabbed segmented control
+ * 2. Legacy single text (string) -- simple text display (backward compat)
+ *
+ * After copy, fires onCopy callback so parent can show "Done" nudge.
  */
 
 import { useState, useCallback } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
+import type { DraftOption } from '../hooks/useGenerateDraft';
 
 // ---------------------------------------------------------------------------
 // Clipboard helper (Telegram WebView fallback)
@@ -40,44 +44,117 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 interface DraftCopyCardProps {
-  draftText: string;
+  options?: DraftOption[];
+  draftText?: string;
+  platform?: string;
+  onCopy?: (text: string) => void;
+  onRegenerate?: () => void;
+  isRegenerating?: boolean;
 }
 
-export function DraftCopyCard({ draftText }: DraftCopyCardProps) {
+const PLATFORM_LABELS: Record<string, string> = {
+  linkedin: 'LinkedIn',
+  email: 'Email',
+  twitter: 'Twitter/X',
+  slack: 'Slack',
+  facebook: 'Facebook',
+  whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
+  other: 'General',
+};
+
+export function DraftCopyCard({
+  options,
+  draftText,
+  platform,
+  onCopy,
+  onRegenerate,
+  isRegenerating,
+}: DraftCopyCardProps) {
+  const [activeTab, setActiveTab] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const hasOptions = options && options.length > 0;
+  const displayText = hasOptions ? options[activeTab]?.text : draftText;
+
   const handleCopy = useCallback(async () => {
-    const success = await copyToClipboard(draftText);
+    if (!displayText) return;
+    const success = await copyToClipboard(displayText);
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      onCopy?.(displayText);
     }
-  }, [draftText]);
+  }, [displayText, onCopy]);
+
+  if (!displayText) return null;
 
   return (
     <div className="rounded-xl border border-surface-secondary bg-surface-secondary/30 p-3">
       {/* Header row */}
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-text-secondary">
-          Draft Message
-        </span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex items-center justify-center rounded-md p-1 text-text-hint transition-colors active:scale-95 active:bg-surface-secondary"
-          aria-label="Copy draft"
-        >
-          {copied ? (
-            <Check className="h-3.5 w-3.5 text-success" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-text-secondary">Draft Message</span>
+          {platform && PLATFORM_LABELS[platform] && (
+            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+              {PLATFORM_LABELS[platform]}
+            </span>
           )}
-        </button>
+        </div>
+        <div className="flex items-center gap-1">
+          {onRegenerate && (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              disabled={isRegenerating}
+              className="flex items-center justify-center rounded-md p-1 text-text-hint transition-colors active:scale-95 active:bg-surface-secondary disabled:opacity-50"
+              aria-label="Regenerate draft"
+            >
+              {isRegenerating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center justify-center rounded-md p-1 text-text-hint transition-colors active:scale-95 active:bg-surface-secondary"
+            aria-label="Copy draft"
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-success" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Segmented control for tabs */}
+      {hasOptions && options.length > 1 && (
+        <div className="mb-3 flex rounded-lg bg-surface-secondary/50 p-0.5">
+          {options.map((opt, i) => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => setActiveTab(i)}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                activeTab === i
+                  ? 'bg-surface text-text shadow-sm'
+                  : 'text-text-hint'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Draft text */}
       <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-text">
-        {draftText}
+        {displayText}
       </pre>
 
       {/* Full-width copy button */}

@@ -9,12 +9,13 @@ import { create } from 'zustand';
 
 export interface Toast {
   id: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
   message: string;
   action?: {
     label: string;
     onClick: () => void;
   };
+  duration?: number;
 }
 
 interface ToastState {
@@ -37,10 +38,10 @@ export const useToastStore = create<ToastState>((set, get) => ({
       return { toasts: next };
     });
 
-    // Auto-dismiss after 4 seconds
+    // Auto-dismiss after duration (default 4 seconds)
     setTimeout(() => {
       get().dismissToast(id);
-    }, 4000);
+    }, toast.duration ?? 4000);
   },
 
   dismissToast: (id) => {

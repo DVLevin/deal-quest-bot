@@ -1,4 +1,4 @@
-import { CheckCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import { useToastStore, type Toast } from '@/shared/stores/toastStore';
 
 /**
@@ -30,8 +30,8 @@ function ToastItem({
   toast: Toast;
   onDismiss: (id: string) => void;
 }) {
-  const Icon = toast.type === 'success' ? CheckCircle : AlertCircle;
-  const bgColor = toast.type === 'success' ? 'bg-success' : 'bg-error';
+  const Icon = toast.type === 'success' ? CheckCircle : toast.type === 'info' ? Info : AlertCircle;
+  const bgColor = toast.type === 'success' ? 'bg-success' : toast.type === 'info' ? 'bg-accent' : 'bg-error';
 
   return (
     <div
