@@ -37,9 +37,7 @@ function SupportHome() {
 
       {/* Recent sessions */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-text-secondary">
-          Recent Sessions
-        </h3>
+        <span className="text-overline">Recent Sessions</span>
 
         {isLoading && (
           <div className="space-y-2">
@@ -159,9 +157,7 @@ function SessionHistory() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-text-secondary">
-        All Sessions
-      </h3>
+      <span className="text-overline">All Sessions</span>
 
       {isLoading && (
         <div className="space-y-2">
@@ -207,11 +203,16 @@ function SessionHistory() {
 
 export default function Support() {
   return (
-    <div className="space-y-4 px-4 pt-4 pb-6">
+    <div className="space-y-4 px-4 pt-4 pb-24">
       {/* Page title */}
-      <div className="flex items-center gap-2">
-        <Zap className="h-5 w-5 text-accent" />
-        <h1 className="text-xl font-bold text-text">Deal Support</h1>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
+          <Zap className="h-5 w-5 text-accent" />
+        </div>
+        <div>
+          <p className="text-overline">AI Co-Pilot</p>
+          <h1 className="text-lg font-bold text-text">Deal Support</h1>
+        </div>
       </div>
 
       {/* Sub-routes */}

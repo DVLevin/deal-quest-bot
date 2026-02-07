@@ -43,20 +43,20 @@ export default function Dashboard() {
           onDismiss={dismiss}
         />
       )}
-      <div className="space-y-4 px-4 pt-4">
-        {/* Contextual header based on smart landing focus */}
+      <div className="space-y-4 px-4 pt-4 pb-24">
+        {/* Contextual alert banner */}
         {!isReady && <Skeleton className="h-6 w-48" />}
         {isReady && focus === 'actions-focus' && (
-          <div className="rounded-2xl bg-gradient-to-b from-error/5 to-transparent px-4 pt-4 pb-2 mb-2">
+          <div className="rounded-2xl border border-error/20 bg-gradient-to-br from-error/8 via-error/4 to-transparent px-4 py-3">
             <p className="text-overline !text-error">
-              You have {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''}
+              {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''} — tap below
             </p>
           </div>
         )}
         {isReady && focus === 'streak-focus' && (
-          <div className="rounded-2xl bg-gradient-to-b from-warning/5 to-transparent px-4 pt-4 pb-2 mb-2">
-            <p className="text-overline !text-accent">
-              Day {streakDays} streak — keep it going!
+          <div className="rounded-2xl border border-warning/20 bg-gradient-to-br from-warning/8 via-warning/4 to-transparent px-4 py-3">
+            <p className="text-overline !text-warning">
+              Day {streakDays} streak — keep the momentum
             </p>
           </div>
         )}

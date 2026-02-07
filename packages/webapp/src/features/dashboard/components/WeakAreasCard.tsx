@@ -107,17 +107,17 @@ export function WeakAreasCard() {
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-text mb-3">Areas to Improve</p>
+      <p className="text-overline mb-3">Weak Spots</p>
 
       <div className="space-y-2">
         {weakAreas.slice(0, 3).map((area) => (
           <div
             key={area.label}
-            className="flex items-center gap-2 rounded-lg bg-surface-secondary p-2"
+            className="flex items-center gap-2 rounded-xl border border-warning/15 bg-warning/5 p-3"
           >
             <AlertTriangle size={14} className="shrink-0 text-warning" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-text truncate">
+              <p className="text-xs font-semibold text-text truncate">
                 {area.label}
               </p>
               <p className="text-xs text-text-hint">
