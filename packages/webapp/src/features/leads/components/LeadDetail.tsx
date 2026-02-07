@@ -300,10 +300,11 @@ export function LeadDetail() {
         onSuccess: () => {
           toast({ type: 'success', message: 'Status updated' });
         },
-        onError: () => {
+        onError: (err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
           toast({
             type: 'error',
-            message: 'Failed to update status',
+            message: `Failed to update status: ${msg}`,
             action: { label: 'Retry', onClick: () => mutation.mutate(vars) },
           });
         },
