@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 19 (Active Engagement Execution) -- In progress
-Plan: 2 of N in current phase (19-01, 19-02 complete)
+Plan: 4 of N in current phase (19-01, 19-02, 19-03, 19-04 complete)
 Status: In progress
-Last activity: 2026-02-07 -- Completed 19-02-PLAN.md
+Last activity: 2026-02-07 -- Completed 19-04-PLAN.md
 
 Progress: [##########################-] 7/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58
+- Total plans completed: 60
 - Average duration: 3.2m
-- Total execution time: 188m
+- Total execution time: 194m
 
 **By Phase:**
 
@@ -53,10 +53,10 @@ Progress: [##########################-] 7/8 v2.0 phases
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
-| 19. Active Engagement Execution | 2/N | 7m | 3.5m |
+| 19. Active Engagement Execution | 4/N | 13m | 3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 3m, 7m, 4m, 3m
+- Last 5 plans: 7m, 4m, 3m, 3m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -149,6 +149,11 @@ Recent decisions affecting current work:
 - [19-02]: No capture="camera" on file input (Telegram Android WebView compat)
 - [19-02]: CantPerformFlow uses progressive disclosure: collapsed link -> expanded textarea -> submit
 - [19-02]: StepActionScreen renders three distinct layouts for pending/done/skipped states
+- [19-04]: DB message bus pattern (polling draft_requests table) instead of adding HTTP server to bot
+- [19-04]: 3-second polling interval for draft request poller
+- [19-04]: Stale processing recovery with 2-minute threshold on bot startup
+- [19-04]: Multi-platform auto-detection prompt replaces LinkedIn-only Edge Function
+- [19-04]: Structured JSON output: platform + content_type + options array (3 lengths)
 
 ### Pending Todos
 
@@ -160,6 +165,7 @@ Recent decisions affecting current work:
 - [15.1-01]: Run migration `insforge/migrations/003_web_research_versions.sql` on InsForge database
 - [15-01]: Run migration `insforge/migrations/004_lead_analysis_history.sql` on InsForge database
 - [18-03]: Run migration `insforge/migrations/005_agent_model_config.sql` on InsForge database
+- [19-04]: Run migration `insforge/migrations/006_draft_requests.sql` on InsForge database
 
 ### Roadmap Evolution
 
@@ -182,7 +188,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 19-02. Step action screen components built.
+Stopped at: Completed 19-04. Bot-side draft generation pipeline built.
 Resume file: None
-Next action: Execute 19-02-PLAN.md (action screen UI components)
+Next action: Continue Phase 19 plans (19-05+)
 Next phase after: Continue Phase 19 plans
