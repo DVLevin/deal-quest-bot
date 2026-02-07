@@ -8,6 +8,7 @@
  */
 
 import { useNavigate } from 'react-router';
+import { BookOpen } from 'lucide-react';
 import { Skeleton, ErrorCard } from '@/shared/ui';
 import { useTrackProgress } from '../hooks/useTrackProgress';
 import { LevelCard } from './LevelCard';
@@ -43,11 +44,17 @@ export function TrackList() {
   }
 
   return (
-    <div className="space-y-4 px-4 pt-4 pb-4">
-      <div>
-        <h1 className="text-xl font-bold text-text">{track.name}</h1>
-        <p className="mt-1 text-sm text-text-hint">{track.description}</p>
+    <div className="space-y-4 px-4 pt-4 pb-24">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/15">
+          <BookOpen className="h-5 w-5 text-success" />
+        </div>
+        <div>
+          <p className="text-overline">Academy</p>
+          <h1 className="text-lg font-bold text-text">{track.name}</h1>
+        </div>
       </div>
+      <p className="text-sm text-text-hint">{track.description}</p>
 
       {levels && <TrackStats levels={levels} />}
 

@@ -16,6 +16,7 @@ import { ListTodo, ChevronRight, AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
+import { cn } from '@/shared/lib/cn';
 import { useTodayActions } from '@/features/leads/hooks/useTodayActions';
 import { useAuthStore } from '@/features/auth/store';
 import { queryKeys } from '@/lib/queries';
@@ -93,8 +94,7 @@ export function TodayActionsCard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ListTodo className="h-5 w-5 text-accent" />
-          <span className="text-sm font-semibold text-text">Today's Actions</span>
+          <span className="text-overline">Today's Actions</span>
         </div>
         <div className="flex gap-1">
           {overdueCount > 0 && (
@@ -119,7 +119,10 @@ export function TodayActionsCard() {
             key={`${action.lead_id}-${action.step_id}`}
             type="button"
             onClick={() => navigate(`/leads/${action.lead_id}?step=${action.step_id}`)}
-            className="flex w-full items-center gap-3 rounded-lg bg-surface-secondary/50 p-2 text-left transition-colors active:bg-surface-secondary"
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg bg-surface-secondary/50 p-3 text-left transition-colors active:bg-surface-secondary',
+              action.isOverdue && 'border-l-3 border-error',
+            )}
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">

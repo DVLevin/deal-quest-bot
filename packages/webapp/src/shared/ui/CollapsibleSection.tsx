@@ -31,7 +31,7 @@ export function CollapsibleSection({
         className="flex w-full items-center gap-2 text-left"
       >
         <Icon className="h-4 w-4 text-accent" />
-        <span className="flex-1 text-sm font-semibold text-text">{title}</span>
+        <span className="flex-1 text-[15px] font-semibold text-text">{title}</span>
         {badge && (
           <Badge variant={badgeVariant} size="sm">
             {badge}

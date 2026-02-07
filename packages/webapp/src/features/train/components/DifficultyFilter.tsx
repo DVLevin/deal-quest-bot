@@ -1,13 +1,14 @@
 /**
- * Difficulty filter for train scenarios.
+ * Difficulty filter with tier-card visual design.
  *
- * Renders 4 buttons: Easy (1), Medium (2), Hard (3), Random (null).
- * Selected button uses accent variant, others use secondary.
+ * Renders 4 tappable cards in a 2x2 grid: Rookie (1), Pro (2), Elite (3), Random (null).
+ * Selected card shows a colored border with ambient glow.
  * 44px minimum touch targets.
  */
 
-import { Button } from '@/shared/ui';
-import { DIFFICULTY_LABELS } from '@/types/constants';
+import { cn } from '@/shared/lib/cn';
+import { Shield, Flame, Skull, Shuffle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface DifficultyFilterProps {
   /** Currently selected difficulty (null = Random) */
@@ -16,27 +17,97 @@ interface DifficultyFilterProps {
   onSelect: (difficulty: number | null) => void;
 }
 
-const OPTIONS: { label: string; value: number | null }[] = [
-  { label: DIFFICULTY_LABELS[1], value: 1 },
-  { label: DIFFICULTY_LABELS[2], value: 2 },
-  { label: DIFFICULTY_LABELS[3], value: 3 },
-  { label: 'Random', value: null },
+interface TierOption {
+  value: number | null;
+  label: string;
+  subtitle: string;
+  icon: LucideIcon;
+  color: string;
+  bgActive: string;
+  borderActive: string;
+  textActive: string;
+}
+
+const TIERS: TierOption[] = [
+  {
+    value: 1,
+    label: 'Rookie',
+    subtitle: 'Warm up',
+    icon: Shield,
+    color: 'oklch(0.72 0.19 150)',
+    bgActive: 'bg-success/10',
+    borderActive: 'border-success',
+    textActive: 'text-success',
+  },
+  {
+    value: 2,
+    label: 'Pro',
+    subtitle: 'Real deals',
+    icon: Flame,
+    color: 'oklch(0.80 0.18 85)',
+    bgActive: 'bg-warning/10',
+    borderActive: 'border-warning',
+    textActive: 'text-warning',
+  },
+  {
+    value: 3,
+    label: 'Elite',
+    subtitle: 'No mercy',
+    icon: Skull,
+    color: 'oklch(0.65 0.22 25)',
+    bgActive: 'bg-error/10',
+    borderActive: 'border-error',
+    textActive: 'text-error',
+  },
+  {
+    value: null,
+    label: 'Random',
+    subtitle: 'Surprise me',
+    icon: Shuffle,
+    color: 'oklch(0.70 0.15 250)',
+    bgActive: 'bg-info/10',
+    borderActive: 'border-info',
+    textActive: 'text-info',
+  },
 ];
 
 export function DifficultyFilter({ selected, onSelect }: DifficultyFilterProps) {
   return (
-    <div className="flex gap-2">
-      {OPTIONS.map((opt) => (
-        <Button
-          key={opt.label}
-          variant={selected === opt.value ? 'primary' : 'secondary'}
-          size="sm"
-          className="flex-1"
-          onClick={() => onSelect(opt.value)}
-        >
-          {opt.label}
-        </Button>
-      ))}
+    <div className="grid grid-cols-2 gap-3">
+      {TIERS.map((tier) => {
+        const isActive = selected === tier.value;
+        const Icon = tier.icon;
+        return (
+          <button
+            key={tier.label}
+            type="button"
+            onClick={() => onSelect(tier.value)}
+            className={cn(
+              'flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border-2 p-3 transition-all active:scale-[0.97]',
+              isActive
+                ? cn(tier.bgActive, tier.borderActive, 'shadow-raised')
+                : 'border-surface-secondary bg-surface-secondary/30 hover:bg-surface-secondary/50',
+            )}
+            style={isActive ? { '--tier-color': tier.color } as React.CSSProperties : undefined}
+          >
+            <Icon
+              className={cn(
+                'h-5 w-5 transition-colors',
+                isActive ? tier.textActive : 'text-text-hint',
+              )}
+            />
+            <span
+              className={cn(
+                'text-sm font-bold transition-colors',
+                isActive ? tier.textActive : 'text-text',
+              )}
+            >
+              {tier.label}
+            </span>
+            <span className="text-[11px] text-text-hint">{tier.subtitle}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

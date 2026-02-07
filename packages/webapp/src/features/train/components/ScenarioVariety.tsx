@@ -1,12 +1,13 @@
 /**
- * Indicator showing remaining unseen scenarios with a low-pool nudge.
+ * Arena-style indicator showing remaining unseen scenarios.
  *
- * Displays "X of Y scenarios unseen" as a text line.
- * When isRunningLow is true (unseenCount <= 3), shows an additional nudge
- * encouraging the user to revisit past scenarios.
+ * Displays as a progress-bar style "missions available" meter.
+ * When isRunningLow, shows a warning nudge.
  *
- * Returns null when totalPoolSize is 0 (no scenarios available).
+ * Returns null when totalPoolSize is 0.
  */
+
+import { cn } from '@/shared/lib/cn';
 
 interface ScenarioVarietyProps {
   unseenCount: number;
@@ -21,15 +22,34 @@ export function ScenarioVariety({
 }: ScenarioVarietyProps) {
   if (totalPoolSize === 0) return null;
 
+  const pct = Math.round((unseenCount / totalPoolSize) * 100);
+
   return (
-    <div>
-      <p className="text-xs text-text-hint">
-        {unseenCount} of {totalPoolSize} scenario{totalPoolSize !== 1 ? 's' : ''} unseen
-      </p>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-overline">Scenarios Available</span>
+        <span className={cn(
+          'text-xs font-bold tabular-nums',
+          isRunningLow ? 'text-warning' : 'text-text-secondary',
+        )}>
+          {unseenCount}/{totalPoolSize}
+        </span>
+      </div>
+
+      {/* Mini progress bar */}
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-secondary">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all',
+            isRunningLow ? 'bg-warning' : 'bg-accent',
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
 
       {isRunningLow && (
-        <p className="mt-0.5 text-xs text-warning">
-          Only {unseenCount} left! Great coverage — consider revisiting past scenarios.
+        <p className="text-xs text-warning">
+          Only {unseenCount} left — consider revisiting past scenarios.
         </p>
       )}
     </div>

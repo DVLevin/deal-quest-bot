@@ -23,6 +23,7 @@ export function StreakIndicator({ streakDays }: StreakIndicatorProps) {
         className={cn(
           'h-4 w-4',
           isActive ? 'text-warning' : 'text-text-hint',
+          streakDays >= 3 && 'streak-fire-shimmer',
         )}
       />
       <span

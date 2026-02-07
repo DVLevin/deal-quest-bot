@@ -27,6 +27,13 @@ export default function Dashboard() {
   const { levelUp, dismiss } = useLevelUpDetection();
   const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
 
+  const primaryAction =
+    focus === 'actions-focus'
+      ? '/leads'
+      : focus === 'streak-focus'
+        ? '/train'
+        : '/support';
+
   return (
     <>
       {levelUp && (
@@ -36,18 +43,22 @@ export default function Dashboard() {
           onDismiss={dismiss}
         />
       )}
-      <div className="space-y-4 px-4 pt-4">
-        {/* Contextual header based on smart landing focus */}
+      <div className="space-y-4 px-4 pt-4 pb-24">
+        {/* Contextual alert banner */}
         {!isReady && <Skeleton className="h-6 w-48" />}
         {isReady && focus === 'actions-focus' && (
-          <p className="text-sm font-medium text-error">
-            You have {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''}
-          </p>
+          <div className="rounded-2xl border border-error/20 bg-gradient-to-br from-error/8 via-error/4 to-transparent px-4 py-3">
+            <p className="text-overline !text-error">
+              {overdueCount} overdue action{overdueCount !== 1 ? 's' : ''} — tap below
+            </p>
+          </div>
         )}
         {isReady && focus === 'streak-focus' && (
-          <p className="text-sm font-medium text-accent">
-            Day {streakDays} streak — keep it going!
-          </p>
+          <div className="rounded-2xl border border-warning/20 bg-gradient-to-br from-warning/8 via-warning/4 to-transparent px-4 py-3">
+            <p className="text-overline !text-warning">
+              Day {streakDays} streak — keep the momentum
+            </p>
+          </div>
         )}
 
         {/* Card layout: actions-focus promotes TodayActionsCard first */}
@@ -55,7 +66,7 @@ export default function Dashboard() {
           <>
             <TodayActionsCard />
             <ProgressCard />
-            <QuickActions />
+            <QuickActions primaryAction={primaryAction} />
             <WeakAreasCard />
             <BadgePreview />
             <LeaderboardWidget />
@@ -64,7 +75,7 @@ export default function Dashboard() {
           <>
             <ProgressCard />
             <TodayActionsCard />
-            <QuickActions />
+            <QuickActions primaryAction={primaryAction} />
             <WeakAreasCard />
             <BadgePreview />
             <LeaderboardWidget />

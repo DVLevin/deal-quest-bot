@@ -36,10 +36,15 @@ function LeadDetailView() {
 
 export default function Leads() {
   return (
-    <div className="space-y-4 px-4 pt-4 pb-6">
-      <div className="flex items-center gap-2">
-        <Users className="h-5 w-5 text-accent" />
-        <h1 className="text-xl font-bold text-text">Leads</h1>
+    <div className="space-y-4 px-4 pt-4 pb-24">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
+          <Users className="h-5 w-5 text-accent" />
+        </div>
+        <div>
+          <p className="text-overline">Pipeline</p>
+          <h1 className="text-lg font-bold text-text">Your Leads</h1>
+        </div>
       </div>
 
       <Routes>

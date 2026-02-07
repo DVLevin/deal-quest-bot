@@ -73,8 +73,8 @@ export function BadgePreview() {
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-primary">Badges</h2>
-        <Link to="/profile" className="text-xs text-link">
+        <span className="text-overline">Badges</span>
+        <Link to="/profile" className="text-xs font-semibold text-accent">
           See all
         </Link>
       </div>

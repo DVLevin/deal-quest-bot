@@ -35,6 +35,19 @@ export const LEAD_STATUS_CONFIG: Record<
 };
 
 // ---------------------------------------------------------------------------
+// Pipeline accent colors (oklch values for status color bars and blocks)
+// ---------------------------------------------------------------------------
+
+export const PIPELINE_ACCENT: Record<LeadStatus, string> = {
+  analyzed: 'oklch(0.70 0.15 250)',
+  reached_out: 'oklch(0.75 0.16 80)',
+  meeting_booked: 'oklch(0.72 0.19 150)',
+  in_progress: 'oklch(0.60 0.20 300)',
+  closed_won: 'oklch(0.75 0.18 85)',
+  closed_lost: 'oklch(0.55 0.08 15)',
+};
+
+// ---------------------------------------------------------------------------
 // Defensive parser helpers
 // ---------------------------------------------------------------------------
 
