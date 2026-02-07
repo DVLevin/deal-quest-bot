@@ -29,6 +29,7 @@ import {
   MessageCirclePlus,
   Search,
   Lightbulb,
+  Loader2,
 } from 'lucide-react';
 import { Card, Badge, Skeleton, ErrorCard, CollapsibleSection } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
@@ -42,6 +43,7 @@ import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
 import { useUploadProof } from '../hooks/useUploadProof';
 import { useGenerateDraft, type DraftResult } from '../hooks/useGenerateDraft';
+import { useGeneratePlan } from '../hooks/useGeneratePlan';
 import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -242,6 +244,7 @@ export function LeadDetail() {
   const stepMutation = useUpdatePlanStep();
   const uploadMutation = useUploadProof();
   const draftMutation = useGenerateDraft();
+  const generatePlanMutation = useGeneratePlan();
   const { toast } = useToast();
 
   // Active step for the StepActionScreen (null = all collapsed)
@@ -735,12 +738,32 @@ export function LeadDetail() {
             <p className="text-sm text-text-hint">No engagement plan yet.</p>
             <button
               type="button"
-              onClick={() => openBotDeepLink(`lead_reanalyze_${lead.id}`)}
-              className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors active:bg-accent/25"
+              onClick={() => {
+                if (!telegramId) return;
+                generatePlanMutation.mutate({ leadId: lead.id, telegramId });
+              }}
+              disabled={generatePlanMutation.isPending}
+              className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors active:bg-accent/25 disabled:opacity-50"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Generate Plan
+              {generatePlanMutation.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Generate Plan
+                </>
+              )}
             </button>
+            {generatePlanMutation.isError && (
+              <p className="text-xs text-error">
+                {generatePlanMutation.error instanceof Error
+                  ? generatePlanMutation.error.message
+                  : 'Plan generation failed'}
+              </p>
+            )}
           </div>
         )}
       </CollapsibleSection>
