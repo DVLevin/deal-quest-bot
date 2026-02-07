@@ -44,13 +44,19 @@ async def _process_draft_request(
     shared_openrouter_key: str,
 ) -> None:
     """Process a single draft request through the CommentGeneratorAgent."""
+    default_llm = None
     try:
         image_b64 = await _fetch_and_encode_image(request.proof_url)
         if not image_b64:
             await draft_repo.fail(request.id, "Failed to fetch screenshot image")
             return
 
-        agent = agent_registry.get("comment_generator")
+        try:
+            agent = agent_registry.get("comment_generator")
+        except KeyError:
+            await draft_repo.fail(request.id, "comment_generator agent not registered")
+            return
+
         default_llm = create_provider("openrouter", shared_openrouter_key)
 
         ctx = PipelineContext(
@@ -60,9 +66,8 @@ async def _process_draft_request(
             model_config=model_config_service,
         )
 
-        override_llm = await ctx.get_llm_for_agent(agent.name)
-        if override_llm:
-            ctx.llm = override_llm
+        # Resolve per-agent model override (always returns a provider)
+        ctx.llm = await ctx.get_llm_for_agent(agent.name)
 
         agent_input = AgentInput(
             user_message="Generate contextual response options from this screenshot.",
@@ -84,17 +89,18 @@ async def _process_draft_request(
                 request.id, request.lead_id, output.error,
             )
 
-        try:
-            await default_llm.close()
-        except Exception:
-            pass
-
     except Exception as e:
         logger.error("Draft request %d processing error: %s", request.id, e)
         try:
             await draft_repo.fail(request.id, str(e))
         except Exception:
             logger.error("Failed to mark draft request %d as failed", request.id)
+    finally:
+        if default_llm:
+            try:
+                await default_llm.close()
+            except Exception:
+                pass
 
 
 async def start_draft_request_poller(
