@@ -14,7 +14,7 @@
  * Pure presentational -- accepts all callbacks from the parent (LeadDetail).
  */
 
-import { X, Check, SkipForward, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
+import { X, Check, SkipForward, Clock, RotateCcw, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import type { EngagementPlanStep } from '@/types/tables';
 import { DraftCopyCard } from './DraftCopyCard';
 import { ProofUpload } from './ProofUpload';
@@ -31,9 +31,11 @@ interface StepActionScreenProps {
   onComplete: () => void;
   onCantPerform: (reason: string) => void;
   onUploadProof: (file: File) => Promise<void>;
+  onGenerateDraft: () => void;
   onClose: () => void;
   isUpdating: boolean;
   isUploading: boolean;
+  isGeneratingDraft: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,9 +49,11 @@ export function StepActionScreen({
   onComplete,
   onCantPerform,
   onUploadProof,
+  onGenerateDraft,
   onClose,
   isUpdating,
   isUploading,
+  isGeneratingDraft,
 }: StepActionScreenProps) {
   // -------------------------------------------------------------------------
   // Completed state banner
@@ -207,7 +211,19 @@ export function StepActionScreen({
       </div>
 
       {/* Draft section */}
-      {step.suggested_text ? (
+      {isGeneratingDraft ? (
+        <div className="space-y-2 rounded-xl border border-surface-secondary bg-surface-secondary/30 p-3">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+            <span className="text-xs font-semibold text-text-secondary">Generating draft...</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="h-3 w-full animate-pulse rounded bg-surface-secondary" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-surface-secondary" />
+            <div className="h-3 w-3/5 animate-pulse rounded bg-surface-secondary" />
+          </div>
+        </div>
+      ) : step.suggested_text ? (
         <DraftCopyCard draftText={step.suggested_text} />
       ) : (
         <p className="text-center text-xs text-text-hint">
@@ -221,6 +237,28 @@ export function StepActionScreen({
         existingProofUrl={step.proof_url}
         isUploading={isUploading}
       />
+
+      {/* Generate draft from screenshot button */}
+      {step.proof_url && !isUploading && (
+        <button
+          type="button"
+          onClick={onGenerateDraft}
+          disabled={isGeneratingDraft}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-medium text-accent transition-colors active:scale-95 disabled:opacity-50"
+        >
+          {isGeneratingDraft ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Analyzing screenshot...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              {step.suggested_text ? 'Regenerate from Screenshot' : 'Generate Draft from Screenshot'}
+            </>
+          )}
+        </button>
+      )}
 
       {/* Action buttons */}
       <div className="flex items-center gap-2">

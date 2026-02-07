@@ -41,6 +41,7 @@ import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
 import { useUploadProof } from '../hooks/useUploadProof';
+import { useGenerateDraft } from '../hooks/useGenerateDraft';
 import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -240,6 +241,7 @@ export function LeadDetail() {
   const mutation = useUpdateLeadStatus();
   const stepMutation = useUpdatePlanStep();
   const uploadMutation = useUploadProof();
+  const draftMutation = useGenerateDraft();
   const { toast } = useToast();
 
   // Active step for the StepActionScreen (null = all collapsed)
@@ -427,6 +429,49 @@ export function LeadDetail() {
     [lead, telegramId, uploadMutation, stepMutation, toast],
   );
 
+  const handleGenerateDraft = useCallback(
+    (stepId: number) => {
+      if (!lead || !telegramId) return;
+      const plan = parseEngagementPlan(lead.engagement_plan);
+      const step = plan.find((s) => s.step_id === stepId);
+      if (!step?.proof_url) return;
+
+      draftMutation.mutate(
+        {
+          proofUrl: step.proof_url,
+          leadId: lead.id,
+          leadName: lead.prospect_first_name && lead.prospect_last_name
+            ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
+            : lead.prospect_name ?? undefined,
+          leadTitle: lead.prospect_title ?? undefined,
+          leadCompany: lead.prospect_company ?? undefined,
+          leadStatus: lead.status,
+          webResearch: lead.web_research,
+        },
+        {
+          onSuccess: (draft) => {
+            // Persist the generated draft to the step's suggested_text
+            stepMutation.mutate(
+              { leadId: lead.id, stepId, newStatus: step.status, telegramId, suggestedText: draft },
+              {
+                onSuccess: () => {
+                  toast({ type: 'success', message: 'Draft generated!' });
+                },
+                onError: () => {
+                  toast({ type: 'error', message: 'Draft generated but failed to save' });
+                },
+              },
+            );
+          },
+          onError: () => {
+            toast({ type: 'error', message: 'Failed to generate draft' });
+          },
+        },
+      );
+    },
+    [lead, telegramId, draftMutation, stepMutation, toast],
+  );
+
   if (Number.isNaN(numericId)) {
     return <Navigate to="/leads" replace />;
   }
@@ -583,9 +628,11 @@ export function LeadDetail() {
                       onComplete={() => handleStepComplete(step.step_id)}
                       onCantPerform={(reason) => handleCantPerform(step.step_id, reason)}
                       onUploadProof={(file) => handleUploadProof(step.step_id, file)}
+                      onGenerateDraft={() => handleGenerateDraft(step.step_id)}
                       onClose={() => setActiveStepId(null)}
                       isUpdating={stepMutation.isPending}
                       isUploading={uploadMutation.isPending}
+                      isGeneratingDraft={draftMutation.isPending}
                     />
                   </div>
                 );

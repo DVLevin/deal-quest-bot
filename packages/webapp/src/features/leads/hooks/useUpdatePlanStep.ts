@@ -25,6 +25,8 @@ interface UpdatePlanStepVars {
   proofUrl?: string;
   /** Reason the user can't perform this step (set when skipping) */
   cantPerformReason?: string;
+  /** AI-generated draft text to persist on the step */
+  suggestedText?: string;
 }
 
 /**
@@ -55,6 +57,7 @@ export function useUpdatePlanStep() {
       telegramId,
       proofUrl,
       cantPerformReason,
+      suggestedText,
     }: UpdatePlanStepVars) => {
       // 1. Fetch current lead's engagement_plan
       const { data: leadData, error: fetchError } = await getInsforge()
@@ -79,6 +82,7 @@ export function useUpdatePlanStep() {
                 : null,
             ...(proofUrl !== undefined && { proof_url: proofUrl }),
             ...(cantPerformReason !== undefined && { cant_perform_reason: cantPerformReason }),
+            ...(suggestedText !== undefined && { suggested_text: suggestedText }),
           };
         }
         return step;
@@ -133,7 +137,7 @@ export function useUpdatePlanStep() {
 
       return { updatedPlan };
     },
-    onMutate: async ({ leadId, stepId, newStatus, proofUrl, cantPerformReason }) => {
+    onMutate: async ({ leadId, stepId, newStatus, proofUrl, cantPerformReason, suggestedText }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: queryKeys.leads.detail(leadId),
@@ -158,6 +162,7 @@ export function useUpdatePlanStep() {
                   : null,
               ...(proofUrl !== undefined && { proof_url: proofUrl }),
               ...(cantPerformReason !== undefined && { cant_perform_reason: cantPerformReason }),
+              ...(suggestedText !== undefined && { suggested_text: suggestedText }),
             };
           }
           return step;
