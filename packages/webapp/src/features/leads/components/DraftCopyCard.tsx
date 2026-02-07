@@ -8,7 +8,7 @@
  * After copy, fires onCopy callback so parent can show "Done" nudge.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
 import type { DraftOption } from '../hooks/useGenerateDraft';
 
@@ -73,6 +73,13 @@ export function DraftCopyCard({
 }: DraftCopyCardProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const hasOptions = options && options.length > 0;
   const displayText = hasOptions ? options[activeTab]?.text : draftText;
@@ -82,7 +89,8 @@ export function DraftCopyCard({
     const success = await copyToClipboard(displayText);
     if (success) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
       onCopy?.(displayText);
     }
   }, [displayText, onCopy]);

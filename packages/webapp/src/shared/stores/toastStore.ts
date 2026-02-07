@@ -24,6 +24,8 @@ interface ToastState {
   dismissToast: (id: string) => void;
 }
 
+const toastTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
 
@@ -39,12 +41,19 @@ export const useToastStore = create<ToastState>((set, get) => ({
     });
 
     // Auto-dismiss after duration (default 4 seconds)
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      toastTimers.delete(id);
       get().dismissToast(id);
     }, toast.duration ?? 4000);
+    toastTimers.set(id, timer);
   },
 
   dismissToast: (id) => {
+    const timer = toastTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.delete(id);
+    }
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     }));

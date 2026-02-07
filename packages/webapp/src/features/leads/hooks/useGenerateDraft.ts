@@ -39,10 +39,12 @@ interface GenerateDraftVars {
 const POLL_INTERVAL = 3000; // 3 seconds
 const POLL_TIMEOUT = 90_000; // 90 seconds (vision models can be slow)
 
-async function pollForCompletion(requestId: number): Promise<DraftResult> {
+async function pollForCompletion(requestId: number, signal?: AbortSignal): Promise<DraftResult> {
   const start = Date.now();
 
   while (Date.now() - start < POLL_TIMEOUT) {
+    if (signal?.aborted) throw new Error('Draft generation cancelled');
+
     const { data, error } = await getInsforge()
       .database.from('draft_requests')
       .select('status, result')
@@ -60,7 +62,13 @@ async function pollForCompletion(requestId: number): Promise<DraftResult> {
       throw new Error(errorMsg);
     }
 
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(resolve, POLL_INTERVAL);
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new Error('Draft generation cancelled'));
+      }, { once: true });
+    });
   }
 
   throw new Error('Draft generation timed out. Please try again.');
@@ -68,6 +76,7 @@ async function pollForCompletion(requestId: number): Promise<DraftResult> {
 
 export function useGenerateDraft() {
   const queryClient = useQueryClient();
+  const abortControllerRef = { current: null as AbortController | null };
 
   return useMutation({
     mutationFn: async ({
@@ -81,6 +90,11 @@ export function useGenerateDraft() {
       leadStatus,
       webResearch,
     }: GenerateDraftVars): Promise<DraftResult> => {
+      // Abort any previous in-flight polling
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const { data, error } = await getInsforge()
         .database.from('draft_requests')
         .insert({
@@ -103,7 +117,7 @@ export function useGenerateDraft() {
       if (error) throw new Error(`Failed to create draft request: ${error.message}`);
       if (!data?.id) throw new Error('No request ID returned');
 
-      return pollForCompletion(data.id);
+      return pollForCompletion(data.id, controller.signal);
     },
     onSettled: (_data, _err, vars) => {
       queryClient.invalidateQueries({
