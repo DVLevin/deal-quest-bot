@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. COMPLETE. All 18 phases across 3 milestones done.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 19 (Active Engagement Execution) added, not yet planned.
 
 ## Previous Milestones
 
@@ -14,13 +14,13 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 ## Current Position
 
-Milestone: v2.0 -- Sales Co-Pilot -- COMPLETE
-Phase: 18 (Agent Observatory & Model Configuration) -- COMPLETE (verified 5/5 must-haves)
-Plan: 4 of 4 in current phase (18-01, 18-02, 18-03, 18-04 complete)
-Status: Milestone v2.0 complete. All 7 phases verified.
-Last activity: 2026-02-06 -- Phase 18 verified, milestone complete
+Milestone: v2.0 -- Sales Co-Pilot
+Phase: 19 (Active Engagement Execution) -- NOT PLANNED
+Plan: 0 of 0 in current phase
+Status: Phase 19 added, awaiting planning
+Last activity: 2026-02-06 -- Phase 19 added to roadmap
 
-Progress: [##########################] 7/7 v2.0 phases
+Progress: [#########################-] 7/8 v2.0 phases
 
 ## Performance Metrics
 
@@ -165,6 +165,7 @@ Recent decisions affecting current work:
 
 - Phase 17 added: LazyFlow UX Overhaul — zero-click workflows, smart defaults, predictive navigation, effort-eliminating interactions
 - Phase 18 added: Agent Observatory & Model Configuration — Langfuse tracing (cloud hobby, self-host ready), per-agent model selection via TMA admin UI, full prompt/I-O/cost visibility
+- Phase 19 added: Active Engagement Execution — step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders
 
 ### Blockers/Concerns
 
@@ -182,7 +183,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Quick task 004 tasks 1-4 complete. Awaiting device visual review (Task 5).
+Stopped at: Phase 19 added to roadmap, not yet planned.
 Resume file: None
-Next action: Visual review on device, then merge quick/004-rebel-design-overhaul branch
-Next phase after: New milestone (v3.0)
+Next action: Plan Phase 19 (/gsd:plan-phase 19)
+Next phase after: Phase 19 execution
