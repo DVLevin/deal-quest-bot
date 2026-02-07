@@ -6,7 +6,7 @@
  * next action preview).
  */
 
-import { User, AlertCircle } from 'lucide-react';
+import { User, AlertCircle, Camera } from 'lucide-react';
 import { Card, Badge, ProgressBar } from '@/shared/ui';
 import { LEAD_STATUS_CONFIG, formatLeadDate } from '../types';
 import type { PlanProgress } from '../types';
@@ -82,9 +82,17 @@ export function LeadCard({ lead, progress, onClick }: LeadCardProps) {
             showLabel={false}
           />
           <div className="mt-1 flex items-center justify-between text-xs">
-            <span className="text-text-hint">
-              {progress.completed}/{progress.total} steps
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-text-hint">
+                {progress.completed}/{progress.total} steps
+              </span>
+              {progress.proofCount > 0 && (
+                <span className="flex items-center gap-1 text-xs text-success">
+                  <Camera className="h-3 w-3" />
+                  {progress.proofCount} proof{progress.proofCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
             {progress.overdue > 0 && (
               <Badge variant="error" size="sm">
                 <AlertCircle className="mr-1 h-3 w-3" />

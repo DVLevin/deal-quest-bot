@@ -226,6 +226,8 @@ export interface PlanProgress {
   overdue: number;
   /** Description of the first pending step, or null if none */
   nextAction: string | null;
+  /** Number of steps that have a proof screenshot uploaded */
+  proofCount: number;
 }
 
 /**
@@ -240,15 +242,19 @@ export function computePlanProgress(
   remindersDueAt: Map<number, string> | null,
 ): PlanProgress {
   if (!plan || plan.length === 0) {
-    return { total: 0, completed: 0, overdue: 0, nextAction: null };
+    return { total: 0, completed: 0, overdue: 0, nextAction: null, proofCount: 0 };
   }
 
   const now = new Date();
   let completed = 0;
   let overdue = 0;
+  let proofCount = 0;
   let nextAction: string | null = null;
 
   for (const step of plan) {
+    if (step.proof_url) {
+      proofCount++;
+    }
     if (step.status === 'done' || step.status === 'skipped') {
       completed++;
     } else if (step.status === 'pending') {
@@ -265,7 +271,7 @@ export function computePlanProgress(
     }
   }
 
-  return { total: plan.length, completed, overdue, nextAction };
+  return { total: plan.length, completed, overdue, nextAction, proofCount };
 }
 
 // ---------------------------------------------------------------------------

@@ -40,9 +40,11 @@ import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
 import { useLead } from '../hooks/useLead';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
+import { useUploadProof } from '../hooks/useUploadProof';
 import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
+import { StepActionScreen } from './StepActionScreen';
 import {
   parseLeadAnalysis,
   parseLeadStrategy,
@@ -237,7 +239,11 @@ export function LeadDetail() {
   );
   const mutation = useUpdateLeadStatus();
   const stepMutation = useUpdatePlanStep();
+  const uploadMutation = useUploadProof();
   const { toast } = useToast();
+
+  // Active step for the StepActionScreen (null = all collapsed)
+  const [activeStepId, setActiveStepId] = useState<number | null>(null);
 
   // Accordion state -- plan section open by default, null = all closed
   const [activeSection, setActiveSection] = useState<SectionId | null>('plan');
@@ -251,11 +257,13 @@ export function LeadDetail() {
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [visualHighlight, setVisualHighlight] = useState<number | null>(highlightStepId);
 
-  // Scroll to highlighted step after data loads
+  // Scroll to highlighted step after data loads and auto-expand into action mode
   useEffect(() => {
     if (highlightStepId && !isLoading && lead) {
       // Ensure plan section is open
       setActiveSection('plan');
+      // Auto-expand into action mode (not just highlight)
+      setActiveStepId(highlightStepId);
       const timer = setTimeout(() => {
         stepRefs.current[highlightStepId]?.scrollIntoView({
           behavior: 'smooth',
@@ -350,6 +358,73 @@ export function LeadDetail() {
       );
     },
     [lead, telegramId, stepMutation, toast],
+  );
+
+  const handleStepComplete = useCallback(
+    (stepId: number) => {
+      if (!lead || !telegramId) return;
+      stepMutation.mutate(
+        { leadId: lead.id, stepId, newStatus: 'done', telegramId },
+        {
+          onSuccess: () => {
+            toast({ type: 'success', message: `Step ${stepId} completed!` });
+            setActiveStepId(null);
+          },
+          onError: () => {
+            toast({ type: 'error', message: 'Failed to complete step' });
+          },
+        },
+      );
+    },
+    [lead, telegramId, stepMutation, toast],
+  );
+
+  const handleCantPerform = useCallback(
+    (stepId: number, reason: string) => {
+      if (!lead || !telegramId) return;
+      stepMutation.mutate(
+        { leadId: lead.id, stepId, newStatus: 'skipped', telegramId, cantPerformReason: reason },
+        {
+          onSuccess: () => {
+            toast({ type: 'success', message: 'Step skipped with reason' });
+            setActiveStepId(null);
+          },
+          onError: () => {
+            toast({ type: 'error', message: 'Failed to skip step' });
+          },
+        },
+      );
+    },
+    [lead, telegramId, stepMutation, toast],
+  );
+
+  const handleUploadProof = useCallback(
+    async (stepId: number, file: File) => {
+      if (!lead || !telegramId) return;
+      uploadMutation.mutate(
+        { file, leadId: lead.id, stepId, telegramId },
+        {
+          onSuccess: (publicUrl) => {
+            // Save the proof URL to the step in engagement_plan JSONB
+            stepMutation.mutate(
+              { leadId: lead.id, stepId, newStatus: 'pending', telegramId, proofUrl: publicUrl },
+              {
+                onSuccess: () => {
+                  toast({ type: 'success', message: 'Proof uploaded!' });
+                },
+                onError: () => {
+                  toast({ type: 'error', message: 'Proof saved but failed to update step' });
+                },
+              },
+            );
+          },
+          onError: () => {
+            toast({ type: 'error', message: 'Upload failed. Try again.' });
+          },
+        },
+      );
+    },
+    [lead, telegramId, uploadMutation, stepMutation, toast],
   );
 
   if (Number.isNaN(numericId)) {
@@ -492,31 +567,68 @@ export function LeadDetail() {
           <div className="space-y-2">
             {engagementPlan.map((step) => {
               const isHighlighted = step.step_id === visualHighlight;
+              const isActive = step.step_id === activeStepId;
+
+              if (isActive) {
+                return (
+                  <div key={step.step_id} ref={(el) => { stepRefs.current[step.step_id] = el; }}>
+                    <StepActionScreen
+                      step={step}
+                      leadName={
+                        lead.prospect_first_name && lead.prospect_last_name
+                          ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
+                          : lead.prospect_name ?? 'Unknown'
+                      }
+                      leadCompany={lead.prospect_company ?? undefined}
+                      onComplete={() => handleStepComplete(step.step_id)}
+                      onCantPerform={(reason) => handleCantPerform(step.step_id, reason)}
+                      onUploadProof={(file) => handleUploadProof(step.step_id, file)}
+                      onClose={() => setActiveStepId(null)}
+                      isUpdating={stepMutation.isPending}
+                      isUploading={uploadMutation.isPending}
+                    />
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={step.step_id}
                   ref={(el) => { stepRefs.current[step.step_id] = el; }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveStepId(step.step_id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') setActiveStepId(step.step_id); }}
                   className={cn(
-                    'flex items-start gap-3 rounded-lg bg-surface-secondary/30 p-2 transition-all duration-300',
+                    'flex items-start gap-3 rounded-lg bg-surface-secondary/30 p-2 transition-all duration-300 cursor-pointer active:bg-surface-secondary/50',
                     isHighlighted && 'ring-2 ring-accent animate-pulse',
+                    step.proof_url && 'border-l-2 border-success',
                   )}
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent">
                     {step.step_id}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-text">{step.description}</p>
+                    <p className={cn('text-sm text-text', step.status === 'done' && 'line-through text-text-hint')}>
+                      {step.description}
+                    </p>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {step.timing && (
                         <span className="text-xs text-text-hint">
                           {step.timing}
                         </span>
                       )}
+                      {step.proof_url && (
+                        <span className="text-xs text-success">Proof attached</span>
+                      )}
+                      {step.cant_perform_reason && (
+                        <span className="text-xs text-warning">Can&apos;t perform</span>
+                      )}
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleStepToggle(step.step_id, step.status)}
+                    onClick={(e) => { e.stopPropagation(); handleStepToggle(step.step_id, step.status); }}
                     disabled={stepMutation.isPending}
                     className={`flex min-h-[32px] items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors active:scale-95 disabled:opacity-50 ${
                       step.status === 'done'
