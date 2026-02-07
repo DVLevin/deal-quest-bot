@@ -110,6 +110,12 @@ export interface EngagementPlanStep {
   status: PlanStepStatus;
   suggested_text?: string;
   completed_at?: string | null;
+  /** URL of uploaded proof screenshot from InsForge storage */
+  proof_url?: string;
+  /** Reason the user can't perform this step (set when status is 'skipped') */
+  cant_perform_reason?: string;
+  /** Suggested alternative action text */
+  alternative_action?: string;
 }
 
 export interface LeadRegistryRow {

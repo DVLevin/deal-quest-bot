@@ -200,6 +200,16 @@ export function parseEngagementPlan(plan: unknown): EngagementPlanStep[] {
           : undefined,
       completed_at:
         typeof item.completed_at === 'string' ? item.completed_at : null,
+      proof_url:
+        typeof item.proof_url === 'string' ? item.proof_url : undefined,
+      cant_perform_reason:
+        typeof item.cant_perform_reason === 'string'
+          ? item.cant_perform_reason
+          : undefined,
+      alternative_action:
+        typeof item.alternative_action === 'string'
+          ? item.alternative_action
+          : undefined,
     }));
 }
 
