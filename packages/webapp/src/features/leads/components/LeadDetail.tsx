@@ -31,9 +31,11 @@ import {
   Lightbulb,
   Loader2,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, Skeleton, ErrorCard, CollapsibleSection } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 import { openBotDeepLink } from '@/shared/lib/deepLink';
+import { getInsforge } from '@/lib/insforge';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
 import { fireLevelUpConfetti } from '@/features/gamification/lib/confetti';
@@ -49,6 +51,7 @@ import { LeadStatusSelector } from './LeadStatusSelector';
 import { LeadNotes } from './LeadNotes';
 import { ActivityTimeline } from './ActivityTimeline';
 import { StepActionScreen } from './StepActionScreen';
+import { OutcomeCaptureModal } from './OutcomeCaptureModal';
 import {
   parseLeadAnalysis,
   parseLeadStrategy,
@@ -56,11 +59,13 @@ import {
   parseLeadDraft,
   parseEngagementPlan,
   computePlanProgress,
+  suggestNextStatus,
   LEAD_STATUS_CONFIG,
   formatLeadDate,
 } from '../types';
+import { queryKeys } from '@/lib/queries';
 import type { LeadStatus } from '@/types/enums';
-import type { PlanStepStatus } from '@/types/tables';
+import type { PlanStepStatus, LeadRegistryRow, EngagementPlanStep } from '@/types/tables';
 import type { SupportAnalysis } from '@/features/support/types';
 
 // ---------------------------------------------------------------------------
@@ -229,6 +234,36 @@ function ActionChip({
 type SectionId = 'plan' | 'intel' | 'activity';
 
 // ---------------------------------------------------------------------------
+// Smart status suggestion helper
+// ---------------------------------------------------------------------------
+
+const SUGGESTION_THRESHOLD = 0.5; // 50% of steps completed
+
+/**
+ * Check if a status change should be suggested based on plan step completion.
+ * Returns the suggested next status label if 50%+ steps are done, null otherwise.
+ */
+function shouldSuggestStatusChange(
+  plan: EngagementPlanStep[],
+  currentStatus: string,
+): { nextStatus: string; nextLabel: string } | null {
+  if (plan.length === 0) return null;
+
+  const doneCount = plan.filter((s) => s.status === 'done').length;
+  const ratio = doneCount / plan.length;
+
+  if (ratio < SUGGESTION_THRESHOLD) return null;
+
+  const nextStatus = suggestNextStatus(currentStatus);
+  if (!nextStatus) return null;
+
+  const config = LEAD_STATUS_CONFIG[nextStatus as LeadStatus];
+  if (!config) return null;
+
+  return { nextStatus, nextLabel: config.label };
+}
+
+// ---------------------------------------------------------------------------
 // LeadDetail component
 // ---------------------------------------------------------------------------
 
@@ -246,6 +281,7 @@ export function LeadDetail() {
   const uploadMutation = useUploadProof();
   const draftMutation = useGenerateDraft();
   const generatePlanMutation = useGeneratePlan();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Active step for the StepActionScreen (null = all collapsed)
@@ -254,6 +290,9 @@ export function LeadDetail() {
   // Draft result state for tabbed options and undo
   const [activeDraftResult, setActiveDraftResult] = useState<DraftResult | null>(null);
   const [previousDraftResult, setPreviousDraftResult] = useState<DraftResult | null>(null);
+
+  // Closure outcome capture -- intercepts closed_won/closed_lost status changes
+  const [closurePending, setClosurePending] = useState<Extract<LeadStatus, 'closed_won' | 'closed_lost'> | null>(null);
 
   // Accordion state -- plan section open by default, null = all closed
   const [activeSection, setActiveSection] = useState<SectionId | null>('plan');
@@ -356,6 +395,31 @@ export function LeadDetail() {
     [lead, telegramId, mutation, toast],
   );
 
+  // Check fresh cache data for status suggestion after step completion
+  const checkStatusSuggestion = useCallback(
+    (leadId: number) => {
+      const freshLead = queryClient.getQueryData<LeadRegistryRow>(
+        queryKeys.leads.detail(leadId),
+      );
+      if (!freshLead) return;
+
+      const freshPlan = parseEngagementPlan(freshLead.engagement_plan);
+      const suggestion = shouldSuggestStatusChange(freshPlan, freshLead.status);
+      if (!suggestion) return;
+
+      toast({
+        type: 'info',
+        message: `Great progress! Consider moving to "${suggestion.nextLabel}"`,
+        duration: 6000,
+        action: {
+          label: 'Update',
+          onClick: () => handleStatusChange(suggestion.nextStatus as LeadStatus),
+        },
+      });
+    },
+    [queryClient, toast, handleStatusChange],
+  );
+
   const handleStepToggle = useCallback(
     (stepId: number, currentStatus: PlanStepStatus) => {
       if (!lead || !telegramId) return;
@@ -379,6 +443,10 @@ export function LeadDetail() {
                   ? 'Skipped'
                   : 'Pending';
             toast({ type: 'success', message: `Step ${stepId} marked ${label}` });
+            // Suggest status change when step marked as done
+            if (newStatus === 'done') {
+              checkStatusSuggestion(lead.id);
+            }
           },
           onError: () => {
             toast({
@@ -393,7 +461,7 @@ export function LeadDetail() {
         },
       );
     },
-    [lead, telegramId, stepMutation, toast],
+    [lead, telegramId, stepMutation, toast, checkStatusSuggestion],
   );
 
   const handleStepComplete = useCallback(
@@ -405,6 +473,8 @@ export function LeadDetail() {
           onSuccess: () => {
             toast({ type: 'success', message: `Step ${stepId} completed!` });
             setActiveStepId(null);
+            // Suggest status change after completing a step
+            checkStatusSuggestion(lead.id);
           },
           onError: () => {
             toast({ type: 'error', message: 'Failed to complete step' });
@@ -412,7 +482,7 @@ export function LeadDetail() {
         },
       );
     },
-    [lead, telegramId, stepMutation, toast],
+    [lead, telegramId, stepMutation, toast, checkStatusSuggestion],
   );
 
   const handleCantPerform = useCallback(
