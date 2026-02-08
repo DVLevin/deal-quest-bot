@@ -282,6 +282,7 @@ export function StepActionScreen({
         <DraftCopyCard
           options={draftResult.options}
           platform={draftResult.platform}
+          contentType={draftResult.content_type}
           onCopy={handleDraftCopy}
           onRegenerate={step.proof_url ? handleRegenerate : undefined}
           isRegenerating={isGeneratingDraft}

@@ -43,10 +43,13 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // DraftCopyCard
 // ---------------------------------------------------------------------------
 
+const LINKEDIN_INVITE_CHAR_LIMIT = 200;
+
 interface DraftCopyCardProps {
   options?: DraftOption[];
   draftText?: string;
   platform?: string;
+  contentType?: string;
   onCopy?: (text: string) => void;
   onRegenerate?: () => void;
   isRegenerating?: boolean;
@@ -67,6 +70,7 @@ export function DraftCopyCard({
   options,
   draftText,
   platform,
+  contentType,
   onCopy,
   onRegenerate,
   isRegenerating,
@@ -164,6 +168,29 @@ export function DraftCopyCard({
       <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-text">
         {displayText}
       </pre>
+
+      {/* Character counter for LinkedIn invites */}
+      {platform === 'linkedin' && contentType === 'connection_request' && displayText && (
+        <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] font-medium ${
+          displayText.length > LINKEDIN_INVITE_CHAR_LIMIT
+            ? 'text-error'
+            : displayText.length > LINKEDIN_INVITE_CHAR_LIMIT * 0.85
+              ? 'text-warning'
+              : 'text-text-hint'
+        }`}>
+          <span>{displayText.length}/{LINKEDIN_INVITE_CHAR_LIMIT}</span>
+          {displayText.length > LINKEDIN_INVITE_CHAR_LIMIT && (
+            <span className="text-error">(exceeds LinkedIn invite limit)</span>
+          )}
+        </div>
+      )}
+
+      {/* General character count for long texts */}
+      {!(platform === 'linkedin' && contentType === 'connection_request') && displayText && displayText.length > 280 && (
+        <div className="mt-1.5 text-right text-[10px] text-text-hint">
+          {displayText.length} chars
+        </div>
+      )}
 
       {/* Full-width copy button */}
       <button
