@@ -359,8 +359,9 @@ export function LeadDetail() {
     [],
   );
 
-  const handleStatusChange = useCallback(
-    (newStatus: LeadStatus) => {
+  // Commits the status change mutation and optionally logs an outcome_capture activity
+  const commitStatusChange = useCallback(
+    (newStatus: LeadStatus, closureReason?: string | null) => {
       if (!lead || !telegramId) return;
       const vars = {
         leadId: lead.id,
@@ -369,7 +370,30 @@ export function LeadDetail() {
         telegramId,
       };
       mutation.mutate(vars, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          // Log closure reason as outcome_capture activity if provided
+          if (
+            closureReason &&
+            (newStatus === 'closed_won' || newStatus === 'closed_lost')
+          ) {
+            try {
+              await getInsforge()
+                .database.from('lead_activity_log')
+                .insert({
+                  lead_id: lead.id,
+                  telegram_id: telegramId,
+                  activity_type: 'outcome_capture',
+                  content: `Closure reason: ${closureReason}`,
+                  metadata: {
+                    outcome: newStatus,
+                    reason: closureReason,
+                  },
+                });
+            } catch {
+              // Non-blocking: status already changed, reason logging is best-effort
+            }
+          }
+
           if (newStatus === 'closed_won') {
             fireLevelUpConfetti();
             toast({ type: 'success', message: 'Deal Won! +500 XP' });
@@ -394,6 +418,36 @@ export function LeadDetail() {
     },
     [lead, telegramId, mutation, toast],
   );
+
+  // Intercepts closed_won/closed_lost to show outcome capture modal first
+  const handleStatusChange = useCallback(
+    (newStatus: LeadStatus) => {
+      if (newStatus === 'closed_won' || newStatus === 'closed_lost') {
+        setClosurePending(newStatus);
+        return;
+      }
+      commitStatusChange(newStatus);
+    },
+    [commitStatusChange],
+  );
+
+  // Handles outcome capture modal confirmation
+  const handleOutcomeConfirm = useCallback(
+    (reason: string | null) => {
+      if (!closurePending) return;
+      commitStatusChange(closurePending, reason);
+      setClosurePending(null);
+    },
+    [closurePending, commitStatusChange],
+  );
+
+  // Handles outcome capture modal dismissal (proceed without reason)
+  const handleOutcomeDismiss = useCallback(() => {
+    if (closurePending) {
+      commitStatusChange(closurePending);
+    }
+    setClosurePending(null);
+  }, [closurePending, commitStatusChange]);
 
   // Check fresh cache data for status suggestion after step completion
   const checkStatusSuggestion = useCallback(
@@ -949,6 +1003,15 @@ export function LeadDetail() {
           <ActivityTimeline leadId={lead.id} />
         </div>
       </CollapsibleSection>
+
+      {/* Outcome capture modal for closed_won/closed_lost */}
+      {closurePending && (
+        <OutcomeCaptureModal
+          outcomeStatus={closurePending}
+          onConfirm={handleOutcomeConfirm}
+          onDismiss={handleOutcomeDismiss}
+        />
+      )}
     </div>
   );
 }
