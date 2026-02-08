@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 20 (Quick Wins by Prody) -- In progress
-Plan: 3 of 5 in current phase (20-01, 20-02, 20-03 complete)
+Plan: 4 of 5 in current phase (20-01, 20-02, 20-03, 20-04 complete)
 Status: In progress
-Last activity: 2026-02-08 -- Completed 20-03-PLAN.md
+Last activity: 2026-02-08 -- Completed 20-04-PLAN.md
 
 Progress: [############################] 8/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 63
+- Total plans completed: 64
 - Average duration: 3.2m
-- Total execution time: 200m
+- Total execution time: 207m
 
 **By Phase:**
 
@@ -54,10 +54,10 @@ Progress: [############################] 8/8 v2.0 phases
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 4/4 | 13m | 3.3m |
-| 20. Quick Wins by Prody | 3/5 | 6m | 2m |
+| 20. Quick Wins by Prody | 4/5 | 13m | 3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 3m, 2m, 4m
+- Last 5 plans: 3m, 3m, 2m, 4m, 7m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -164,6 +164,10 @@ Recent decisions affecting current work:
 - [20-03]: useState initializer reads URL param once (not useEffect) to avoid flash
 - [20-03]: checkStatusSuggestion reads optimistically-updated query cache via getQueryData
 - [20-03]: 50% threshold for status suggestion; only fires on 'done' (not skip or reset)
+- [20-04]: Bottom-sheet modal pattern (items-end) for closure reason capture on mobile
+- [20-04]: Outcome logging is best-effort (non-blocking) after status mutation succeeds
+- [20-04]: Stale digest capped at 10 leads per message with overflow indicator
+- [20-04]: 24-hour interval guard on stale digest prevents over-messaging on 6h scheduler
 
 ### Pending Todos
 
@@ -201,7 +205,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 20-03 (Weak area training links & smart status suggestion)
+Stopped at: Completed 20-04 (Outcome capture & stale lead digest)
 Resume file: None
-Next action: Continue Phase 20 plans (20-04 next)
+Next action: Continue Phase 20 plans (20-05 next)
 Next phase after: Complete remaining Phase 20 quick wins
