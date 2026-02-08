@@ -56,6 +56,12 @@ class CommentGeneratorAgent(BaseAgent):
                 if lead_context.get("web_research"):
                     parts.append(f"\n**Background Research:**\n{lead_context['web_research']}")
 
+            user_instructions = input_data.context.get("user_instructions")
+            if user_instructions:
+                parts.append(f"\n**User Instructions:**")
+                parts.append(f"The user has specifically requested: {user_instructions}")
+                parts.append("Please follow these instructions while generating the response options.")
+
             user_message = "\n".join(parts)
 
             result = await pipeline_ctx.llm.complete(

@@ -34,7 +34,7 @@ interface StepActionScreenProps {
   onComplete: () => void;
   onCantPerform: (reason: string) => void;
   onUploadProof: (file: File) => Promise<void>;
-  onGenerateDraft: () => void;
+  onGenerateDraft: (instructions?: string) => void;
   onClose: () => void;
   isUpdating: boolean;
   isUploading: boolean;
@@ -66,6 +66,8 @@ export function StepActionScreen({
 }: StepActionScreenProps) {
   const { toast } = useToast();
   const [hasCopied, setHasCopied] = useState(false);
+  const [regenInstructions, setRegenInstructions] = useState('');
+  const [showInstructionInput, setShowInstructionInput] = useState(false);
 
   const handleDraftCopy = useCallback((_text: string) => {
     setHasCopied(true);
@@ -81,8 +83,10 @@ export function StepActionScreen({
   }, [toast, onComplete]);
 
   const handleRegenerate = useCallback(() => {
-    onGenerateDraft();
-  }, [onGenerateDraft]);
+    onGenerateDraft(regenInstructions.trim() || undefined);
+    setRegenInstructions('');
+    setShowInstructionInput(false);
+  }, [onGenerateDraft, regenInstructions]);
 
   // Undo toast on regeneration completion
   const prevDraftResultRef = useRef(draftResult);
@@ -302,24 +306,77 @@ export function StepActionScreen({
 
       {/* Generate draft from screenshot button */}
       {step.proof_url && !isUploading && (
-        <button
-          type="button"
-          onClick={onGenerateDraft}
-          disabled={isGeneratingDraft}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-medium text-accent transition-colors active:scale-95 disabled:opacity-50"
-        >
-          {isGeneratingDraft ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Analyzing screenshot...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              {draftResult || step.suggested_text ? 'Regenerate from Screenshot' : 'Generate Draft from Screenshot'}
-            </>
+        <div className="space-y-2">
+          {/* Instruction input (shown when regenerating) */}
+          {showInstructionInput && (draftResult || step.suggested_text) && (
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-2">
+              <label className="text-xs font-medium text-text-secondary">
+                Regeneration instructions (optional)
+              </label>
+              <textarea
+                value={regenInstructions}
+                onChange={(e) => setRegenInstructions(e.target.value)}
+                placeholder="e.g. Make it shorter, more casual, focus on their recent post about AI..."
+                className="w-full rounded-lg border border-surface-secondary bg-surface px-3 py-2 text-sm text-text placeholder:text-text-hint focus:border-accent focus:outline-none resize-none"
+                rows={2}
+                maxLength={500}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-text-hint">{regenInstructions.length}/500</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowInstructionInput(false); setRegenInstructions(''); }}
+                    className="rounded-md px-3 py-1 text-xs font-medium text-text-hint"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRegenerate}
+                    disabled={isGeneratingDraft}
+                    className="flex items-center gap-1 rounded-md bg-accent px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+                  >
+                    {isGeneratingDraft ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
-        </button>
+
+          {/* Main generate/regenerate button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (draftResult || step.suggested_text) {
+                // For regeneration, show instruction input first
+                if (!showInstructionInput) {
+                  setShowInstructionInput(true);
+                } else {
+                  handleRegenerate();
+                }
+              } else {
+                // First generation -- no instructions needed
+                onGenerateDraft();
+              }
+            }}
+            disabled={isGeneratingDraft}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-medium text-accent transition-colors active:scale-95 disabled:opacity-50"
+          >
+            {isGeneratingDraft ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing screenshot...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {draftResult || step.suggested_text ? 'Regenerate from Screenshot' : 'Generate Draft from Screenshot'}
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {/* Action buttons */}

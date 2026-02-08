@@ -616,7 +616,7 @@ export function LeadDetail() {
   );
 
   const handleGenerateDraft = useCallback(
-    (stepId: number) => {
+    (stepId: number, userInstructions?: string) => {
       if (!lead || !telegramId) return;
       const plan = parseEngagementPlan(lead.engagement_plan);
       const step = plan.find((s) => s.step_id === stepId);
@@ -640,6 +640,7 @@ export function LeadDetail() {
           leadCompany: lead.prospect_company ?? undefined,
           leadStatus: lead.status,
           webResearch: lead.web_research,
+          userInstructions,
         },
         {
           onSuccess: () => {
@@ -823,7 +824,7 @@ export function LeadDetail() {
                       onComplete={() => handleStepComplete(step.step_id)}
                       onCantPerform={(reason) => handleCantPerform(step.step_id, reason)}
                       onUploadProof={(file) => handleUploadProof(step.step_id, file)}
-                      onGenerateDraft={() => handleGenerateDraft(step.step_id)}
+                      onGenerateDraft={(instructions?: string) => handleGenerateDraft(step.step_id, instructions)}
                       onClose={() => setActiveStepId(null)}
                       isUpdating={stepMutation.isPending}
                       isUploading={uploadMutation.isPending}

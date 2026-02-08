@@ -71,7 +71,10 @@ async def _process_draft_request(
 
         agent_input = AgentInput(
             user_message="Generate contextual response options from this screenshot.",
-            context={"lead_context": request.lead_context or {}},
+            context={
+                "lead_context": request.lead_context or {},
+                "user_instructions": request.user_instructions,
+            },
         )
 
         output = await agent.run(agent_input, ctx)

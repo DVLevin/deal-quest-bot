@@ -235,6 +235,7 @@ class DraftRequestModel(BaseModel):
     telegram_id: int
     proof_url: str
     lead_context: dict[str, Any] = {}
+    user_instructions: str | None = None
     status: str = "pending"
     result: dict[str, Any] | None = None
     created_at: str | None = None

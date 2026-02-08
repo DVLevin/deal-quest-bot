@@ -34,6 +34,7 @@ interface GenerateDraftVars {
   leadCompany?: string;
   leadStatus?: string;
   webResearch?: string | null;
+  userInstructions?: string;
 }
 
 const POLL_INTERVAL = 3000; // 3 seconds
@@ -89,6 +90,7 @@ export function useGenerateDraft() {
       leadCompany,
       leadStatus,
       webResearch,
+      userInstructions,
     }: GenerateDraftVars): Promise<DraftResult> => {
       // Abort any previous in-flight polling
       abortControllerRef.current?.abort();
@@ -110,6 +112,7 @@ export function useGenerateDraft() {
             web_research: webResearch || null,
           },
           status: 'pending',
+          user_instructions: userInstructions || null,
         })
         .select()
         .single();
