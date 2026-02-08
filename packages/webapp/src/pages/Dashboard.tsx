@@ -19,10 +19,12 @@ import { LeaderboardWidget } from '@/features/dashboard/components/LeaderboardWi
 import { QuickActions } from '@/features/dashboard/components/QuickActions';
 import { WeakAreasCard } from '@/features/dashboard/components/WeakAreasCard';
 import { TodayActionsCard } from '@/features/dashboard/components/TodayActionsCard';
+import { FirstTimeGuide } from '@/features/dashboard/components/FirstTimeGuide';
 import { useLevelUpDetection } from '@/features/gamification/hooks/useLevelUpDetection';
 import { LevelUpOverlay } from '@/features/gamification/components/LevelUpOverlay';
 import { useSmartLanding } from '@/features/dashboard/hooks/useSmartLanding';
 import { useUserProgress } from '@/features/dashboard/hooks/useUserProgress';
+import { useLeads } from '@/features/leads/hooks/useLeads';
 import { isAdminUsername } from '@/features/admin/lib/adminAccess';
 import { Skeleton } from '@/shared/ui';
 
@@ -30,7 +32,9 @@ export default function Dashboard() {
   const { levelUp, dismiss } = useLevelUpDetection();
   const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
   const { data: user } = useUserProgress();
+  const { data: leads } = useLeads();
   const showAdmin = isAdminUsername(user?.username);
+  const isFirstTimeUser = user && user.total_xp === 0 && (!leads || leads.length === 0);
 
   const primaryAction =
     focus === 'actions-focus'
@@ -65,6 +69,8 @@ export default function Dashboard() {
             </p>
           </div>
         )}
+
+        {isFirstTimeUser && <FirstTimeGuide />}
 
         {/* Card layout: actions-focus promotes TodayActionsCard first */}
         {focus === 'actions-focus' ? (
