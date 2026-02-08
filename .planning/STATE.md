@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: v2.0 -- Sales Co-Pilot
 Phase: 20 (Quick Wins by Prody) -- In progress
-Plan: 2 of 5 in current phase (20-01, 20-02 complete)
+Plan: 3 of 5 in current phase (20-01, 20-02, 20-03 complete)
 Status: In progress
-Last activity: 2026-02-08 -- Completed 20-02-PLAN.md
+Last activity: 2026-02-08 -- Completed 20-03-PLAN.md
 
 Progress: [############################] 8/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 62
+- Total plans completed: 63
 - Average duration: 3.2m
-- Total execution time: 196m
+- Total execution time: 200m
 
 **By Phase:**
 
@@ -54,11 +54,11 @@ Progress: [############################] 8/8 v2.0 phases
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 4/4 | 13m | 3.3m |
-| 20. Quick Wins by Prody | 2/5 | 2m | 1m |
+| 20. Quick Wins by Prody | 3/5 | 6m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 3m, 3m, 3m, 2m
-- Trend: stable/improving
+- Last 5 plans: 3m, 3m, 3m, 2m, 4m
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -160,6 +160,10 @@ Recent decisions affecting current work:
 - [20-01]: Bot uses existing UserRepo.update_xp which already includes level recalculation
 - [20-02]: Stale threshold: 7 days without update for pipeline summary bar
 - [20-02]: Used CheckCircle (not CheckCircle2) for codebase icon consistency
+- [20-03]: URL param ?difficulty=N for weak area -> train routing (simple, bookmarkable)
+- [20-03]: useState initializer reads URL param once (not useEffect) to avoid flash
+- [20-03]: checkStatusSuggestion reads optimistically-updated query cache via getQueryData
+- [20-03]: 50% threshold for status suggestion; only fires on 'done' (not skip or reset)
 
 ### Pending Todos
 
@@ -197,7 +201,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 20-02 (Pipeline summary bar & done-for-today celebration)
+Stopped at: Completed 20-03 (Weak area training links & smart status suggestion)
 Resume file: None
-Next action: Continue Phase 20 plans (20-03 next)
+Next action: Continue Phase 20 plans (20-04 next)
 Next phase after: Complete remaining Phase 20 quick wins
