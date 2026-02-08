@@ -6,8 +6,10 @@
  * without N+1 queries.
  *
  * Shows loading skeletons, empty state, or lead cards with progress info.
+ * Includes a pipeline summary bar above the cards showing Active/Stale/Closed counts.
  */
 
+import { useMemo } from 'react';
 import { Users } from 'lucide-react';
 import { Skeleton, ErrorCard, EmptyState } from '@/shared/ui';
 import { useLeads } from '../hooks/useLeads';
@@ -22,6 +24,27 @@ interface LeadListProps {
 export function LeadList({ onSelectLead }: LeadListProps) {
   const { data: leads, isLoading, isError, refetch } = useLeads();
   const { data: reminders } = useLeadReminders();
+
+  const statusCounts = useMemo(() => {
+    if (!leads || leads.length === 0) return null;
+    let active = 0;
+    let stale = 0;
+    let closed = 0;
+    const now = Date.now();
+    const STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    for (const lead of leads) {
+      if (lead.status === 'closed_won' || lead.status === 'closed_lost') {
+        closed++;
+      } else {
+        active++;
+        const updatedAt = new Date(lead.updated_at ?? lead.created_at ?? 0).getTime();
+        if (now - updatedAt > STALE_MS) {
+          stale++;
+        }
+      }
+    }
+    return { active, stale, closed, total: leads.length };
+  }, [leads]);
 
   if (isLoading) {
     return (
@@ -56,6 +79,21 @@ export function LeadList({ onSelectLead }: LeadListProps) {
 
   return (
     <div className="space-y-2">
+      {statusCounts && (
+        <div className="flex items-center gap-3 rounded-lg bg-surface-secondary/50 px-3 py-2 text-xs font-medium">
+          <span className="text-text-secondary">{statusCounts.total} leads</span>
+          <span className="text-text-hint">|</span>
+          <span className="text-accent">{statusCounts.active} Active</span>
+          {statusCounts.stale > 0 && (
+            <>
+              <span className="text-text-hint">|</span>
+              <span className="text-warning">{statusCounts.stale} Stale</span>
+            </>
+          )}
+          <span className="text-text-hint">|</span>
+          <span className="text-text-secondary">{statusCounts.closed} Closed</span>
+        </div>
+      )}
       {leads.map((lead) => {
         const progress = computePlanProgress(
           lead.engagement_plan,
