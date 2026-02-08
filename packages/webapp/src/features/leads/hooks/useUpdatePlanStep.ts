@@ -66,7 +66,7 @@ export function useUpdatePlanStep() {
         .eq('id', leadId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) throw new Error(`Failed to load lead data: ${fetchError.message}`);
       if (!leadData) throw new Error('Lead not found');
 
       // 2. Update the step in engagement_plan
@@ -97,7 +97,7 @@ export function useUpdatePlanStep() {
         })
         .eq('id', leadId);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error(`Failed to save step update: ${updateError.message}`);
 
       // 4. Update scheduled_reminders row if it exists
       const reminderStatus = mapToReminderStatus(newStatus);
@@ -133,7 +133,10 @@ export function useUpdatePlanStep() {
           content: activityContent,
         });
 
-      if (activityError) throw activityError;
+      // Activity log is secondary -- don't fail the mutation if step update succeeded
+      if (activityError) {
+        console.warn('Activity log insert failed:', activityError);
+      }
 
       return { updatedPlan };
     },

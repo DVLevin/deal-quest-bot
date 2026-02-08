@@ -502,10 +502,11 @@ export function LeadDetail() {
               checkStatusSuggestion(lead.id);
             }
           },
-          onError: () => {
+          onError: (err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Failed to update step';
             toast({
               type: 'error',
-              message: 'Failed to update step',
+              message: msg,
               action: {
                 label: 'Retry',
                 onClick: () => handleStepToggle(stepId, currentStatus),
@@ -530,8 +531,13 @@ export function LeadDetail() {
             // Suggest status change after completing a step
             checkStatusSuggestion(lead.id);
           },
-          onError: () => {
-            toast({ type: 'error', message: 'Failed to complete step' });
+          onError: (err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Failed to complete step';
+            toast({
+              type: 'error',
+              message: msg,
+              action: { label: 'Retry', onClick: () => handleStepComplete(stepId) },
+            });
           },
         },
       );
@@ -549,8 +555,13 @@ export function LeadDetail() {
             toast({ type: 'success', message: 'Step skipped with reason' });
             setActiveStepId(null);
           },
-          onError: () => {
-            toast({ type: 'error', message: 'Failed to skip step' });
+          onError: (err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Failed to skip step';
+            toast({
+              type: 'error',
+              message: msg,
+              action: { label: 'Retry', onClick: () => handleCantPerform(stepId, reason) },
+            });
           },
         },
       );
@@ -573,13 +584,30 @@ export function LeadDetail() {
                   toast({ type: 'success', message: 'Screenshot attached!' });
                 },
                 onError: () => {
-                  toast({ type: 'error', message: 'Screenshot saved but failed to update step' });
+                  toast({
+                    type: 'error',
+                    message: 'Screenshot saved but failed to link it to the step',
+                    action: {
+                      label: 'Retry linking',
+                      onClick: () => {
+                        stepMutation.mutate(
+                          { leadId: lead.id, stepId, newStatus: 'pending', telegramId, proofUrl: publicUrl },
+                          {
+                            onSuccess: () => toast({ type: 'success', message: 'Screenshot linked!' }),
+                            onError: () => toast({ type: 'error', message: 'Still failed to link screenshot. Try again later.' }),
+                          },
+                        );
+                      },
+                    },
+                    duration: 10000,
+                  });
                 },
               },
             );
           },
-          onError: () => {
-            toast({ type: 'error', message: 'Upload failed. Try again.' });
+          onError: (err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Upload failed';
+            toast({ type: 'error', message: `${msg}. Try again.` });
           },
         },
       );
@@ -617,8 +645,13 @@ export function LeadDetail() {
           onSuccess: () => {
             toast({ type: 'success', message: 'Draft generated!' });
           },
-          onError: () => {
-            toast({ type: 'error', message: 'Failed to generate draft' });
+          onError: (err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Failed to generate draft';
+            toast({
+              type: 'error',
+              message: msg,
+              action: { label: 'Try again', onClick: () => handleGenerateDraft(stepId) },
+            });
           },
         },
       );
