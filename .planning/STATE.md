@@ -171,6 +171,10 @@ Recent decisions affecting current work:
 - [20-05]: Streak fetched separately since LeaderboardEntry type does not include streak_days
 - [20-05]: AttemptRow has no difficulty field; mode badge shown instead of difficulty badge
 - [20-05]: Lead count uses head:true count query for efficiency (no row data transferred)
+- [quick-007]: Activity log insert failures are non-blocking (console.warn) since step update already succeeded
+- [quick-007]: Upload-then-update orphan handled by retry-linking pattern (retries step update only)
+- [quick-007]: Regeneration shows instruction input on first click, generates on second (progressive disclosure)
+- [quick-007]: LinkedIn invite char limit 200 with 85% yellow threshold (170 chars)
 
 ### Pending Todos
 
@@ -184,6 +188,7 @@ Recent decisions affecting current work:
 - [18-03]: Run migration `insforge/migrations/005_agent_model_config.sql` on InsForge database
 - [19-04]: Run migration `insforge/migrations/006_draft_requests.sql` on InsForge database
 - [quick-006]: Run migration `insforge/migrations/007_plan_requests.sql` on InsForge database
+- [quick-007]: Run migration `insforge/migrations/008_draft_requests_user_instructions.sql` on InsForge database
 
 ### Roadmap Evolution
 
@@ -204,11 +209,12 @@ None currently.
 | 002-lead-company-enrichment | Complete (3/3) | Structured prospect info (first/last name, geography) with enriched web research |
 | 003-tma-bot-deep-actions | Complete (2/2) | TMA-to-bot deep linking for lead actions (reanalyze, context, reresearch, advice) |
 | 006-tma-plan-generation-message-bus | Complete (3/3) | In-app plan generation via plan_requests DB message bus |
+| 007-step-action-fixes-and-regen-input | Complete (3/3) | Specific error messages + retry, draft regen with user instructions, LinkedIn char counter |
 
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 20-05 (Admin rep detail & first-time guide)
+Stopped at: Completed quick-007 (Step action fixes and regen input)
 Resume file: None
-Next action: Phase 20 complete. All v2.0 phases done.
-Next phase after: New milestone planning or additional quick wins
+Next action: Additional quick wins or new milestone planning
+Next phase after: All v2.0 phases done
