@@ -49,6 +49,54 @@ export function useUpdateLeadStatus() {
         });
 
       if (activityError) throw activityError;
+
+      // 3. Award XP on deal closure (closed_won) with double-fire guard
+      if (newStatus === 'closed_won') {
+        // Guard: check if XP was already awarded for this lead (prevents double-fire from bot + TMA)
+        const { data: existingAward } = await getInsforge()
+          .database.from('lead_activity_log')
+          .select('id')
+          .eq('lead_id', leadId)
+          .eq('activity_type', 'xp_award')
+          .limit(1);
+
+        if (!existingAward || existingAward.length === 0) {
+          // Fetch current user XP
+          const { data: userData } = await getInsforge()
+            .database.from('users')
+            .select('total_xp, current_level')
+            .eq('telegram_id', telegramId)
+            .single();
+
+          if (userData) {
+            const newXp = (userData.total_xp ?? 0) + 500;
+            // Recalculate level (same formula as bot/services/scoring.py)
+            let level = 1;
+            let remaining = newXp;
+            while (true) {
+              const needed = level * 200;
+              if (remaining < needed) break;
+              remaining -= needed;
+              level++;
+            }
+            await getInsforge()
+              .database.from('users')
+              .update({ total_xp: newXp, current_level: level })
+              .eq('telegram_id', telegramId);
+
+            // Insert xp_award guard marker so bot side won't double-award
+            await getInsforge()
+              .database.from('lead_activity_log')
+              .insert({
+                lead_id: leadId,
+                telegram_id: telegramId,
+                activity_type: 'xp_award',
+                content: 'Deal closure XP: +500',
+                metadata: { xp_amount: 500, source: 'tma' },
+              });
+          }
+        }
+      }
     },
     onMutate: async ({ leadId, newStatus, telegramId }) => {
       // Cancel outgoing refetches
@@ -95,6 +143,10 @@ export function useUpdateLeadStatus() {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.leads.activities(leadId),
+      });
+      // Invalidate user data so ProgressCard and LevelUpDetection pick up new XP/level
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.detail(telegramId),
       });
     },
   });

@@ -36,6 +36,7 @@ import { cn } from '@/shared/lib/cn';
 import { openBotDeepLink } from '@/shared/lib/deepLink';
 import { useToast } from '@/shared/stores/toastStore';
 import { useAuthStore } from '@/features/auth/store';
+import { fireLevelUpConfetti } from '@/features/gamification/lib/confetti';
 import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
 import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
 import { useLead } from '../hooks/useLead';
@@ -330,7 +331,12 @@ export function LeadDetail() {
       };
       mutation.mutate(vars, {
         onSuccess: () => {
-          toast({ type: 'success', message: 'Status updated' });
+          if (newStatus === 'closed_won') {
+            fireLevelUpConfetti();
+            toast({ type: 'success', message: 'Deal Won! +500 XP' });
+          } else {
+            toast({ type: 'success', message: 'Status updated' });
+          }
         },
         onError: (err: unknown) => {
           const msg =
