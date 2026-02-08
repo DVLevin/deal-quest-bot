@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 19 (Active Engagement Execution) in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 20 (Quick Wins by Prody) in progress.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 19 (Active Engagement Execution) -- In progress
-Plan: 4 of N in current phase (19-01, 19-02, 19-03, 19-04 complete)
+Phase: 20 (Quick Wins by Prody) -- In progress
+Plan: 2 of 5 in current phase (20-01, 20-02 complete)
 Status: In progress
-Last activity: 2026-02-07 -- Completed 19-04-PLAN.md
+Last activity: 2026-02-08 -- Completed 20-02-PLAN.md
 
-Progress: [##########################-] 7/8 v2.0 phases
+Progress: [############################] 8/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 60
+- Total plans completed: 62
 - Average duration: 3.2m
-- Total execution time: 194m
+- Total execution time: 196m
 
 **By Phase:**
 
@@ -53,11 +53,12 @@ Progress: [##########################-] 7/8 v2.0 phases
 | 16. TMA Lead Experience | 4/4 | 8m | 2m |
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
-| 19. Active Engagement Execution | 4/N | 13m | 3.3m |
+| 19. Active Engagement Execution | 4/4 | 13m | 3.3m |
+| 20. Quick Wins by Prody | 2/5 | 2m | 1m |
 
 **Recent Trend:**
-- Last 5 plans: 7m, 4m, 3m, 3m, 3m
-- Trend: stable
+- Last 5 plans: 4m, 3m, 3m, 3m, 2m
+- Trend: stable/improving
 
 *Updated after each plan completion*
 
@@ -154,6 +155,11 @@ Recent decisions affecting current work:
 - [19-04]: Stale processing recovery with 2-minute threshold on bot startup
 - [19-04]: Multi-platform auto-detection prompt replaces LinkedIn-only Edge Function
 - [19-04]: Structured JSON output: platform + content_type + options array (3 lengths)
+- [20-01]: XP guard uses lead_activity_log with activity_type='xp_award' per lead (not a global flag)
+- [20-01]: TMA recalculates level inline (same formula as UserRepo.update_xp) to avoid extra API call
+- [20-01]: Bot uses existing UserRepo.update_xp which already includes level recalculation
+- [20-02]: Stale threshold: 7 days without update for pipeline summary bar
+- [20-02]: Used CheckCircle (not CheckCircle2) for codebase icon consistency
 
 ### Pending Todos
 
@@ -173,6 +179,7 @@ Recent decisions affecting current work:
 - Phase 17 added: LazyFlow UX Overhaul — zero-click workflows, smart defaults, predictive navigation, effort-eliminating interactions
 - Phase 18 added: Agent Observatory & Model Configuration — Langfuse tracing (cloud hobby, self-host ready), per-agent model selection via TMA admin UI, full prompt/I-O/cost visibility
 - Phase 19 added: Active Engagement Execution — step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders
+- Phase 20 added: Quick Wins by Prody — PM-audit-driven improvements from docs/pm-audit/ (deal closure celebration, pipeline velocity, smart status, outcome capture, onboarding polish, training routing)
 
 ### Blockers/Concerns
 
@@ -189,8 +196,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: Completed quick-006 (TMA plan generation message bus)
+Last session: 2026-02-08
+Stopped at: Completed 20-02 (Pipeline summary bar & done-for-today celebration)
 Resume file: None
-Next action: Continue Phase 19 plans or next quick task
-Next phase after: Continue Phase 19 plans
+Next action: Continue Phase 20 plans (20-03 next)
+Next phase after: Complete remaining Phase 20 quick wins
