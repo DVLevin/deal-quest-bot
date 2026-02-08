@@ -5,12 +5,26 @@
  * and average score. Top 3 members get accent-colored rank numbers.
  */
 
+import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Card, Skeleton, ErrorCard } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
-import { useTeamLeaderboard } from '@/features/admin/hooks/useTeamLeaderboard';
+import { useTeamLeaderboard, type LeaderboardEntry } from '@/features/admin/hooks/useTeamLeaderboard';
+import { RepDetailView } from '@/features/admin/components/RepDetailView';
 
 export function MemberLeaderboard() {
   const { data: entries, isLoading, isError, refetch } = useTeamLeaderboard();
+  const [selectedMember, setSelectedMember] = useState<LeaderboardEntry | null>(null);
+
+  if (selectedMember) {
+    return (
+      <RepDetailView
+        user={selectedMember.user}
+        avgScore={selectedMember.avgScore}
+        onBack={() => setSelectedMember(null)}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -53,9 +67,11 @@ export function MemberLeaderboard() {
             entry.user.first_name || entry.user.username || `User ${entry.user.telegram_id}`;
 
           return (
-            <div
+            <button
               key={entry.user.id}
-              className="flex items-center gap-3 rounded-lg bg-surface-secondary/50 px-3 py-2"
+              type="button"
+              onClick={() => setSelectedMember(entry)}
+              className="flex w-full cursor-pointer items-center gap-3 rounded-lg bg-surface-secondary/50 px-3 py-2 text-left transition-colors active:bg-surface-secondary"
             >
               {/* Rank */}
               <span
@@ -81,7 +97,10 @@ export function MemberLeaderboard() {
               <span className="text-sm font-semibold text-accent">
                 {entry.user.total_xp.toLocaleString()} XP
               </span>
-            </div>
+
+              {/* Chevron */}
+              <ChevronRight className="h-4 w-4 shrink-0 text-text-hint" />
+            </button>
           );
         })}
       </div>
