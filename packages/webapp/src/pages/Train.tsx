@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { Swords, ArrowLeft } from 'lucide-react';
 import { Button, Skeleton } from '@/shared/ui';
 import { DifficultyFilter } from '@/features/train/components/DifficultyFilter';
@@ -30,9 +31,13 @@ import type { TrainScenario } from '@/features/train/data/scenarios';
 type Step = 'filter' | 'scenario' | 'results';
 
 export default function Train() {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<Step>('filter');
+
+  // Read difficulty from URL param (e.g. /train?difficulty=2)
+  const urlDifficulty = searchParams.get('difficulty');
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(
-    null,
+    urlDifficulty ? Number(urlDifficulty) : null,
   );
   const [currentScenario, setCurrentScenario] = useState<TrainScenario | null>(
     null,

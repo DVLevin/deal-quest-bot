@@ -35,6 +35,7 @@ interface WeakArea {
   label: string;
   avgScore: number;
   type: 'difficulty' | 'track-level';
+  difficulty?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,6 +58,7 @@ export function WeakAreasCard() {
           label: `${DIFFICULTY_LABELS[diffNum] ?? `Level ${diffNum}`} scenarios`,
           avgScore: data.avg,
           type: 'difficulty',
+          difficulty: diffNum,
         });
       }
     }
@@ -129,7 +131,13 @@ export function WeakAreasCard() {
               size="sm"
               className="shrink-0"
               onClick={() =>
-                navigate(area.type === 'track-level' ? '/learn' : '/train')
+                navigate(
+                  area.type === 'track-level'
+                    ? '/learn'
+                    : area.difficulty != null
+                      ? `/train?difficulty=${area.difficulty}`
+                      : '/train',
+                )
               }
             >
               Practice
