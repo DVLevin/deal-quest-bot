@@ -228,6 +228,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 - [ ] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
+- [ ] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -384,6 +385,27 @@ Plans:
 - [ ] 19-04-PLAN.md -- Bot backend: draft_requests migration, CommentGeneratorAgent, multi-platform prompt, draft poller, main.py wiring (Wave 1)
 - [ ] 19-05-PLAN.md -- TMA migration: DB message bus hook, tabbed DraftCopyCard, post-copy nudge, edge function removal (Wave 2)
 
+### Phase 20: Quick Wins by Prody
+**Goal**: Implement 10 PM-audit-driven quick wins that reward deal closure with XP and confetti, add pipeline visibility, route weak areas to filtered training, suggest status progression on step completion, capture closure outcomes, send stale lead digests, provide admin rep detail views, and guide first-time users
+**Depends on**: Phase 19
+**Requirements**: QW-01 through QW-10 (from docs/pm-audit/06-QUICK-WINS.md)
+**Success Criteria** (what must be TRUE):
+  1. Closing a deal (closed_won) awards 500 XP, triggers confetti, and shows celebration toast in both TMA and bot
+  2. Lead list page shows pipeline summary bar (Active | Stale | Closed counts) and closure prompts for outcome reasons
+  3. Weak area "Practice" button routes to /train with difficulty pre-selected, and step completion triggers smart status suggestion toasts
+  4. TodayActionsCard shows "All caught up!" celebration when no actions remain
+  5. Admin can drill into any leaderboard member to see their stats and recent attempts
+  6. First-time users (0 XP, 0 leads) see a 3-step guided onboarding card on the Dashboard
+  7. Bot sends daily stale lead digest when stale leads exist (7+ days without update)
+**Plans**: 5 plans
+
+Plans:
+- [ ] 20-01-PLAN.md -- Deal closure celebration + XP award (TMA + bot) and "Start Free" onboarding label (Wave 1)
+- [ ] 20-02-PLAN.md -- Pipeline summary bar on leads page and "Done for Today" celebration (Wave 1)
+- [ ] 20-03-PLAN.md -- Weak area filtered training link and smart status suggestion on step completion (Wave 1)
+- [ ] 20-04-PLAN.md -- Outcome capture modal on lead closure and stale lead daily digest (Wave 2)
+- [ ] 20-05-PLAN.md -- Admin rep detail view and first-time user guided tour (Wave 2)
+
 ## Progress
 
 ### v1.0 Progress (Complete)
@@ -440,3 +462,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
 | 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
 | 19. Active Engagement Execution | 3/5 | In Progress | — |
+| 20. Quick Wins by Prody | 0/0 | Not Started | — |
