@@ -439,17 +439,44 @@ async def on_lead_view(
 
 @router.callback_query(F.data.startswith("lead:status:"))
 async def on_lead_status_update(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    user_repo: UserRepo,
+    activity_repo: LeadActivityRepo,
 ) -> None:
-    """Update a lead's status."""
+    """Update a lead's status and award XP on closed_won."""
     parts = callback.data.split(":")  # type: ignore[union-attr]
     lead_id = int(parts[2])
     new_status = parts[3]
+    tg_id = callback.from_user.id
 
     await lead_repo.update_status(lead_id, new_status)
 
-    status_label = STATUS_LABELS.get(new_status, new_status)
-    await callback.answer(f"Updated to {status_label}")
+    # Award XP on deal closure with double-fire guard
+    if new_status == "closed_won":
+        # Check if XP was already awarded for this lead (prevents double-fire from TMA + bot)
+        existing_activities = await activity_repo.get_for_lead(lead_id, limit=50)
+        already_awarded = any(a.activity_type == "xp_award" for a in existing_activities)
+
+        if not already_awarded:
+            await user_repo.update_xp(tg_id, 500)
+            # Insert xp_award guard marker so TMA side won't double-award
+            await activity_repo.create(
+                LeadActivityModel(
+                    lead_id=lead_id,
+                    telegram_id=tg_id,
+                    activity_type="xp_award",
+                    content="Deal closure XP: +500",
+                    metadata={"xp_amount": 500, "source": "bot"},
+                )
+            )
+            await callback.answer("Deal Won! +500 XP")
+        else:
+            status_label = STATUS_LABELS.get(new_status, new_status)
+            await callback.answer(f"Updated to {status_label} (XP already awarded)")
+    else:
+        status_label = STATUS_LABELS.get(new_status, new_status)
+        await callback.answer(f"Updated to {status_label}")
 
     # Refresh the lead detail view
     lead = await lead_repo.get_by_id(lead_id)

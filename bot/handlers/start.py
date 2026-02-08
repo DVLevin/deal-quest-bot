@@ -48,11 +48,11 @@ Let's get you set up (takes 30 seconds)!"""
 SETUP_METHOD_KEYBOARD = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(
-            text="⚡ Quick Setup (Recommended)",
+            text="⚡ Start Free (Recommended)",
             callback_data="setup:auto",
         )],
         [InlineKeyboardButton(
-            text="🔑 Use My Own API Key",
+            text="🔑 Use My Own Key",
             callback_data="setup:custom",
         )],
     ]
