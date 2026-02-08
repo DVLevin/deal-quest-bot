@@ -12,7 +12,7 @@
  */
 
 import { useEffect } from 'react';
-import { ListTodo, ChevronRight, AlertCircle, Calendar } from 'lucide-react';
+import { ChevronRight, AlertCircle, Calendar, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, Skeleton, ErrorCard } from '@/shared/ui';
@@ -76,12 +76,16 @@ export function TodayActionsCard() {
 
   if (!actions || actions.length === 0) {
     return (
-      <Card>
-        <div className="flex items-center gap-2 text-text-secondary">
-          <ListTodo className="h-5 w-5" />
-          <span className="text-sm font-medium">Today's Actions</span>
+      <Card className="border border-success/20 bg-success/5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/15">
+            <CheckCircle className="h-5 w-5 text-success" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text">All caught up!</p>
+            <p className="text-xs text-text-secondary">No actions due today. Keep the momentum going.</p>
+          </div>
         </div>
-        <p className="mt-2 text-sm text-text-hint">No actions due today. Great job!</p>
       </Card>
     );
   }
