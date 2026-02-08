@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 20 (Quick Wins by Prody) in progress.
+**Current focus:** Milestone v2.0 -- Sales Co-Pilot. Phase 20 (Quick Wins by Prody) complete.
 
 ## Previous Milestones
 
@@ -15,19 +15,19 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 ## Current Position
 
 Milestone: v2.0 -- Sales Co-Pilot
-Phase: 20 (Quick Wins by Prody) -- In progress
-Plan: 4 of 5 in current phase (20-01, 20-02, 20-03, 20-04 complete)
-Status: In progress
-Last activity: 2026-02-08 -- Completed 20-04-PLAN.md
+Phase: 20 (Quick Wins by Prody) -- Complete
+Plan: 5 of 5 in current phase (20-01, 20-02, 20-03, 20-04, 20-05 complete)
+Status: Phase complete
+Last activity: 2026-02-08 -- Completed 20-05-PLAN.md
 
 Progress: [############################] 8/8 v2.0 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 64
+- Total plans completed: 65
 - Average duration: 3.2m
-- Total execution time: 207m
+- Total execution time: 210m
 
 **By Phase:**
 
@@ -54,10 +54,10 @@ Progress: [############################] 8/8 v2.0 phases
 | 17. LazyFlow UX Overhaul | 4/4 | 8m | 2m |
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 4/4 | 13m | 3.3m |
-| 20. Quick Wins by Prody | 4/5 | 13m | 3.3m |
+| 20. Quick Wins by Prody | 5/5 | 16m | 3.2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 3m, 2m, 4m, 7m
+- Last 5 plans: 3m, 2m, 4m, 7m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -168,6 +168,9 @@ Recent decisions affecting current work:
 - [20-04]: Outcome logging is best-effort (non-blocking) after status mutation succeeds
 - [20-04]: Stale digest capped at 10 leads per message with overflow indicator
 - [20-04]: 24-hour interval guard on stale digest prevents over-messaging on 6h scheduler
+- [20-05]: Streak fetched separately since LeaderboardEntry type does not include streak_days
+- [20-05]: AttemptRow has no difficulty field; mode badge shown instead of difficulty badge
+- [20-05]: Lead count uses head:true count query for efficiency (no row data transferred)
 
 ### Pending Todos
 
@@ -205,7 +208,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 20-04 (Outcome capture & stale lead digest)
+Stopped at: Completed 20-05 (Admin rep detail & first-time guide)
 Resume file: None
-Next action: Continue Phase 20 plans (20-05 next)
-Next phase after: Complete remaining Phase 20 quick wins
+Next action: Phase 20 complete. All v2.0 phases done.
+Next phase after: New milestone planning or additional quick wins
