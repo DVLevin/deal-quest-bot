@@ -188,6 +188,8 @@ Recent decisions affecting current work:
 - [21-04]: NON_RESUMABLE paths: / (exact) and /admin (prefix) excluded from session tracking
 - [21-04]: Session resume skipped when startParam present (deep link takes priority over resume)
 - [21-04]: Query params cleared after deep link processing via navigate(pathname, { replace: true })
+- [Phase 21]: [21-03]: emitTmaEvent uses double fire-and-forget (try/catch + .catch) for maximum safety
+- [Phase 21]: [21-03]: useBotNotifications polls at 10s interval with 60s window and useRef<Set> dedup
 
 ### Pending Todos
 
@@ -229,7 +231,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 21-04-PLAN.md (Deep link precision & session resume)
+Stopped at: Completed 21-03-PLAN.md (TMA event wiring and bot notification toasts)
 Resume file: None
 Next action: Phase 21 complete. Plan next phase.
 Next phase after: Phase 21 fully complete
