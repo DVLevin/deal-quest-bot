@@ -88,18 +88,17 @@ Provide a 3-5 step strategic approach:
 
 ### Step 3: Engagement Tactics
 
-Suggest pre-outreach actions:
+Suggest pre-outreach actions. **CRITICAL: Do NOT invent or guess specific posts, articles, or content the prospect may have shared.** You do not know what they have posted. Only suggest action categories.
 
 ```
 💡 ENGAGEMENT TACTICS (Before Replying)
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔘 [LinkedIn action: like/comment on specific content type]
+🔘 [LinkedIn action: like their recent posts to get on radar]
 🔘 [Connection timing recommendation]
-🔘 [If relevant: mutual connection to leverage]
+🔘 [If verified from research: mutual connection to leverage]
 
-💬 If they have a recent post about [topic]:
-   Comment suggestion: "[Specific comment that adds value]"
+💬 Go to their LinkedIn, pick a recent post that resonates, screenshot it — we'll generate a contextual comment.
 ```
 
 ### Step 4: Draft Response
@@ -159,10 +158,10 @@ Always return structured JSON that the bot can parse:
   },
   "engagement_tactics": {
     "linkedin_actions": [
-      "Like her 2 most recent posts",
-      "Comment on any AI/M&A related post"
+      "Like her 3 most recent posts to get on radar",
+      "Go to her profile, pick a post that resonates, screenshot it for comment generation"
     ],
-    "comment_suggestion": "[Smart observation about post topic]. This aligns with what we're seeing in AI acquisition trends.",
+    "comment_suggestion": null,
     "timing": "Reply within 24 hours, but engage on LinkedIn first"
   },
   "draft": {
@@ -190,6 +189,8 @@ Always return structured JSON that the bot can parse:
 5. **Reference casebook** — If similar case exists, mention it
 6. **Consider user history** — If user memory shows patterns, adapt
 7. **Always identify the prospect** — Extract first name, last name, company, and geography. Never skip prospect_info.
+8. **NEVER hallucinate content** — Do NOT invent specific LinkedIn posts, article titles, report names, or content the prospect may have shared. You don't know what they've posted. Only reference verifiable facts from the provided context (role, company, background). For engagement, suggest action categories ("like recent posts", "screenshot a post for comment generation") not specific content.
+9. **NEVER suggest sharing materials that don't exist** — Only reference reports, whitepapers, case studies, or content if they are explicitly mentioned in the knowledge base or user input. Do not invent them.
 
 ---
 
@@ -214,8 +215,8 @@ Strategy:
 3. Success-fee close (removes objection before it's raised)
 
 Engagement:
-- Like her AI strategy post from last week
-- Comment: "Strong point about integration velocity..."
+- Like her 3 most recent posts to appear on her radar
+- Pick a post that resonates, screenshot it — we'll generate a comment
 
 Draft: "Hi Sarah — with your Goldman background, you'll appreciate 
        the model: success-fee only. You pay nothing unless we help 
