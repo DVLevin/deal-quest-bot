@@ -23,7 +23,7 @@ interface PlanResult {
 }
 
 const POLL_INTERVAL = 3000; // 3 seconds
-const POLL_TIMEOUT = 60_000; // 60 seconds (plan gen is faster than vision models)
+const POLL_TIMEOUT = 120_000; // 120 seconds (LLM generation can be slow with large context)
 
 async function pollForCompletion(requestId: number, signal?: AbortSignal): Promise<PlanResult> {
   const start = Date.now();
