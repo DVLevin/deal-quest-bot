@@ -252,3 +252,16 @@ class PlanRequestModel(BaseModel):
     result: dict[str, Any] | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class TmaEventModel(BaseModel):
+    """TMA-to-Bot event for cross-interface notifications."""
+
+    id: int | None = None
+    telegram_id: int
+    event_type: str  # step_completed, step_skipped, status_changed, lead_assigned
+    lead_id: int | None = None
+    payload: dict[str, Any] = {}
+    status: str = "pending"
+    created_at: str | None = None
+    delivered_at: str | None = None

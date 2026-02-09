@@ -22,6 +22,7 @@ from bot.storage.models import (
     ScenarioSeenModel,
     ScheduledReminderModel,
     SupportSessionModel,
+    TmaEventModel,
     TrackProgressModel,
     UserMemoryModel,
     UserModel,
@@ -1168,6 +1169,78 @@ class PlanRequestRepo:
                     self.table,
                     filters={"id": row["id"]},
                     data={"status": "pending", "updated_at": cutoff.isoformat()},
+                )
+                count += 1
+        return count
+
+
+class TmaEventRepo:
+    """Repository for TMA-to-Bot event bus."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "tma_events"
+
+    async def claim_next(self) -> TmaEventModel | None:
+        """Claim the oldest pending event by setting status to 'processing'."""
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.pending"},
+            order="created_at.asc",
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return None
+
+        row = rows[0]
+        result = await self.client.update(
+            self.table,
+            filters={"id": row["id"], "status": "pending"},
+            data={"status": "processing"},
+        )
+        if not result:
+            return None
+        return TmaEventModel(**result)
+
+    async def mark_delivered(self, event_id: int) -> None:
+        """Mark an event as delivered with timestamp."""
+        await self.client.update(
+            self.table,
+            filters={"id": event_id},
+            data={
+                "status": "delivered",
+                "delivered_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def mark_failed(self, event_id: int, error: str) -> None:
+        """Mark an event as failed."""
+        logger.error("TMA event %d failed: %s", event_id, error)
+        await self.client.update(
+            self.table,
+            filters={"id": event_id},
+            data={"status": "failed"},
+        )
+
+    async def reset_stale_processing(self, max_age_minutes: int = 2) -> int:
+        """Reset stale 'processing' events back to 'pending'."""
+        cutoff = datetime.now(timezone.utc)
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.processing"},
+        )
+        if not rows or not isinstance(rows, list):
+            return 0
+
+        count = 0
+        for row in rows:
+            created_at = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
+            age_minutes = (cutoff - created_at).total_seconds() / 60
+            if age_minutes > max_age_minutes:
+                await self.client.update(
+                    self.table,
+                    filters={"id": row["id"]},
+                    data={"status": "pending"},
                 )
                 count += 1
         return count
