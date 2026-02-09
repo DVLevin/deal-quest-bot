@@ -23,10 +23,12 @@ interface PlanResult {
 }
 
 const POLL_INTERVAL = 3000; // 3 seconds
-const POLL_TIMEOUT = 120_000; // 120 seconds (LLM generation can be slow with large context)
+const POLL_TIMEOUT = 180_000; // 3 minutes
+const NOT_PICKED_UP_THRESHOLD = 30_000; // 30 seconds — if still 'pending', bot likely not running
 
 async function pollForCompletion(requestId: number, signal?: AbortSignal): Promise<PlanResult> {
   const start = Date.now();
+  let wasPickedUp = false;
 
   while (Date.now() - start < POLL_TIMEOUT) {
     if (signal?.aborted) throw new Error('Plan generation cancelled');
@@ -39,13 +41,27 @@ async function pollForCompletion(requestId: number, signal?: AbortSignal): Promi
 
     if (error) throw new Error(`Poll error: ${error.message}`);
 
-    if (data?.status === 'completed' && data.result) {
+    const status = data?.status;
+
+    if (status === 'completed' && data.result) {
       return data.result as PlanResult;
     }
 
-    if (data?.status === 'failed') {
+    if (status === 'failed') {
       const errorMsg = (data.result as { error?: string })?.error || 'Plan generation failed';
       throw new Error(errorMsg);
+    }
+
+    // Track if the bot has picked up the request
+    if (status === 'processing') {
+      wasPickedUp = true;
+    }
+
+    // If still pending after threshold, the bot likely isn't running
+    if (status === 'pending' && !wasPickedUp && Date.now() - start > NOT_PICKED_UP_THRESHOLD) {
+      throw new Error(
+        'The bot hasn\'t picked up this request yet. Please make sure the bot is running and try again.'
+      );
     }
 
     await new Promise<void>((resolve, reject) => {
@@ -57,7 +73,12 @@ async function pollForCompletion(requestId: number, signal?: AbortSignal): Promi
     });
   }
 
-  throw new Error('Plan generation timed out. Please try again.');
+  // Timeout — give a diagnostic message based on last known state
+  throw new Error(
+    wasPickedUp
+      ? 'Plan generation is taking longer than expected. The bot is still working — check back in a moment.'
+      : 'Plan generation timed out. The bot may not be running or is overloaded. Please try again.'
+  );
 }
 
 export function useGeneratePlan() {

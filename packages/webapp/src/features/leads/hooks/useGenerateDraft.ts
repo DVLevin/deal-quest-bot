@@ -38,10 +38,12 @@ interface GenerateDraftVars {
 }
 
 const POLL_INTERVAL = 3000; // 3 seconds
-const POLL_TIMEOUT = 90_000; // 90 seconds (vision models can be slow)
+const POLL_TIMEOUT = 180_000; // 3 minutes
+const NOT_PICKED_UP_THRESHOLD = 30_000; // 30 seconds — if still 'pending', bot likely not running
 
 async function pollForCompletion(requestId: number, signal?: AbortSignal): Promise<DraftResult> {
   const start = Date.now();
+  let wasPickedUp = false;
 
   while (Date.now() - start < POLL_TIMEOUT) {
     if (signal?.aborted) throw new Error('Draft generation cancelled');
@@ -54,13 +56,25 @@ async function pollForCompletion(requestId: number, signal?: AbortSignal): Promi
 
     if (error) throw new Error(`Poll error: ${error.message}`);
 
-    if (data?.status === 'completed' && data.result) {
+    const status = data?.status;
+
+    if (status === 'completed' && data.result) {
       return data.result as DraftResult;
     }
 
-    if (data?.status === 'failed') {
+    if (status === 'failed') {
       const errorMsg = (data.result as { error?: string })?.error || 'Draft generation failed';
       throw new Error(errorMsg);
+    }
+
+    if (status === 'processing') {
+      wasPickedUp = true;
+    }
+
+    if (status === 'pending' && !wasPickedUp && Date.now() - start > NOT_PICKED_UP_THRESHOLD) {
+      throw new Error(
+        'The bot hasn\'t picked up this request yet. Please make sure the bot is running and try again.'
+      );
     }
 
     await new Promise<void>((resolve, reject) => {
@@ -72,7 +86,11 @@ async function pollForCompletion(requestId: number, signal?: AbortSignal): Promi
     });
   }
 
-  throw new Error('Draft generation timed out. Please try again.');
+  throw new Error(
+    wasPickedUp
+      ? 'Draft generation is taking longer than expected. The bot is still working — check back in a moment.'
+      : 'Draft generation timed out. The bot may not be running or is overloaded. Please try again.'
+  );
 }
 
 export function useGenerateDraft() {
