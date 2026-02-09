@@ -128,8 +128,13 @@ def _format_reminder_message(
     reminder: ScheduledReminderModel,
     step: dict | None,
     escalation_level: int,
-) -> str:
-    """Format a rich reminder message with escalation tone."""
+) -> tuple[str, bool]:
+    """Format a rich reminder message with full draft inline.
+
+    Returns:
+        Tuple of (message_text, draft_was_truncated).
+        draft_was_truncated is True if draft exceeded 3500 chars and was cut.
+    """
     name = lead.prospect_name or f"Lead #{lead.id}"
     company = f" @ {lead.prospect_company}" if lead.prospect_company else ""
 
@@ -149,53 +154,72 @@ def _format_reminder_message(
         icon = "\u2757"  # exclamation
         intro = "Final reminder before auto-snooze."
 
-    # Draft preview (truncated)
-    draft_preview = ""
-    draft_text = reminder.draft_text or (step.get("suggested_text") if step else None)
+    # Full draft text inline (prefer step's suggested_text, fall back to reminder.draft_text)
+    draft_section = ""
+    draft_was_truncated = False
+    draft_text = (step.get("suggested_text") if step else None) or reminder.draft_text
     if draft_text:
-        preview = draft_text[:150].replace("\n", " ")
-        draft_preview = f'\n\n\U0001F4DD *Draft:* "{preview}..."'
+        # Telegram message limit is 4096 chars; header uses ~200-300, so cap draft at 3500
+        if len(draft_text) > 3500:
+            draft_text = draft_text[:3500] + "..."
+            draft_was_truncated = True
+        draft_section = f"\n\n\U0001F4DD *Suggested draft:*\n\n{draft_text}"
 
     return (
         f"{icon} *Engagement Step Due: {name}{company}*\n\n"
         f"{intro}\n\n"
         f"\U0001F4CB *Step {reminder.step_id}:* {step_desc}"
-        f"{draft_preview}"
+        f"{draft_section}",
+        draft_was_truncated,
     )
 
 
 def _reminder_action_keyboard(
-    lead_id: int, step_id: int, tma_url: str = "",
+    lead_id: int, step_id: int, tma_url: str = "", draft_was_truncated: bool = False,
 ) -> InlineKeyboardMarkup:
-    """Build inline keyboard for reminder actions with optional Open in App button."""
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    """Build inline keyboard for reminder actions with optional Open in App button.
+
+    Layout:
+        Row 1: [Mark Done] [Snooze 24h]   — primary actions
+        Row 2: [Copy Draft] [Skip]         — secondary actions
+        Row 2b (conditional): [View Full Draft] — only if draft was truncated
+        Row 3: [Open in App]               — deep link (added by add_open_in_app_row)
+    """
+    rows = [
+        # Row 1: Primary actions
         [
             InlineKeyboardButton(
-                text="\u2705 Done",
-                callback_data=f"reminder:done:{lead_id}:{step_id}"
+                text="\u2705 Mark Done",
+                callback_data=f"reminder:done:{lead_id}:{step_id}",
             ),
             InlineKeyboardButton(
                 text="\u23F0 Snooze 24h",
-                callback_data=f"reminder:snooze:{lead_id}:{step_id}"
+                callback_data=f"reminder:snooze:{lead_id}:{step_id}",
+            ),
+        ],
+        # Row 2: Secondary actions
+        [
+            InlineKeyboardButton(
+                text="\U0001F4CB Copy Draft",
+                callback_data=f"reminder:copy_draft:{lead_id}:{step_id}",
             ),
             InlineKeyboardButton(
                 text="\u23ED Skip",
-                callback_data=f"reminder:skip:{lead_id}:{step_id}"
+                callback_data=f"reminder:skip:{lead_id}:{step_id}",
             ),
         ],
-        [
+    ]
+
+    # Only show View Full Draft if the draft was truncated (over 3500 chars)
+    if draft_was_truncated:
+        rows.append([
             InlineKeyboardButton(
                 text="\U0001F4DD View Full Draft",
-                callback_data=f"reminder:draft:{lead_id}:{step_id}"
+                callback_data=f"reminder:draft:{lead_id}:{step_id}",
             ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="\U0001F4CB View Lead",
-                callback_data=f"lead:view:{lead_id}"
-            ),
-        ],
-    ])
+        ])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=rows)
     return add_open_in_app_row(
         keyboard,
         tma_url,
@@ -282,8 +306,8 @@ async def _process_due_plan_reminders(
                         break
 
             # Build rich message with escalation tone
-            text = _format_reminder_message(lead, reminder, step, reminder_count)
-            keyboard = _reminder_action_keyboard(lead.id, reminder.step_id, tma_url)  # type: ignore[arg-type]
+            text, draft_truncated = _format_reminder_message(lead, reminder, step, reminder_count)
+            keyboard = _reminder_action_keyboard(lead.id, reminder.step_id, tma_url, draft_truncated)  # type: ignore[arg-type]
 
             # Send notification with inline keyboard
             await bot.send_message(
