@@ -209,11 +209,12 @@ None currently.
 | 003-tma-bot-deep-actions | Complete (2/2) | TMA-to-bot deep linking for lead actions (reanalyze, context, reresearch, advice) |
 | 006-tma-plan-generation-message-bus | Complete (3/3) | In-app plan generation via plan_requests DB message bus |
 | 007-step-action-fixes-and-regen-input | Complete (3/3) | Specific error messages + retry, draft regen with user instructions, LinkedIn char counter |
+| 008-engagement-plan-no-hallucinations | Complete (2/2) | Anti-hallucination rules in engagement_plan.md + strategist_agent.md prompts |
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: Completed quick-007 (Step action fixes and regen input)
+Last session: 2026-02-09
+Stopped at: Completed quick-008 (Engagement plan anti-hallucination)
 Resume file: None
 Next action: Additional quick wins or new milestone planning
 Next phase after: All v2.0 phases done
