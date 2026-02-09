@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 21 -- Seamless TMA-Bot Integration. Plan 02 complete.
+**Current focus:** Phase 21 -- Seamless TMA-Bot Integration. COMPLETE.
 
 ## Previous Milestones
 
@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: Seamless TMA-Bot Integration
 Phase: 21 -- Seamless TMA-Bot Integration
-Current Plan: 3 of 4
-Status: Executing phase 21
-Last activity: 2026-02-09 -- Completed 21-02-PLAN.md
+Current Plan: 4 of 4
+Status: Phase 21 COMPLETE
+Last activity: 2026-02-09 -- Completed 21-04-PLAN.md
 
-Progress: [################--------------] 2/4 phase 21 plans
+Progress: [##############################] 4/4 phase 21 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 67
+- Total plans completed: 69
 - Average duration: 3.2m
-- Total execution time: 215m
+- Total execution time: 221m
 
 **By Phase:**
 
@@ -55,7 +55,7 @@ Progress: [################--------------] 2/4 phase 21 plans
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 5/5 | 16m | 3.2m |
 | 20. Quick Wins by Prody | 5/5 | 16m | 3.2m |
-| 21. Seamless TMA-Bot Integration | 2/4 | 5m | 2.5m |
+| 21. Seamless TMA-Bot Integration | 4/4 | 11m | 2.8m |
 
 **Recent Trend:**
 - Last 5 plans: 4m, 7m, 3m, 2m, 3m
@@ -184,6 +184,10 @@ Recent decisions affecting current work:
 - [21-02]: 3-second poll interval matching draft/plan pollers
 - [21-02]: Stale processing recovery with 2-minute threshold on startup
 - [21-02]: tma_events uses created_at for stale detection (no updated_at column)
+- [21-04]: One-shot consume pattern: localStorage entry removed immediately after reading (useRef cache survives re-renders)
+- [21-04]: NON_RESUMABLE paths: / (exact) and /admin (prefix) excluded from session tracking
+- [21-04]: Session resume skipped when startParam present (deep link takes priority over resume)
+- [21-04]: Query params cleared after deep link processing via navigate(pathname, { replace: true })
 
 ### Pending Todos
 
@@ -225,7 +229,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 21-02-PLAN.md (TMA event bus infrastructure)
+Stopped at: Completed 21-04-PLAN.md (Deep link precision & session resume)
 Resume file: None
-Next action: Execute 21-03-PLAN.md
-Next phase after: 2 plans remaining in phase 21
+Next action: Phase 21 complete. Plan next phase.
+Next phase after: Phase 21 fully complete
