@@ -229,7 +229,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 - [x] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
 - [x] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
-- [ ] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA→Bot confirmation messages, Bot→TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
+- [x] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA→Bot confirmation messages, Bot→TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -420,10 +420,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 21-01-PLAN.md -- Bot reminder enhancements: full inline drafts, Copy Draft button, Mark Done with next step info (Wave 1)
-- [ ] 21-02-PLAN.md -- TMA event bus: tma_events table, model, repo, bot poller for Telegram confirmations (Wave 1)
-- [ ] 21-03-PLAN.md -- TMA mutation event writes + bot-to-TMA toast notifications for async work (Wave 2)
-- [ ] 21-04-PLAN.md -- Deep link precision (action=execute, section=plan) and localStorage session resume (Wave 2)
+- [x] 21-01-PLAN.md -- Bot reminder enhancements: full inline drafts, Copy Draft button, Mark Done with next step info (Wave 1)
+- [x] 21-02-PLAN.md -- TMA event bus: tma_events table, model, repo, bot poller for Telegram confirmations (Wave 1)
+- [x] 21-03-PLAN.md -- TMA mutation event writes + bot-to-TMA toast notifications for async work (Wave 2)
+- [x] 21-04-PLAN.md -- Deep link precision (action=execute, section=plan) and localStorage session resume (Wave 2)
 
 ## Progress
 
@@ -482,4 +482,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
 | 19. Active Engagement Execution | 5/5 | Complete | 2026-02-09 |
 | 20. Quick Wins by Prody | 5/5 | Complete | 2026-02-08 |
-| 21. Seamless TMA-Bot Integration | 0/4 | Planned | — |
+| 21. Seamless TMA-Bot Integration | 4/4 | Complete | 2026-02-09 |
