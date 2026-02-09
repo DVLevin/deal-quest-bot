@@ -246,6 +246,8 @@ async def main() -> None:
                 plan_request_repo,
                 lead_repo,
                 reminder_repo,
+                bot,
+                cfg.tma_url,
             ),
             name="plan_request_poller",
         )

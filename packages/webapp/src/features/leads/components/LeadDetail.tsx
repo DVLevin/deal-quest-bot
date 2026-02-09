@@ -904,15 +904,24 @@ export function LeadDetail() {
               type="button"
               onClick={() => {
                 if (!telegramId) return;
-                generatePlanMutation.mutate({ leadId: lead.id, telegramId });
+                generatePlanMutation.mutate({ leadId: lead.id, telegramId }, {
+                  onSuccess: () => {
+                    toast({ type: 'info', message: 'Plan generation started. You\'ll get a notification in Telegram when it\'s ready.', duration: 6000 });
+                  },
+                });
               }}
-              disabled={generatePlanMutation.isPending}
+              disabled={generatePlanMutation.isPending || generatePlanMutation.isSuccess}
               className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors active:bg-accent/25 disabled:opacity-50"
             >
-              {generatePlanMutation.isPending ? (
+              {generatePlanMutation.isSuccess ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Generating...
+                  Generating — check Telegram for update
+                </>
+              ) : generatePlanMutation.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Sending request...
                 </>
               ) : (
                 <>
