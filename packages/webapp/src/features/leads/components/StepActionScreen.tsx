@@ -15,7 +15,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { X, Check, SkipForward, Clock, RotateCcw, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
+import { X, Check, SkipForward, Clock, RotateCcw, AlertTriangle, Loader2, Sparkles, Camera, MessageSquare } from 'lucide-react';
 import type { EngagementPlanStep } from '@/types/tables';
 import { useToast } from '@/shared/stores/toastStore';
 import type { DraftResult } from '../hooks/useGenerateDraft';
@@ -224,6 +224,11 @@ export function StepActionScreen({
   // -------------------------------------------------------------------------
   // Pending state -- full action screen
   // -------------------------------------------------------------------------
+
+  // Detect comment-type steps for smart UX guidance
+  const isCommentStep = step.action_type === 'linkedin_comment'
+    || /comment|reply/i.test(step.description);
+
   return (
     <div className="relative rounded-2xl border border-surface-secondary bg-surface p-4 shadow-lg space-y-4">
       {/* Close button */}
@@ -292,6 +297,28 @@ export function StepActionScreen({
           draftText={step.suggested_text}
           onCopy={handleDraftCopy}
         />
+      ) : !step.proof_url && isCommentStep ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Camera className="h-4 w-4 text-accent" />
+            <span className="text-xs font-semibold text-accent">How it works</span>
+          </div>
+          <div className="space-y-1 text-center">
+            <p className="text-xs text-text-secondary">
+              <span className="font-medium">1.</span> Screenshot their LinkedIn post below
+            </p>
+            <p className="text-xs text-text-secondary">
+              <span className="font-medium">2.</span> AI generates a contextual comment for you
+            </p>
+            <p className="text-xs text-text-secondary">
+              <span className="font-medium">3.</span> Copy, post, and mark done
+            </p>
+          </div>
+        </div>
+      ) : !step.proof_url ? (
+        <p className="text-center text-xs text-text-hint">
+          Attach a screenshot to generate a draft
+        </p>
       ) : (
         <p className="text-center text-xs text-text-hint">
           No draft available for this step

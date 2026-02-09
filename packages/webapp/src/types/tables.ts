@@ -105,8 +105,10 @@ export type PlanStepStatus = 'pending' | 'done' | 'skipped';
 
 export interface EngagementPlanStep {
   step_id: number;
+  action_type?: string;
   description: string;
   timing: string;
+  delay_days?: number;
   status: PlanStepStatus;
   suggested_text?: string;
   completed_at?: string | null;

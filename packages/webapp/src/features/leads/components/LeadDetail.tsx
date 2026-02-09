@@ -581,7 +581,30 @@ export function LeadDetail() {
               { leadId: lead.id, stepId, newStatus: 'pending', telegramId, proofUrl: publicUrl },
               {
                 onSuccess: () => {
-                  toast({ type: 'success', message: 'Screenshot attached!' });
+                  toast({ type: 'success', message: 'Screenshot attached! Generating comment...' });
+                  // Auto-trigger draft generation with the just-uploaded URL
+                  draftMutation.mutate(
+                    {
+                      proofUrl: publicUrl,
+                      leadId: lead.id,
+                      stepId,
+                      telegramId,
+                      leadName: lead.prospect_first_name && lead.prospect_last_name
+                        ? `${lead.prospect_first_name} ${lead.prospect_last_name}`
+                        : lead.prospect_name ?? undefined,
+                      leadTitle: lead.prospect_title ?? undefined,
+                      leadCompany: lead.prospect_company ?? undefined,
+                      leadStatus: lead.status,
+                      webResearch: lead.web_research,
+                    },
+                    {
+                      onSuccess: () => toast({ type: 'success', message: 'Draft generated!' }),
+                      onError: (err: unknown) => {
+                        const msg = err instanceof Error ? err.message : 'Failed to generate draft';
+                        toast({ type: 'error', message: `${msg}. Use the "Generate Draft" button to try again.` });
+                      },
+                    },
+                  );
                 },
                 onError: () => {
                   toast({
@@ -612,7 +635,7 @@ export function LeadDetail() {
         },
       );
     },
-    [lead, telegramId, uploadMutation, stepMutation, toast],
+    [lead, telegramId, uploadMutation, stepMutation, draftMutation, toast],
   );
 
   const handleGenerateDraft = useCallback(
