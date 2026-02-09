@@ -228,7 +228,8 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 - [x] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
-- [ ] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
+- [x] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
+- [ ] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA→Bot confirmation messages, Bot→TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -406,6 +407,24 @@ Plans:
 - [x] 20-04-PLAN.md -- Outcome capture modal on lead closure and stale lead daily digest (Wave 1)
 - [x] 20-05-PLAN.md -- Admin rep detail view and first-time user guided tour (Wave 2)
 
+### Phase 21: Seamless TMA-Bot Integration
+**Goal**: The bot and TMA feel like one product, not two -- bot reminders are self-contained action points with inline drafts and completion, TMA actions trigger bot confirmations, and opening the TMA always lands you exactly where you need to be
+**Depends on**: Phase 20 (v2.0 complete)
+**Requirements**: SEAM-01, SEAM-02, SEAM-03 (from docs/analysis/tma-bot-communication-analysis.md)
+**Success Criteria** (what must be TRUE):
+  1. Bot reminder messages include the full draft text, a [Copy Draft] button, and a [Mark Done] inline button -- 80% of step completions can happen without opening TMA
+  2. When a user completes a step, changes status, or assigns a lead in TMA, the bot sends a brief confirmation message in the Telegram chat (e.g., "Step 3 marked complete for {lead_name}. Next step due in 2 days.")
+  3. When the bot finishes async work (draft ready, plan ready, re-analysis complete) and TMA is open, a toast notification appears inside TMA with a link to the relevant item
+  4. Opening TMA via deep link lands on the exact screen and section (step action screen, plan section expanded, etc.) -- not just the lead page
+  5. Opening TMA via menu button resumes the last-viewed context (stored in localStorage) or shows action-aware landing (overdue actions hero section when actions exist)
+**Plans**: 4 plans
+
+Plans:
+- [ ] 21-01-PLAN.md -- Bot reminder enhancements: full inline drafts, Copy Draft button, Mark Done with next step info (Wave 1)
+- [ ] 21-02-PLAN.md -- TMA event bus: tma_events table, model, repo, bot poller for Telegram confirmations (Wave 1)
+- [ ] 21-03-PLAN.md -- TMA mutation event writes + bot-to-TMA toast notifications for async work (Wave 2)
+- [ ] 21-04-PLAN.md -- Deep link precision (action=execute, section=plan) and localStorage session resume (Wave 2)
+
 ## Progress
 
 ### v1.0 Progress (Complete)
@@ -463,3 +482,4 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
 | 19. Active Engagement Execution | 5/5 | Complete | 2026-02-09 |
 | 20. Quick Wins by Prody | 5/5 | Complete | 2026-02-08 |
+| 21. Seamless TMA-Bot Integration | 0/4 | Planned | — |
