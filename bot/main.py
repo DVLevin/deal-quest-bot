@@ -27,6 +27,7 @@ from bot.services.casebook import CasebookService
 from bot.services.crypto import CryptoService
 from bot.services.draft_poller import start_draft_request_poller
 from bot.services.plan_poller import start_plan_request_poller
+from bot.services.tma_event_poller import start_tma_event_poller
 from bot.services.engagement import EngagementService
 from bot.services.followup_scheduler import start_followup_scheduler
 from bot.services.model_config import ModelConfigService
@@ -43,6 +44,7 @@ from bot.storage.repositories import (
     DraftRequestRepo,
     GeneratedScenarioRepo,
     PlanRequestRepo,
+    TmaEventRepo,
     LeadActivityRepo,
     LeadRegistryRepo,
     ScheduledReminderRepo,
@@ -99,6 +101,7 @@ async def main() -> None:
     model_config_repo = AgentModelConfigRepo(insforge)
     draft_request_repo = DraftRequestRepo(insforge)
     plan_request_repo = PlanRequestRepo(insforge)
+    tma_event_repo = TmaEventRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -252,6 +255,13 @@ async def main() -> None:
             name="plan_request_poller",
         )
         logger.info("Plan request poller started (3-second interval)")
+
+        # Start TMA event poller for cross-interface notifications
+        create_background_task(
+            start_tma_event_poller(bot, tma_event_repo, lead_repo),
+            name="tma_event_poller",
+        )
+        logger.info("TMA event poller started (3-second interval)")
 
     # Start background scenario generation loop
     if scenario_generator:
