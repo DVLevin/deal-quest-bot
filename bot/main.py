@@ -218,7 +218,7 @@ async def main() -> None:
     # Start followup scheduler in background
     if engagement_service:
         create_background_task(
-            start_followup_scheduler(bot, lead_repo, activity_repo),
+            start_followup_scheduler(bot, lead_repo, activity_repo, tma_url=cfg.tma_url),
             name="followup_scheduler",
         )
         logger.info("Followup scheduler started")

@@ -7,9 +7,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.storage.models import LeadActivityModel
 from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +31,31 @@ STALE_THRESHOLD_DAYS = 7
 _STALE_DIGEST_INTERVAL = timedelta(hours=24)
 
 
+def _followup_action_keyboard(
+    lead_id: int, telegram_id: int, tma_url: str = "",
+) -> InlineKeyboardMarkup:
+    """Build inline keyboard for followup reminder actions."""
+    rows = [
+        [
+            InlineKeyboardButton(
+                text="\U0001F4AC View Lead",
+                callback_data=f"lead:view:{lead_id}",
+            ),
+            InlineKeyboardButton(
+                text="\U0001F4DD Add Context",
+                callback_data=f"context:add:{lead_id}",
+            ),
+        ],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=rows)
+    return add_open_in_app_row(keyboard, tma_url, path=f"leads/{lead_id}")
+
+
 async def _process_due_followups(
     bot: Bot,
     lead_repo: LeadRegistryRepo,
     activity_repo: LeadActivityRepo,
+    tma_url: str = "",
 ) -> None:
     """Find and process leads that are due for followup."""
     now = datetime.now(timezone.utc)
@@ -68,6 +91,7 @@ async def _process_due_followups(
 
             # Suggest action based on plan progress
             suggested_action = "Check in on this lead"
+            next_step = None
             if lead.engagement_plan:
                 pending_steps = [
                     s for s in lead.engagement_plan if s.get("status") != "done"
@@ -76,13 +100,27 @@ async def _process_due_followups(
                     next_step = pending_steps[0]
                     suggested_action = next_step.get("description", suggested_action)
 
+            # Include draft text inline if available from next pending step
+            draft_section = ""
+            if next_step:
+                draft_text = next_step.get("suggested_text") or ""
+                if draft_text:
+                    if len(draft_text) > 3500:
+                        draft_text = draft_text[:3500] + "..."
+                    draft_section = f"\n\n\U0001F4DD *Suggested draft:*\n\n{draft_text}"
+
             reminder_text = (
-                f"🔔 *Lead Followup Reminder*\n\n"
-                f"📋 *{name}*{company}\n"
+                f"\U0001F514 *Lead Followup Reminder*\n\n"
+                f"\U0001F4CB *{name}*{company}\n"
                 f"Status: {status}\n"
                 f"Followup #{lead.followup_count + 1}\n\n"
-                f"💡 *Suggested action:*\n{suggested_action}\n\n"
-                f"Use /leads to view details and update."
+                f"\U0001F4A1 *Suggested action:*\n{suggested_action}"
+                f"{draft_section}"
+            )
+
+            # Build inline keyboard
+            keyboard = _followup_action_keyboard(
+                lead.id, lead.telegram_id, tma_url  # type: ignore[arg-type]
             )
 
             # Send reminder to the user
@@ -90,6 +128,7 @@ async def _process_due_followups(
                 chat_id=lead.telegram_id,
                 text=reminder_text,
                 parse_mode="Markdown",
+                reply_markup=keyboard,
             )
 
             # Log the followup
@@ -119,6 +158,7 @@ async def _process_due_followups(
 async def _send_stale_digest(
     bot: Bot,
     lead_repo: LeadRegistryRepo,
+    tma_url: str = "",
 ) -> None:
     """Query stale leads (no update for STALE_THRESHOLD_DAYS), group by user, and send digest."""
     now = datetime.now(timezone.utc)
@@ -182,15 +222,18 @@ async def _send_stale_digest(
             if len(user_leads) > 10:
                 lines.append(f"\n... and {len(user_leads) - 10} more")
 
-            lines.append("\n💡 Review these leads and update their status or add context.")
-            lines.append("Use /leads to manage your pipeline.")
+            lines.append("\n\U0001F4A1 Review these leads and update their status or add context.")
 
             digest_text = "\n".join(lines)
+
+            # Build keyboard with Open in App button
+            digest_keyboard = add_open_in_app_row(None, tma_url, path="leads")
 
             await bot.send_message(
                 chat_id=telegram_id,
                 text=digest_text,
                 parse_mode="Markdown",
+                reply_markup=digest_keyboard,
             )
 
             logger.info(
@@ -207,6 +250,7 @@ async def start_followup_scheduler(
     bot: Bot,
     lead_repo: LeadRegistryRepo,
     activity_repo: LeadActivityRepo,
+    tma_url: str = "",
 ) -> None:
     """Background loop that checks for due followups every 6 hours and sends daily stale digest."""
     logger.info("Followup scheduler started (interval: %ds)", CHECK_INTERVAL_SECONDS)
@@ -215,7 +259,7 @@ async def start_followup_scheduler(
 
     while True:
         try:
-            await _process_due_followups(bot, lead_repo, activity_repo)
+            await _process_due_followups(bot, lead_repo, activity_repo, tma_url)
         except Exception as e:
             logger.error("Followup scheduler error: %s", e)
 
@@ -223,7 +267,7 @@ async def start_followup_scheduler(
         now = datetime.now(timezone.utc)
         if _last_stale_digest is None or (now - _last_stale_digest) >= _STALE_DIGEST_INTERVAL:
             try:
-                await _send_stale_digest(bot, lead_repo)
+                await _send_stale_digest(bot, lead_repo, tma_url)
                 _last_stale_digest = now
                 logger.info("Stale lead digest check completed")
             except Exception as e:
