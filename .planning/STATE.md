@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v2.0 -- Sales Co-Pilot. All phases complete (19 finalized, 20 complete).
+**Current focus:** Phase 21 -- Seamless TMA-Bot Integration. Plan 01 complete.
 
 ## Previous Milestones
 
@@ -14,19 +14,20 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 ## Current Position
 
-Milestone: v2.0 -- Sales Co-Pilot
-Phase: All phases complete (19 + 20 finalized)
-Status: Milestone complete -- all 10 v2.0 phases done
-Last activity: 2026-02-09 -- Completed 19-05-PLAN.md + quick-007
+Milestone: Seamless TMA-Bot Integration
+Phase: 21 -- Seamless TMA-Bot Integration
+Current Plan: 2 of 4
+Status: Executing phase 21
+Last activity: 2026-02-09 -- Completed 21-01-PLAN.md
 
-Progress: [##############################] 10/10 v2.0 phases
+Progress: [########----------------------] 1/4 phase 21 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 65
+- Total plans completed: 66
 - Average duration: 3.2m
-- Total execution time: 210m
+- Total execution time: 212m
 
 **By Phase:**
 
@@ -54,9 +55,10 @@ Progress: [##############################] 10/10 v2.0 phases
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 5/5 | 16m | 3.2m |
 | 20. Quick Wins by Prody | 5/5 | 16m | 3.2m |
+| 21. Seamless TMA-Bot Integration | 1/4 | 2m | 2m |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 2m, 4m, 7m, 3m
+- Last 5 plans: 2m, 4m, 7m, 3m, 2m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -174,6 +176,10 @@ Recent decisions affecting current work:
 - [quick-007]: Upload-then-update orphan handled by retry-linking pattern (retries step update only)
 - [quick-007]: Regeneration shows instruction input on first click, generates on second (progressive disclosure)
 - [quick-007]: LinkedIn invite char limit 200 with 85% yellow threshold (170 chars)
+- [21-01]: Full draft inline with 3500-char cap (leaves ~600 chars for header within Telegram 4096 limit)
+- [21-01]: Copy Draft sends as NEW message (answer, not edit) for native long-press copy
+- [21-01]: View Full Draft button only appears when draft exceeds 3500 chars (conditional row)
+- [21-01]: Next step lookup excludes current step_id, filters status not in (done, skipped)
 
 ### Pending Todos
 
@@ -214,7 +220,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed quick-008 (Engagement plan anti-hallucination)
+Stopped at: Completed 21-01-PLAN.md (Self-contained reminder messages)
 Resume file: None
-Next action: Additional quick wins or new milestone planning
-Next phase after: All v2.0 phases done
+Next action: Execute 21-02-PLAN.md
+Next phase after: 3 plans remaining in phase 21
