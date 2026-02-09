@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
-from urllib.parse import unquote
 
 import httpx
 
@@ -28,21 +27,17 @@ async def _fetch_and_encode_image(
 ) -> str | None:
     """Fetch image from URL, pre-resize for vision model, and base64-encode.
 
-    The InsForge SDK encodes slashes in storage keys (%2F instead of /),
-    but the upload API stores with raw slashes. We unquote the URL to match
-    the actual stored path and add auth headers for InsForge storage access.
+    InsForge storage API returns a 302 redirect to a signed CDN URL.
+    httpx defaults to follow_redirects=False, so we must enable it.
+    Auth header is needed for the initial InsForge API request.
     """
     try:
-        # InsForge SDK encodes slashes in keys (proof%2F12%2F3%2F...) but
-        # the storage API expects raw slashes (proof/12/3/...).
-        url = unquote(proof_url)
-
         headers: dict[str, str] = {}
         if insforge:
             headers["Authorization"] = f"Bearer {insforge.anon_key}"
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(url, headers=headers)
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            resp = await client.get(proof_url, headers=headers)
             resp.raise_for_status()
             image_bytes = resp.content
 
