@@ -12,6 +12,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getInsforge } from '@/lib/insforge';
 import { queryKeys } from '@/lib/queries';
+import { emitTmaEvent } from '@/lib/tmaEvents';
 import type { LeadStatus } from '@/types/enums';
 import type { LeadListItem } from './useLeads';
 
@@ -133,7 +134,7 @@ export function useUpdateLeadStatus() {
         );
       }
     },
-    onSettled: (_data, _err, { telegramId, leadId }) => {
+    onSettled: (_data, _err, { telegramId, leadId, oldStatus, newStatus }) => {
       // Refetch to get true server state
       queryClient.invalidateQueries({
         queryKey: queryKeys.leads.byUser(telegramId),
@@ -148,6 +149,14 @@ export function useUpdateLeadStatus() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.users.detail(telegramId),
       });
+
+      // Emit TMA event for bot-side confirmation (fire-and-forget)
+      if (!_err) {
+        emitTmaEvent(telegramId, 'status_changed', leadId, {
+          old_status: oldStatus,
+          new_status: newStatus,
+        }).catch(() => {});
+      }
     },
   });
 }

@@ -13,6 +13,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getInsforge } from '@/lib/insforge';
 import { queryKeys } from '@/lib/queries';
+import { emitTmaEvent } from '@/lib/tmaEvents';
 import type { PlanStepStatus, EngagementPlanStep } from '@/types/tables';
 import type { LeadRegistryRow } from '@/types/tables';
 
@@ -188,7 +189,7 @@ export function useUpdatePlanStep() {
         );
       }
     },
-    onSettled: (_data, _err, { telegramId, leadId }) => {
+    onSettled: (_data, _err, { telegramId, leadId, stepId, newStatus, cantPerformReason }) => {
       // Refetch to get true server state
       queryClient.invalidateQueries({
         queryKey: queryKeys.leads.detail(leadId),
@@ -207,6 +208,37 @@ export function useUpdatePlanStep() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.leads.reminders(telegramId),
       });
+
+      // Emit TMA event for bot-side confirmation (fire-and-forget)
+      if (_data && !_err) {
+        const updatedPlan = (_data.updatedPlan ?? []) as EngagementPlanStep[];
+        const completedStep = updatedPlan.find((s) => s.step_id === stepId);
+        const stepDesc = completedStep?.description ?? '';
+
+        if (newStatus === 'done') {
+          // Find the next pending step after the completed one
+          const stepIndex = updatedPlan.findIndex((s) => s.step_id === stepId);
+          const nextStep = updatedPlan
+            .slice(stepIndex + 1)
+            .find((s) => s.status === 'pending');
+
+          emitTmaEvent(telegramId, 'step_completed', leadId, {
+            step_id: stepId,
+            step_desc: stepDesc,
+            ...(nextStep && {
+              next_step_id: nextStep.step_id,
+              next_step_desc: nextStep.description,
+            }),
+          }).catch(() => {});
+        } else if (newStatus === 'skipped') {
+          emitTmaEvent(telegramId, 'step_skipped', leadId, {
+            step_id: stepId,
+            step_desc: stepDesc,
+            reason: cantPerformReason ?? '',
+          }).catch(() => {});
+        }
+        // 'pending' (reset) -- don't emit (not user-facing)
+      }
     },
   });
 }

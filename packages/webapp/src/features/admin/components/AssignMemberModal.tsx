@@ -90,7 +90,7 @@ export function AssignMemberModal({
                       <button
                         type="button"
                         disabled={isPending}
-                        onClick={() => assign.mutate({ leadId, telegramId: tid })}
+                        onClick={() => assign.mutate({ leadId, telegramId: tid, memberName: displayName })}
                         className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-text-secondary transition-colors active:bg-surface-secondary disabled:opacity-50"
                       >
                         <UserPlus className="h-3.5 w-3.5" />

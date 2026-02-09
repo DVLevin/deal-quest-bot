@@ -5,11 +5,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getInsforge } from '@/lib/insforge';
 import { queryKeys } from '@/lib/queries';
+import { emitTmaEvent } from '@/lib/tmaEvents';
 import { useAuthStore } from '@/features/auth/store';
 
 interface AssignVars {
   leadId: number;
   telegramId: number;
+  /** Display name of the member being assigned (for event payload) */
+  memberName?: string;
 }
 
 export function useAssignLead() {
@@ -28,13 +31,20 @@ export function useAssignLead() {
 
       if (error) throw error;
     },
-    onSettled: (_data, _err, { leadId }) => {
+    onSettled: (_data, _err, { leadId, memberName }) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.leadAssignments(leadId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.allLeads,
       });
+
+      // Emit TMA event for bot-side confirmation (fire-and-forget)
+      if (!_err && currentUser) {
+        emitTmaEvent(currentUser, 'lead_assigned', leadId, {
+          member_name: memberName ?? 'team member',
+        }).catch(() => {});
+      }
     },
   });
 }
