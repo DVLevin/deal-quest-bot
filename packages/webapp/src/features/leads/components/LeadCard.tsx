@@ -17,9 +17,11 @@ interface LeadCardProps {
   lead: LeadListItem;
   progress?: PlanProgress;
   onClick: () => void;
+  /** Shown for assigned (non-owned) leads to indicate who owns it */
+  ownerName?: string;
 }
 
-export function LeadCard({ lead, progress, onClick }: LeadCardProps) {
+export function LeadCard({ lead, progress, onClick, ownerName }: LeadCardProps) {
   const statusConfig = LEAD_STATUS_CONFIG[lead.status as LeadStatus];
 
   return (
@@ -69,6 +71,11 @@ export function LeadCard({ lead, progress, onClick }: LeadCardProps) {
               <p className="text-xs text-text-hint">
                 {formatLeadDate(lead.updated_at ?? lead.created_at ?? null)}
               </p>
+              {ownerName && (
+                <p className="text-xs text-accent/70">
+                  via {ownerName}
+                </p>
+              )}
             </div>
 
             {/* Status badge */}

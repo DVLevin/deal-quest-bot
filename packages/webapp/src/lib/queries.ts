@@ -70,5 +70,7 @@ export const queryKeys = {
     weakAreas: ['admin', 'weakAreas'] as const,
     recentActivity: ['admin', 'recentActivity'] as const,
     modelConfigs: ['admin', 'modelConfigs'] as const,
+    allLeads: ['admin', 'allLeads'] as const,
+    leadAssignments: (leadId: number) => ['admin', 'assignments', leadId] as const,
   },
 } as const;

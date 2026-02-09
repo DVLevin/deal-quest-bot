@@ -163,6 +163,17 @@ export interface LeadActivityRow {
 }
 
 // ---------------------------------------------------------------------------
+// lead_assignments
+// ---------------------------------------------------------------------------
+export interface LeadAssignmentRow {
+  id: number;
+  lead_id: number;
+  telegram_id: number;
+  assigned_by: number;
+  created_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // casebook
 // ---------------------------------------------------------------------------
 export interface CasebookRow {

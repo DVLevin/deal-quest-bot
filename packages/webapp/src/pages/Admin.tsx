@@ -12,6 +12,7 @@ import { MemberLeaderboard } from '@/features/admin/components/MemberLeaderboard
 import { WeakAreas } from '@/features/admin/components/WeakAreas';
 import { ActivityFeed } from '@/features/admin/components/ActivityFeed';
 import { ModelConfigPanel } from '@/features/admin/components/ModelConfigPanel';
+import { AdminLeadsSection } from '@/features/admin/components/AdminLeadsSection';
 
 export default function Admin() {
   return (
@@ -20,6 +21,7 @@ export default function Admin() {
       <TeamOverview />
       <PerformanceChart />
       <MemberLeaderboard />
+      <AdminLeadsSection />
       <WeakAreas />
       <ActivityFeed />
       <ModelConfigPanel />

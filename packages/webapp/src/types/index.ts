@@ -7,6 +7,7 @@ export type {
   ScenarioSeenRow,
   LeadRegistryRow,
   LeadActivityRow,
+  LeadAssignmentRow,
   CasebookRow,
   UserMemoryRow,
   GeneratedScenarioRow,
