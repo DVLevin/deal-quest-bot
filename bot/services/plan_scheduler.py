@@ -224,7 +224,7 @@ def _reminder_action_keyboard(
         keyboard,
         tma_url,
         path=f"leads/{lead_id}",
-        query_params={"step": str(step_id)},
+        query_params={"step": str(step_id), "action": "execute"},
     )
 
 

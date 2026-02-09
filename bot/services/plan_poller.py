@@ -37,7 +37,7 @@ async def _notify_plan_ready(
                 ),
             ],
         ])
-        keyboard = add_open_in_app_row(keyboard, tma_url, path=f"leads/{lead_id}")
+        keyboard = add_open_in_app_row(keyboard, tma_url, path=f"leads/{lead_id}", query_params={"section": "plan"})
 
         await bot.send_message(
             chat_id=telegram_id,
