@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Phase 21 -- Seamless TMA-Bot Integration. Plan 01 complete.
+**Current focus:** Phase 21 -- Seamless TMA-Bot Integration. Plan 02 complete.
 
 ## Previous Milestones
 
@@ -16,18 +16,18 @@ v1.1: 4 phases, 10 plans, 28m total -- COMPLETE
 
 Milestone: Seamless TMA-Bot Integration
 Phase: 21 -- Seamless TMA-Bot Integration
-Current Plan: 2 of 4
+Current Plan: 3 of 4
 Status: Executing phase 21
-Last activity: 2026-02-09 -- Completed 21-01-PLAN.md
+Last activity: 2026-02-09 -- Completed 21-02-PLAN.md
 
-Progress: [########----------------------] 1/4 phase 21 plans
+Progress: [################--------------] 2/4 phase 21 plans
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 66
+- Total plans completed: 67
 - Average duration: 3.2m
-- Total execution time: 212m
+- Total execution time: 215m
 
 **By Phase:**
 
@@ -55,10 +55,10 @@ Progress: [########----------------------] 1/4 phase 21 plans
 | 18. Agent Observatory | 4/4 | 17m | 4.3m |
 | 19. Active Engagement Execution | 5/5 | 16m | 3.2m |
 | 20. Quick Wins by Prody | 5/5 | 16m | 3.2m |
-| 21. Seamless TMA-Bot Integration | 1/4 | 2m | 2m |
+| 21. Seamless TMA-Bot Integration | 2/4 | 5m | 2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 2m, 4m, 7m, 3m, 2m
+- Last 5 plans: 4m, 7m, 3m, 2m, 3m
 - Trend: stable
 
 *Updated after each plan completion*
@@ -180,6 +180,10 @@ Recent decisions affecting current work:
 - [21-01]: Copy Draft sends as NEW message (answer, not edit) for native long-press copy
 - [21-01]: View Full Draft button only appears when draft exceeds 3500 chars (conditional row)
 - [21-01]: Next step lookup excludes current step_id, filters status not in (done, skipped)
+- [21-02]: At-most-once delivery: always mark delivered even if Telegram send fails
+- [21-02]: 3-second poll interval matching draft/plan pollers
+- [21-02]: Stale processing recovery with 2-minute threshold on startup
+- [21-02]: tma_events uses created_at for stale detection (no updated_at column)
 
 ### Pending Todos
 
@@ -194,6 +198,7 @@ Recent decisions affecting current work:
 - [19-04]: Run migration `insforge/migrations/006_draft_requests.sql` on InsForge database
 - [quick-006]: Run migration `insforge/migrations/007_plan_requests.sql` on InsForge database
 - [quick-007]: Run migration `insforge/migrations/008_draft_requests_user_instructions.sql` on InsForge database
+- [21-02]: Run migration `insforge/migrations/010_tma_events.sql` on InsForge database
 
 ### Roadmap Evolution
 
@@ -220,7 +225,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-09
-Stopped at: Completed 21-01-PLAN.md (Self-contained reminder messages)
+Stopped at: Completed 21-02-PLAN.md (TMA event bus infrastructure)
 Resume file: None
-Next action: Execute 21-02-PLAN.md
-Next phase after: 3 plans remaining in phase 21
+Next action: Execute 21-03-PLAN.md
+Next phase after: 2 plans remaining in phase 21
