@@ -14,18 +14,28 @@ from bot.pipeline.context import PipelineContext
 from bot.services.image_utils import pre_resize_image
 from bot.services.llm_router import create_provider
 from bot.services.model_config import ModelConfigService
-from bot.storage.repositories import DraftRequestRepo
+from bot.storage.insforge_client import InsForgeClient
+from bot.storage.repositories import DraftRequestRepo, LeadRegistryRepo
 
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = 3  # seconds
 
 
-async def _fetch_and_encode_image(proof_url: str) -> str | None:
-    """Fetch image from URL, pre-resize for vision model, and base64-encode."""
+async def _fetch_and_encode_image(
+    proof_url: str, insforge: InsForgeClient | None = None,
+) -> str | None:
+    """Fetch image from URL, pre-resize for vision model, and base64-encode.
+
+    Passes InsForge auth headers for storage URLs to avoid 403 errors.
+    """
     try:
+        headers: dict[str, str] = {}
+        if insforge:
+            headers["Authorization"] = f"Bearer {insforge.anon_key}"
+
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(proof_url)
+            resp = await client.get(proof_url, headers=headers)
             resp.raise_for_status()
             image_bytes = resp.content
 
@@ -36,17 +46,46 @@ async def _fetch_and_encode_image(proof_url: str) -> str | None:
         return None
 
 
+def _build_rich_lead_context(lead, tma_context: dict | None = None) -> dict:
+    """Build rich lead context from DB lead record, falling back to TMA-provided context."""
+    ctx: dict = {}
+    if not lead and not tma_context:
+        return ctx
+
+    if lead:
+        ctx["name"] = (
+            f"{lead.prospect_first_name} {lead.prospect_last_name}"
+            if lead.prospect_first_name and lead.prospect_last_name
+            else lead.prospect_name or ""
+        )
+        ctx["title"] = lead.prospect_title or ""
+        ctx["company"] = lead.prospect_company or ""
+        ctx["geography"] = lead.prospect_geography or ""
+        ctx["status"] = lead.status or ""
+        ctx["web_research"] = lead.web_research or ""
+        ctx["prospect_analysis"] = lead.prospect_analysis or ""
+        ctx["closing_strategy"] = lead.closing_strategy or ""
+        ctx["engagement_tactics"] = lead.engagement_tactics or ""
+        ctx["draft_response"] = lead.draft_response or ""
+    elif tma_context:
+        ctx = dict(tma_context)
+
+    return ctx
+
+
 async def _process_draft_request(
     request,
     agent_registry: AgentRegistry,
     model_config_service: ModelConfigService,
     draft_repo: DraftRequestRepo,
+    lead_repo: LeadRegistryRepo,
+    insforge: InsForgeClient,
     shared_openrouter_key: str,
 ) -> None:
     """Process a single draft request through the CommentGeneratorAgent."""
     default_llm = None
     try:
-        image_b64 = await _fetch_and_encode_image(request.proof_url)
+        image_b64 = await _fetch_and_encode_image(request.proof_url, insforge)
         if not image_b64:
             await draft_repo.fail(request.id, "Failed to fetch screenshot image")
             return
@@ -56,6 +95,15 @@ async def _process_draft_request(
         except KeyError:
             await draft_repo.fail(request.id, "comment_generator agent not registered")
             return
+
+        # Fetch full lead data from DB for rich context
+        lead = None
+        try:
+            lead = await lead_repo.get_by_id(request.lead_id)
+        except Exception as e:
+            logger.warning("Could not fetch lead %d for draft context: %s", request.lead_id, e)
+
+        lead_context = _build_rich_lead_context(lead, request.lead_context)
 
         default_llm = create_provider("openrouter", shared_openrouter_key)
 
@@ -72,7 +120,7 @@ async def _process_draft_request(
         agent_input = AgentInput(
             user_message="Generate contextual response options from this screenshot.",
             context={
-                "lead_context": request.lead_context or {},
+                "lead_context": lead_context,
                 "user_instructions": request.user_instructions,
             },
         )
@@ -110,6 +158,8 @@ async def start_draft_request_poller(
     agent_registry: AgentRegistry,
     model_config_service: ModelConfigService,
     draft_repo: DraftRequestRepo,
+    lead_repo: LeadRegistryRepo,
+    insforge: InsForgeClient,
     shared_openrouter_key: str,
 ) -> None:
     """Poll draft_requests table and process pending requests."""
@@ -131,6 +181,8 @@ async def start_draft_request_poller(
                     agent_registry,
                     model_config_service,
                     draft_repo,
+                    lead_repo,
+                    insforge,
                     shared_openrouter_key,
                 )
         except Exception as e:

@@ -236,6 +236,8 @@ async def main() -> None:
                 agent_registry,
                 model_config_service,
                 draft_request_repo,
+                lead_repo,
+                insforge,
                 cfg.openrouter_api_key,
             ),
             name="draft_request_poller",

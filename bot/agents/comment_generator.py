@@ -51,10 +51,35 @@ class CommentGeneratorAgent(BaseAgent):
                     parts.append(f"- Title: {lead_context['title']}")
                 if lead_context.get("company"):
                     parts.append(f"- Company: {lead_context['company']}")
+                if lead_context.get("geography"):
+                    parts.append(f"- Geography: {lead_context['geography']}")
                 if lead_context.get("status"):
-                    parts.append(f"- Relationship: {lead_context['status']}")
+                    parts.append(f"- Relationship stage: {lead_context['status']}")
+
+                # Full deal intelligence from DB
+                if lead_context.get("prospect_analysis"):
+                    analysis = lead_context["prospect_analysis"]
+                    if len(analysis) > 2000:
+                        analysis = analysis[:2000] + "..."
+                    parts.append(f"\n**Deal Analysis:**\n{analysis}")
+
+                if lead_context.get("closing_strategy"):
+                    strategy = lead_context["closing_strategy"]
+                    if len(strategy) > 1000:
+                        strategy = strategy[:1000] + "..."
+                    parts.append(f"\n**Closing Strategy:**\n{strategy}")
+
+                if lead_context.get("engagement_tactics"):
+                    tactics = lead_context["engagement_tactics"]
+                    if len(tactics) > 1000:
+                        tactics = tactics[:1000] + "..."
+                    parts.append(f"\n**Engagement Tactics:**\n{tactics}")
+
                 if lead_context.get("web_research"):
-                    parts.append(f"\n**Background Research:**\n{lead_context['web_research']}")
+                    research = lead_context["web_research"]
+                    if len(research) > 1500:
+                        research = research[:1500] + "..."
+                    parts.append(f"\n**Background Research:**\n{research}")
 
             user_instructions = input_data.context.get("user_instructions")
             if user_instructions:
