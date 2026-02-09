@@ -12,7 +12,9 @@
  * their own TanStack Query hooks.
  */
 
-import { Link } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { retrieveLaunchParams } from '@telegram-apps/sdk-react';
 import { ProgressCard } from '@/features/dashboard/components/ProgressCard';
 import { BadgePreview } from '@/features/dashboard/components/BadgePreview';
 import { LeaderboardWidget } from '@/features/dashboard/components/LeaderboardWidget';
@@ -25,16 +27,40 @@ import { LevelUpOverlay } from '@/features/gamification/components/LevelUpOverla
 import { useSmartLanding } from '@/features/dashboard/hooks/useSmartLanding';
 import { useUserProgress } from '@/features/dashboard/hooks/useUserProgress';
 import { useLeads } from '@/features/leads/hooks/useLeads';
+import { useBotNotifications } from '@/features/leads/hooks/useBotNotifications';
+import { useAuthStore } from '@/features/auth/store';
 import { isAdminUsername } from '@/features/admin/lib/adminAccess';
 import { Skeleton } from '@/shared/ui';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const telegramId = useAuthStore((s) => s.telegramId);
   const { levelUp, dismiss } = useLevelUpDetection();
-  const { focus, isReady, overdueCount, streakDays } = useSmartLanding();
+  const { focus, isReady, overdueCount, streakDays, resumePath } = useSmartLanding();
+
+  // Poll for bot-completed async work (drafts, plans) and show toasts
+  useBotNotifications(telegramId);
   const { data: user } = useUserProgress();
   const { data: leads } = useLeads();
   const showAdmin = isAdminUsername(user?.username);
   const isFirstTimeUser = user && user.total_xp === 0 && (!leads || leads.length === 0);
+
+  // Session resume: navigate to last-viewed page if opened via menu button (no startParam)
+  const resumeGuard = useRef(false);
+  useEffect(() => {
+    if (!isReady || resumeGuard.current || !resumePath) return;
+    resumeGuard.current = true;
+
+    // Only resume if user arrived via menu button, not via deep link (startParam)
+    try {
+      const lp = retrieveLaunchParams();
+      if (lp.tgWebAppStartParam) return; // Deep link -- skip resume
+    } catch {
+      // Not in Telegram context, OK to resume
+    }
+
+    navigate(resumePath, { replace: true });
+  }, [isReady, resumePath, navigate]);
 
   const primaryAction =
     focus === 'actions-focus'

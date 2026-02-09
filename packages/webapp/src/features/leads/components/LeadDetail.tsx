@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef, type ComponentType } from 'react';
-import { useParams, useSearchParams, Navigate } from 'react-router';
+import { useParams, useSearchParams, useNavigate, useLocation, Navigate } from 'react-router';
 import {
   Target,
   FileText,
@@ -42,6 +42,7 @@ import { fireLevelUpConfetti } from '@/features/gamification/lib/confetti';
 import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
 import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
 import { useLead } from '../hooks/useLead';
+import { useBotNotifications } from '../hooks/useBotNotifications';
 import { useUpdateLeadStatus } from '../hooks/useUpdateLeadStatus';
 import { useUpdatePlanStep } from '../hooks/useUpdatePlanStep';
 import { useUploadProof } from '../hooks/useUploadProof';
@@ -272,6 +273,11 @@ export function LeadDetail() {
   const numericId = Number(leadIdParam);
   const telegramId = useAuthStore((s) => s.telegramId);
   const [searchParams] = useSearchParams();
+  const nav = useNavigate();
+  const location = useLocation();
+
+  // Poll for bot-completed async work (drafts, plans) and show toasts
+  useBotNotifications(telegramId);
 
   const { data: lead, isLoading, isError, refetch } = useLead(
     Number.isNaN(numericId) ? 0 : numericId,
@@ -300,28 +306,50 @@ export function LeadDetail() {
     setActiveSection((prev) => (prev === id ? null : id));
   };
 
-  // Deep link step highlighting
+  // Deep link step highlighting and action/section params
   const highlightStepParam = searchParams.get('step');
   const highlightStepId = highlightStepParam ? Number(highlightStepParam) : null;
+  const actionParam = searchParams.get('action');
+  const sectionParam = searchParams.get('section');
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [visualHighlight, setVisualHighlight] = useState<number | null>(highlightStepId);
+  const deepLinkProcessed = useRef(false);
 
-  // Scroll to highlighted step after data loads and auto-expand into action mode
+  // Process deep link params after data loads: step highlight, action=execute, section=plan
   useEffect(() => {
-    if (highlightStepId && !isLoading && lead) {
-      // Ensure plan section is open
+    if (deepLinkProcessed.current || isLoading || !lead) return;
+
+    const hasDeepLinkParams = highlightStepId || actionParam || sectionParam;
+    if (!hasDeepLinkParams) return;
+    deepLinkProcessed.current = true;
+
+    // section=plan: ensure plan section is expanded
+    if (sectionParam === 'plan') {
       setActiveSection('plan');
-      // Auto-expand into action mode (not just highlight)
-      setActiveStepId(highlightStepId);
-      const timer = setTimeout(() => {
+    }
+
+    // step=X with optional action=execute: open step action screen
+    if (highlightStepId) {
+      setActiveSection('plan');
+      if (actionParam === 'execute') {
+        setActiveStepId(highlightStepId);
+      } else {
+        // Just highlight without full action screen
+        setActiveStepId(highlightStepId);
+      }
+      setTimeout(() => {
         stepRefs.current[highlightStepId]?.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
         });
       }, 150);
-      return () => clearTimeout(timer);
     }
-  }, [highlightStepId, isLoading, lead]);
+
+    // Clear query params after processing to avoid re-triggering on back navigation
+    if (hasDeepLinkParams) {
+      nav(location.pathname, { replace: true });
+    }
+  }, [highlightStepId, actionParam, sectionParam, isLoading, lead, nav]);
 
   // Clear highlight animation after 3 seconds
   useEffect(() => {

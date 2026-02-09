@@ -6,8 +6,8 @@
  * useBackButton syncs Telegram's BackButton with navigation state.
  */
 
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { AppLayout } from '@/shared/layouts/AppLayout';
 import { Skeleton } from '@/shared/ui';
 import { useBackButton } from '@/shared/hooks/useBackButton';
@@ -41,9 +41,39 @@ function PageSkeleton() {
  * Inner router component that has access to router context.
  * useBackButton must be called inside BrowserRouter.
  */
+/** Non-resumable path prefixes -- don't save these to session storage */
+const NON_RESUMABLE = ['/', '/admin'];
+
+function useSessionTracker() {
+  const location = useLocation();
+  const prevPath = useRef<string>('');
+
+  useEffect(() => {
+    const fullPath = location.pathname + location.search;
+
+    // Skip if path hasn't changed (debounce)
+    if (fullPath === prevPath.current) return;
+    prevPath.current = fullPath;
+
+    // Don't save non-resumable paths
+    const isNonResumable = NON_RESUMABLE.some((prefix) =>
+      prefix === '/'
+        ? location.pathname === '/'
+        : location.pathname.startsWith(prefix),
+    );
+    if (isNonResumable) return;
+
+    localStorage.setItem(
+      'dq_last_path',
+      JSON.stringify({ path: fullPath, ts: Date.now() }),
+    );
+  }, [location.pathname, location.search]);
+}
+
 function AppRoutes() {
   useBackButton();
   useDeepLink();
+  useSessionTracker();
 
   return (
     <AppLayout>
