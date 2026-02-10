@@ -292,6 +292,7 @@ export function LeadDetail() {
 
   // Active step for the StepActionScreen (null = all collapsed)
   const [activeStepId, setActiveStepId] = useState<number | null>(null);
+  const [confirmRegenPlan, setConfirmRegenPlan] = useState(false);
 
   // Draft result state for tabbed options and undo
   const [activeDraftResult, setActiveDraftResult] = useState<DraftResult | null>(null);
@@ -947,6 +948,54 @@ export function LeadDetail() {
                 </div>
               );
             })}
+
+            {/* Regenerate Plan button */}
+            <div className="pt-2 border-t border-surface-secondary">
+              {confirmRegenPlan ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!telegramId) return;
+                      generatePlanMutation.mutate({ leadId: lead.id, telegramId }, {
+                        onSuccess: () => {
+                          toast({ type: 'info', message: 'Regenerating plan. You\'ll get a Telegram notification when ready.', duration: 6000 });
+                          setConfirmRegenPlan(false);
+                        },
+                      });
+                    }}
+                    disabled={generatePlanMutation.isPending}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-warning/15 px-3 py-2 text-xs font-medium text-warning transition-colors active:scale-95 disabled:opacity-50"
+                  >
+                    {generatePlanMutation.isPending ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" /> Sending...</>
+                    ) : (
+                      'Yes, regenerate'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRegenPlan(false)}
+                    className="flex flex-1 items-center justify-center rounded-lg bg-surface-secondary px-3 py-2 text-xs font-medium text-text-hint transition-colors active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmRegenPlan(true)}
+                  disabled={generatePlanMutation.isPending || generatePlanMutation.isSuccess}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-text-hint transition-colors active:bg-surface-secondary/50 disabled:opacity-50"
+                >
+                  {generatePlanMutation.isSuccess ? (
+                    <><Loader2 className="h-3 w-3 animate-spin" /> Regenerating...</>
+                  ) : (
+                    <><RefreshCw className="h-3 w-3" /> Regenerate Plan</>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-4">
