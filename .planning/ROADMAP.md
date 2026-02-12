@@ -229,7 +229,7 @@ v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. T
 - [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
 - [x] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
 - [x] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
-- [x] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA→Bot confirmation messages, Bot→TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
+- [x] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA->Bot confirmation messages, Bot->TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
 
 ### Phase 12: Scheduling & Reminder Infrastructure
 **Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
@@ -483,3 +483,121 @@ Phase 18 depends on Phase 17 (observability layer wraps completed agent features
 | 19. Active Engagement Execution | 5/5 | Complete | 2026-02-09 |
 | 20. Quick Wins by Prody | 5/5 | Complete | 2026-02-08 |
 | 21. Seamless TMA-Bot Integration | 4/4 | Complete | 2026-02-09 |
+
+---
+
+## Milestone: v3.0 -- Prospect Discovery & UX Evolution
+
+v3.0 expands Deal Quest from a reactive sales tool into a proactive prospect discovery platform. Users gain the ability to search LinkedIn prospects directly from the TMA and create leads with one tap, record voice notes anywhere in the app for hands-free input, and collaborate on leads with team transfers and shared activity feeds. The bot evolves from a full-featured command interface to a lean notification hub with quick-confirm interactions, while the TMA receives a comprehensive UX overhaul covering progressive disclosure, interaction reduction, animations, visual consistency, and mobile viewport optimization. The build starts with the highest-value standalone feature (LinkedIn search), validates the riskiest capability early (voice recording on Android WebView), then modernizes the bot once TMA alternatives exist, adds team collaboration on stable foundations, and finishes with a cross-cutting UX polish pass.
+
+### v3.0 Phases
+
+- [ ] **Phase 22: LinkedIn Prospect Search** - Edge function proxy, search UI, prospect result cards, one-tap lead creation, search resilience
+- [ ] **Phase 23: TMA Voice Input** - useVoiceRecorder hook, recording UI, audio upload pipeline, bot transcription poller, voice integration points
+- [ ] **Phase 24: Bot Role Modernization** - Command simplification, graceful deprecation, enhanced notification hub, quick-confirm interactions
+- [ ] **Phase 25: Team Collaboration** - Lead transfer flow, team activity feed, assigned leads visibility, transfer notifications
+- [ ] **Phase 26: UX Overhaul** - Progressive disclosure, interaction reduction, animation polish, visual consistency, mobile viewport optimization
+
+### Phase 22: LinkedIn Prospect Search
+**Goal**: Users can discover new prospects by searching LinkedIn directly from the TMA, browse results as visual cards, and create a fully analyzed lead from any search result with a single tap -- turning prospect discovery from a manual multi-app process into an integrated in-app workflow
+**Depends on**: Phase 21 (v2.0 complete)
+**Requirements**: LSRCH-V30-01, LSRCH-V30-02, LSRCH-V30-03, LSRCH-V30-04, LSRCH-V30-05
+**Success Criteria** (what must be TRUE):
+  1. TMA can search LinkedIn prospects via an InsForge edge function proxy -- the edge function handles CORS headers and mixed content bypass to the external microservice, and the TMA never makes direct HTTP-only requests
+  2. User can enter a keyword (and optional company filter), tap search, and see a scrollable list of prospect cards showing name, headline, location, company, profile image, and open-to-work badge
+  3. User can tap any search result to create a lead with LinkedIn data pre-filled (name, title, company, location, image URL) and the existing AI analysis + engagement plan pipeline runs automatically
+  4. Search requests have an 8-second timeout with user-friendly error messages for timeout, service-down, and rate-limit scenarios, and duplicate submissions are blocked while a request is in-flight
+  5. Search results render correctly for zero results (empty state with guidance), partial data (missing fields gracefully hidden), and large result sets (scrollable without layout issues)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md -- InsForge edge function proxy: linkedin-search function, CORS handling, timeout, error normalization (Wave 1)
+- [ ] 22-02-PLAN.md -- Search UI and prospect cards: search page, keyword/company inputs, ProspectCard component, result list with loading/empty/error states (Wave 1)
+- [ ] 22-03-PLAN.md -- Prospect-to-lead creation: one-tap flow, pre-fill lead data, trigger AI pipeline via existing support flow, navigation to new lead (Wave 2)
+
+### Phase 23: TMA Voice Input
+**Goal**: Users can record voice notes directly in the TMA for any text input context -- lead notes, support context, context updates -- and have the audio automatically transcribed via the existing AssemblyAI pipeline, making hands-free input a first-class interaction pattern
+**Depends on**: Phase 22 (LinkedIn search provides new input contexts to voice-enable; sequential ordering ensures voice testing happens after first v3.0 phase validates the build pipeline)
+**Requirements**: VOICE-V30-01, VOICE-V30-02, VOICE-V30-03, VOICE-V30-04, VOICE-V30-05
+**Success Criteria** (what must be TRUE):
+  1. User can tap a microphone button next to any text input (lead notes, support context, context update) to start recording, see a recording timer with animated waveform, and stop or cancel the recording
+  2. On devices where MediaRecorder is unavailable (detected via feature check), the microphone button is hidden and the user sees no broken UI -- voice input silently degrades to text-only
+  3. Recorded audio is uploaded to InsForge Storage, a `transcription_requests` row is created, the TMA polls for completion, and the transcribed text populates the text field for user review and editing before saving
+  4. The bot-side transcription poller picks up `transcription_requests` rows, downloads audio from InsForge Storage, transcribes via AssemblyAI, and writes the result back -- all within 30 seconds for a typical recording
+  5. Voice recording works with codec detection (`audio/webm;codecs=opus` primary, `audio/mp4` fallback) and enforces a 120-second maximum recording duration
+**Plans**: 3 plans
+
+Plans:
+- [ ] 23-01-PLAN.md -- useVoiceRecorder hook + VoiceRecordButton component: MediaRecorder API, codec detection, recording state, timer, waveform, feature detection fallback (Wave 1)
+- [ ] 23-02-PLAN.md -- Audio upload pipeline + transcription polling: InsForge Storage upload, transcription_requests migration/model/repo, useTranscriptionRequest hook with polling (Wave 1)
+- [ ] 23-03-PLAN.md -- Bot transcription poller + voice integration points: start_transcription_request_poller service, wire VoiceRecordButton into lead notes, support context, and context update inputs (Wave 2)
+
+### Phase 24: Bot Role Modernization
+**Goal**: The bot evolves from a feature-complete command interface into a lean notification hub with quick-confirm interactions -- complex workflows redirect to the TMA while the bot excels at proactive notifications, inline draft delivery, and one-tap confirmations that don't require opening the app
+**Depends on**: Phase 23 (TMA must have LinkedIn search and voice input as alternatives before bot commands are simplified; all v3.0 TMA features must be stable)
+**Requirements**: BOTMOD-V30-01, BOTMOD-V30-02, BOTMOD-V30-03, BOTMOD-V30-04
+**Success Criteria** (what must be TRUE):
+  1. Bot commands are reduced to essential quick actions -- complex workflows (lead analysis, engagement planning, detailed stats) redirect to the TMA with "Open in App" deep link buttons instead of duplicating the full flow in chat
+  2. Deprecated commands still respond with a friendly redirect message ("This feature has moved to the app. Tap below to open it.") with a deep link button for at least 30 days before handler removal
+  3. Bot proactively sends contextual notifications for new lead assignments, engagement step reminders with inline drafts, async work completion (draft/plan generation), and team activity highlights
+  4. Common actions (approve draft, mark step done, snooze reminder) are completable with one-tap inline buttons directly in the bot chat without opening the TMA
+**Plans**: 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md -- Command audit and simplification: identify commands to deprecate, add redirect handlers with deep links, update /start menu (Wave 1)
+- [ ] 24-02-PLAN.md -- Enhanced notification hub and quick-confirm buttons: consolidate notification patterns, add proactive notifications for assignments and team highlights, one-tap confirm buttons (Wave 1)
+
+### Phase 25: Team Collaboration
+**Goal**: Team members can transfer leads to each other, see shared activity across the team, and receive notifications when leads are assigned to them -- enabling collaborative deal management without leaving the existing Deal Quest workflow
+**Depends on**: Phase 24 (bot notification hub must exist for transfer notifications; bot modernization ensures notification patterns are consolidated before team events are added)
+**Requirements**: TEAM-V30-01, TEAM-V30-02, TEAM-V30-03, TEAM-V30-04
+**Success Criteria** (what must be TRUE):
+  1. Admin or lead owner can transfer a lead to another team member via a TMA modal with team member picker -- the transfer updates `lead_assignments`, logs a `transfer` activity, and notifies the recipient via bot message with "Open in App" deep link
+  2. Team activity feed shows lead activities across all team members (status changes, step completions, transfers, notes) with actor attribution and 15-second polling refresh
+  3. Lead list shows both owned and assigned leads with clear visual distinction ("Your lead" vs "Assigned by [name]") and the query correctly unions own leads with assigned leads
+  4. Transfer notifications arrive in the recipient's Telegram chat within 5 seconds with lead name, assigner name, and a deep link button to the lead detail page
+**Plans**: 3 plans
+
+Plans:
+- [ ] 25-01-PLAN.md -- Lead transfer flow: TransferModal component, team member picker, lead_assignments mutation, transfer activity logging (Wave 1)
+- [ ] 25-02-PLAN.md -- Assigned leads visibility: query union for own + assigned leads, visual indicators on LeadCard, lead list filter for "Assigned to me" (Wave 1)
+- [ ] 25-03-PLAN.md -- Team activity feed + transfer notifications: TeamActivityFeed component with polling, bot transfer notification handler via tma_events bus (Wave 2)
+
+### Phase 26: UX Overhaul
+**Goal**: The entire TMA receives a comprehensive UX polish pass -- information-heavy screens use progressive disclosure, multi-step flows are condensed, state changes are animated, visual patterns are consistent across all pages, and every screen works flawlessly on small mobile viewports
+**Depends on**: Phase 25 (all v3.0 features must be complete before cross-cutting UX pass -- progressive disclosure, animation, and viewport fixes need to cover the new LinkedIn search, voice input, and team collaboration screens in addition to existing pages)
+**Requirements**: UX-V30-01, UX-V30-02, UX-V30-03, UX-V30-04, UX-V30-05
+**Success Criteria** (what must be TRUE):
+  1. Information-heavy screens (LeadDetail, Dashboard, Admin) collapse secondary information behind expand/tap interactions -- primary actions and critical data are visible first, details are one tap away
+  2. Multi-step flows across the app are audited and reduced in tap count -- unnecessary confirmation dialogs are removed, obvious defaults are auto-selected, and the total interaction cost of common workflows drops measurably
+  3. State changes (step completion, status update, card expand/collapse), page transitions, and loading states have smooth micro-animations across all screens -- no jarring instant-swap UI updates
+  4. Spacing, typography, color usage, icon style, and component patterns are consistent across all TMA pages -- visual inconsistencies accumulated during v2.0 and v3.0 rapid development are resolved
+  5. All screens render correctly on small viewports (iPhone SE, older Android) with no overflow issues, all buttons have minimum 44px touch targets, and safe area insets are respected on notched devices
+**Plans**: 3 plans
+
+Plans:
+- [ ] 26-01-PLAN.md -- Progressive disclosure + interaction reduction: audit and refactor LeadDetail, Dashboard, Admin, and new v3.0 screens with collapsible sections and reduced confirmation steps (Wave 1)
+- [ ] 26-02-PLAN.md -- Animation and transition polish: micro-animations for state changes, page transitions (framer-motion or CSS), loading state animations across all screens (Wave 1)
+- [ ] 26-03-PLAN.md -- Visual consistency + mobile viewport: spacing/typography/color/icon audit, component pattern normalization, small viewport fixes, 44px touch targets, safe area insets (Wave 2)
+
+### v3.0 Progress
+
+**Execution Order:**
+Phases execute sequentially: 22 -> 23 -> 24 -> 25 -> 26.
+Phase 22 (LinkedIn search) is independent with highest standalone value and lowest risk.
+Phase 23 (voice input) has a critical Android WebView feasibility question that must be answered early.
+Phase 24 (bot modernization) must wait until TMA alternatives exist for deprecated commands.
+Phase 25 (team collaboration) depends on stable features and consolidated notification patterns.
+Phase 26 (UX overhaul) must be last to cover all new v3.0 screens in addition to existing pages.
+
+```
+22 (LinkedIn Search) ──> 23 (Voice Input) ──> 24 (Bot Modernization) ──> 25 (Team Collaboration) ──> 26 (UX Overhaul)
+```
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 22. LinkedIn Prospect Search | 0/3 | Pending | -- |
+| 23. TMA Voice Input | 0/3 | Pending | -- |
+| 24. Bot Role Modernization | 0/2 | Pending | -- |
+| 25. Team Collaboration | 0/3 | Pending | -- |
+| 26. UX Overhaul | 0/3 | Pending | -- |

@@ -419,35 +419,35 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LSRCH-V30-01 | — | Pending |
-| LSRCH-V30-02 | — | Pending |
-| LSRCH-V30-03 | — | Pending |
-| LSRCH-V30-04 | — | Pending |
-| LSRCH-V30-05 | — | Pending |
-| VOICE-V30-01 | — | Pending |
-| VOICE-V30-02 | — | Pending |
-| VOICE-V30-03 | — | Pending |
-| VOICE-V30-04 | — | Pending |
-| VOICE-V30-05 | — | Pending |
-| BOTMOD-V30-01 | — | Pending |
-| BOTMOD-V30-02 | — | Pending |
-| BOTMOD-V30-03 | — | Pending |
-| BOTMOD-V30-04 | — | Pending |
-| TEAM-V30-01 | — | Pending |
-| TEAM-V30-02 | — | Pending |
-| TEAM-V30-03 | — | Pending |
-| TEAM-V30-04 | — | Pending |
-| UX-V30-01 | — | Pending |
-| UX-V30-02 | — | Pending |
-| UX-V30-03 | — | Pending |
-| UX-V30-04 | — | Pending |
-| UX-V30-05 | — | Pending |
+| LSRCH-V30-01 | Phase 22 | Pending |
+| LSRCH-V30-02 | Phase 22 | Pending |
+| LSRCH-V30-03 | Phase 22 | Pending |
+| LSRCH-V30-04 | Phase 22 | Pending |
+| LSRCH-V30-05 | Phase 22 | Pending |
+| VOICE-V30-01 | Phase 23 | Pending |
+| VOICE-V30-02 | Phase 23 | Pending |
+| VOICE-V30-03 | Phase 23 | Pending |
+| VOICE-V30-04 | Phase 23 | Pending |
+| VOICE-V30-05 | Phase 23 | Pending |
+| BOTMOD-V30-01 | Phase 24 | Pending |
+| BOTMOD-V30-02 | Phase 24 | Pending |
+| BOTMOD-V30-03 | Phase 24 | Pending |
+| BOTMOD-V30-04 | Phase 24 | Pending |
+| TEAM-V30-01 | Phase 25 | Pending |
+| TEAM-V30-02 | Phase 25 | Pending |
+| TEAM-V30-03 | Phase 25 | Pending |
+| TEAM-V30-04 | Phase 25 | Pending |
+| UX-V30-01 | Phase 26 | Pending |
+| UX-V30-02 | Phase 26 | Pending |
+| UX-V30-03 | Phase 26 | Pending |
+| UX-V30-04 | Phase 26 | Pending |
+| UX-V30-05 | Phase 26 | Pending |
 
 **v3.0 Coverage:**
 - v3.0 requirements: 23 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-12 after v3.0 milestone requirements created*
+*Last updated: 2026-02-12 after v3.0 roadmap phases created*

@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface
-**Current focus:** Milestone v3.0 -- Prospect Discovery & UX Evolution. Defining requirements.
+**Current focus:** Milestone v3.0 -- Prospect Discovery & UX Evolution. Roadmap created, ready for Phase 22 planning.
 
 ## Previous Milestones
 
@@ -16,10 +16,10 @@ v2.0: 11 phases, 40 plans, 113m total -- COMPLETE
 ## Current Position
 
 Milestone: v3.0 -- Prospect Discovery & UX Evolution
-Phase: Not started (defining requirements)
+Phase: 22 -- LinkedIn Prospect Search (pending)
 Plan: --
-Status: Defining requirements
-Last activity: 2026-02-11 -- Milestone v3.0 started
+Status: Roadmap created, awaiting Phase 22 plan creation
+Last activity: 2026-02-12 -- v3.0 roadmap created (5 phases, 14 plans estimated)
 
 ## Performance Metrics
 
@@ -76,6 +76,15 @@ Recent decisions affecting current work:
 - [v2.0 Roadmap]: No LinkedIn URL scraping (legal risk); "paste the text" guidance instead
 - [v2.0 Roadmap]: User-triggered re-analysis only (no automatic strategy rewrites)
 - [v2.0 Roadmap]: PostgreSQL polling scheduler (extend followup_scheduler.py, no new dependencies)
+- [v3.0 Roadmap]: 5 phases (22-26) derived from 23 requirements at standard depth
+- [v3.0 Roadmap]: Sequential execution: 22 -> 23 -> 24 -> 25 -> 26
+- [v3.0 Roadmap]: LinkedIn search first (lowest risk, highest standalone value)
+- [v3.0 Roadmap]: Voice recording second (critical Android WebView feasibility question)
+- [v3.0 Roadmap]: Bot modernization third (must wait for TMA alternatives to exist)
+- [v3.0 Roadmap]: Team collaboration fourth (depends on stable features + consolidated notifications)
+- [v3.0 Roadmap]: UX overhaul last (cross-cutting pass needs all new screens to exist)
+- [v3.0 Roadmap]: Zero new npm/Python dependencies -- browser-native APIs + InsForge edge functions
+- [v3.0 Roadmap]: Known RLS security debt (anon key USING(true)) acknowledged but not in v3.0 scope
 - [12-02]: 15-minute polling interval balances responsiveness with resource usage
 - [12-02]: Optimistic update before send prevents duplicate reminders on bot restart
 - [12-02]: Timing parser prioritizes delay_days over timing string regex
@@ -211,10 +220,12 @@ Recent decisions affecting current work:
 - Phase 18 added: Agent Observatory & Model Configuration — Langfuse tracing (cloud hobby, self-host ready), per-agent model selection via TMA admin UI, full prompt/I-O/cost visibility
 - Phase 19 added: Active Engagement Execution — step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, draft copy, can't-perform flow, and deep links from bot reminders
 - Phase 20 added: Quick Wins by Prody — PM-audit-driven improvements from docs/pm-audit/ (deal closure celebration, pipeline velocity, smart status, outcome capture, onboarding polish, training routing)
+- v3.0 Roadmap created: 5 phases (22-26) from 23 requirements -- LinkedIn search, voice input, bot modernization, team collaboration, UX overhaul
 
 ### Blockers/Concerns
 
-None currently.
+- [Phase 23]: Android WebView microphone access unconfirmed -- must test on real device before building voice UI (VOICE-V30-01/02)
+- [Phase 22]: InsForge edge function outbound HTTP policy needs validation -- Deno fetch to HTTP endpoint
 
 ## Quick Tasks
 
@@ -229,8 +240,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-09
-Stopped at: Completed 21-03-PLAN.md (TMA event wiring and bot notification toasts)
+Last session: 2026-02-12
+Stopped at: v3.0 roadmap created (Phases 22-26)
 Resume file: None
-Next action: Phase 21 complete. Plan next phase.
-Next phase after: Phase 21 fully complete
+Next action: Plan Phase 22 (LinkedIn Prospect Search)
+Next phase after: Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26
