@@ -361,5 +361,93 @@
 - Unmapped: 0
 
 ---
+
+## v3.0 Requirements -- Prospect Discovery & UX Evolution
+
+### LinkedIn Prospect Search
+
+- [ ] **LSRCH-V30-01**: LinkedIn search edge function proxy — InsForge edge function (`linkedin-search`) that proxies POST requests to the external LinkedIn search microservice (`http://13.61.184.191:8000/api/people/search`), handling CORS headers and mixed content bypass
+- [ ] **LSRCH-V30-02**: Search UI in TMA — search page with keyword input, optional company filter, result count selector, and search button; debounced submission with loading state
+- [ ] **LSRCH-V30-03**: Prospect result cards — display search results as cards showing name, headline, location, company, open_to_work badge, and profile image; scrollable list with result count
+- [ ] **LSRCH-V30-04**: One-tap prospect-to-lead creation — tap a search result to create a lead with LinkedIn data pre-filled (name, title, company, location, image URL); triggers AI analysis + engagement plan generation via existing pipeline
+- [ ] **LSRCH-V30-05**: Search resilience — 8-second timeout with AbortController, user-friendly error messages for timeout/service-down/rate-limit, prevent duplicate submissions while request is in-flight
+
+### TMA Voice Input
+
+- [ ] **VOICE-V30-01**: `useVoiceRecorder` hook — custom React hook (~60 LOC) using browser MediaRecorder API with codec detection (`audio/webm;codecs=opus` primary, `audio/mp4` fallback), 120-second max duration, and recording state management
+- [ ] **VOICE-V30-02**: Voice recording UI component — microphone button with recording timer, animated waveform indicator, stop/cancel controls; hides mic button when MediaRecorder is unavailable (feature detection with graceful fallback message)
+- [ ] **VOICE-V30-03**: Audio upload pipeline — upload recorded audio blob to InsForge Storage (`prospect-photos/audio/` prefix), insert `transcription_requests` row, poll for completion; follows existing `draft_requests`/`plan_requests` async pattern
+- [ ] **VOICE-V30-04**: Bot transcription poller — new poller service (`start_transcription_request_poller`) that watches `transcription_requests` table, downloads audio from InsForge Storage, sends to existing AssemblyAI `TranscriptionService`, writes transcribed text back
+- [ ] **VOICE-V30-05**: Voice input integration points — add voice recording button to lead notes input, support context input, and context update input; transcribed text populates the text field for user review/edit before saving
+
+### Bot Role Modernization
+
+- [ ] **BOTMOD-V30-01**: Bot command simplification — reduce bot commands to essential quick actions; complex workflows (lead analysis, engagement planning) redirect to TMA with "Open in App" deep link buttons
+- [ ] **BOTMOD-V30-02**: Graceful command deprecation — removed commands still respond with a friendly redirect message ("This feature has moved to the app. Tap below to open it.") for at least 30 days before handler removal
+- [ ] **BOTMOD-V30-03**: Enhanced notification hub — bot proactively sends contextual notifications for: new lead assignments, engagement step reminders with inline drafts, async work completion (draft/plan generation), team activity highlights
+- [ ] **BOTMOD-V30-04**: Quick-confirm interactions — bot offers one-tap confirmation/action buttons for common actions (approve draft, mark step done, snooze reminder) without opening TMA
+
+### Team Collaboration
+
+- [ ] **TEAM-V30-01**: Lead transfer flow — admin/owner can transfer a lead to another team member via TMA modal with team member picker; updates `lead_assignments` table, logs `transfer` activity, notifies recipient via bot
+- [ ] **TEAM-V30-02**: Team activity feed — new feed component showing lead activities across all team members (status changes, step completions, transfers, notes) with actor attribution; 15-second polling via React Query
+- [ ] **TEAM-V30-03**: Assigned leads visibility — lead list shows both owned and assigned leads with clear "Your lead" vs "Assigned by [name]" indicator; query unions own leads + assigned leads
+- [ ] **TEAM-V30-04**: Transfer notifications — bot sends Telegram message to assignee when a lead is transferred ("You've been assigned lead: [Name]") with "Open in App" deep link button to the lead detail page
+
+### UX Overhaul
+
+- [ ] **UX-V30-01**: Progressive disclosure — declutter information-heavy screens (LeadDetail, Dashboard, Admin) by collapsing secondary information behind expand/tap interactions; show primary actions first
+- [ ] **UX-V30-02**: Interaction reduction — audit all multi-step flows and reduce tap count; examples: merge confirm dialogs where possible, auto-select obvious defaults, remove unnecessary confirmation steps
+- [ ] **UX-V30-03**: Animation and transition polish — add micro-animations for state changes (step completion, status update, card expand/collapse), page transitions, and loading states across all screens
+- [ ] **UX-V30-04**: Visual consistency pass — ensure consistent spacing, typography, color usage, icon style, and component patterns across all TMA pages; fix any visual inconsistencies accumulated during v2.0 rapid development
+- [ ] **UX-V30-05**: Mobile viewport optimization — audit all screens on small viewports (iPhone SE, older Android), fix overflow issues, ensure all buttons are tappable (minimum 44px touch targets), and respect safe area insets
+
+## v3.0 Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Official LinkedIn API (OAuth) | Requires API partner approval; using external microservice instead |
+| In-browser speech recognition (Web Speech API) | Unreliable in Telegram WebView; server-side AssemblyAI via bot pipeline |
+| Real-time WebSocket activity feed | Over-engineering for team size of 5-20; 15s polling via React Query sufficient |
+| Voice-to-voice (TTS responses) | Scope creep, high complexity, unclear user value |
+| Complex team permission system (roles/ACLs) | Premature; current admin/member split is sufficient |
+| LinkedIn profile scraping in TMA | Legal risk; solved by external microservice |
+| Bot complete replacement | Hybrid approach stays; bot handles notifications + quick actions |
+| Multi-team / organization isolation | Requires RLS overhaul (known auth debt); defer to v3.1 if multiple teams needed |
+
+## v3.0 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LSRCH-V30-01 | — | Pending |
+| LSRCH-V30-02 | — | Pending |
+| LSRCH-V30-03 | — | Pending |
+| LSRCH-V30-04 | — | Pending |
+| LSRCH-V30-05 | — | Pending |
+| VOICE-V30-01 | — | Pending |
+| VOICE-V30-02 | — | Pending |
+| VOICE-V30-03 | — | Pending |
+| VOICE-V30-04 | — | Pending |
+| VOICE-V30-05 | — | Pending |
+| BOTMOD-V30-01 | — | Pending |
+| BOTMOD-V30-02 | — | Pending |
+| BOTMOD-V30-03 | — | Pending |
+| BOTMOD-V30-04 | — | Pending |
+| TEAM-V30-01 | — | Pending |
+| TEAM-V30-02 | — | Pending |
+| TEAM-V30-03 | — | Pending |
+| TEAM-V30-04 | — | Pending |
+| UX-V30-01 | — | Pending |
+| UX-V30-02 | — | Pending |
+| UX-V30-03 | — | Pending |
+| UX-V30-04 | — | Pending |
+| UX-V30-05 | — | Pending |
+
+**v3.0 Coverage:**
+- v3.0 requirements: 23 total
+- Mapped to phases: 0 (pending roadmap creation)
+- Unmapped: 23
+
+---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-05 after v2.0 milestone requirements created*
+*Last updated: 2026-02-12 after v3.0 milestone requirements created*
