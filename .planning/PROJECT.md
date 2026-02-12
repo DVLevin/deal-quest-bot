@@ -89,20 +89,26 @@ Sales reps can see their progress, practice scenarios, get deal support, and tra
 | Inlined shared types for Railway | Railway `root_dir=packages/webapp` can't access `../shared`; types copied to `webapp/src/types/` | Confirmed |
 | Always push after commits | Railway deploys from remote — local-only commits never reach production. GSD executors must push after plan completion | Lesson learned (Phase 2/3) |
 
-## Previous Milestone: v1.1 — Quick & Medium Wins (COMPLETE)
+## Previous Milestones
 
-**Result:** 19/19 requirements delivered across 4 phases (8-11). Lead management, training experience, error handling & UX, and performance & reliability all improved.
+### v1.1 — Quick & Medium Wins (COMPLETE)
+**Result:** 19/19 requirements delivered across 4 phases (8-11). Lead management, training experience, error handling & UX, and performance & reliability.
 
-## Current Milestone: v2.0 — Sales Co-Pilot
+### v2.0 — Sales Co-Pilot (COMPLETE)
+**Result:** 51 requirements delivered across 11 phases (12-21). Scheduled engagement reminders, smart lead creation from screenshots, rich bot reminders with inline drafts, conversational re-analysis, multi-platform comment generation, bidirectional TMA-Bot communication, Langfuse observability, per-agent model config, step action screens, deal closure celebration, pipeline summary, first-time guide.
 
-**Goal:** Transform Deal Quest from a training tool into an active sales co-pilot that guides reps through prospect outreach with AI-generated engagement plans, timed reminders, and strategy re-analysis as deals evolve.
+## Current Milestone: v3.0 — Prospect Discovery & UX Evolution
 
-**Focus Areas:**
-1. **Smart Lead Creation** — Reduce lead creation friction: screenshot/URL → auto-enriched lead with AI analysis, strategy, and engagement plan generated automatically
-2. **Engagement Plan Executor** — THE killer feature: AI generates timed outreach plans, bot pings users for each step until confirmed done, contextual draft messages provided per step, progress tracked in TMA
-3. **Conversational Re-analysis** — Feed prospect responses back into the system, AI re-analyzes and evolves strategy, engagement plan updates dynamically based on new context
+**Goal:** Add AI-powered prospect discovery via external LinkedIn search microservice, voice-first input across TMA, modernize the bot role toward notifications + quick actions, add team collaboration features, and deliver a comprehensive UX polish pass across the entire app.
 
-**Scope:** Major new capabilities for the bot + TMA. Bot-side features (reminders, re-analysis pipelines) and TMA-side features (engagement plan UI, lead thread views) coordinated together.
+**Target features:**
+1. **LinkedIn Prospect Search** — Natural language search ("I need ML engineers at startups") → external microservice → review results in TMA → one-tap lead creation with full AI analysis + engagement plan
+2. **Voice Input in TMA** — Record voice memos anywhere text input exists today (lead notes, prospect context, meeting debriefs, analysis input) via browser MediaRecorder + AssemblyAI transcription
+3. **Bot Role Modernization** — Shift bot toward notifications, status updates, and quick confirmations; move complex workflows (lead creation, analysis) to TMA; resolve duplicate workflows
+4. **Team Collaboration** — Lead transfer/handoff with full context, team activity feed showing real-time teammate actions
+5. **UX Overhaul** — Reduce taps/steps, declutter information-heavy screens with progressive disclosure, animation/transition polish, visual consistency pass across all screens
+
+**Scope:** External microservice integration, TMA voice capabilities, bot simplification, team features, and full UX polish. Bot-side changes are subtractive (simplify) while TMA-side changes are additive (new features + polish).
 
 ---
-*Last updated: 2026-02-05 after v2.0 milestone creation*
+*Last updated: 2026-02-11 after v3.0 milestone creation*
