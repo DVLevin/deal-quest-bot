@@ -111,44 +111,44 @@
 | TRACE-04 | Phase 1 (v1.0) | Complete |
 | TRACE-05 | Phase 1 (v1.0) | Complete |
 | TRACE-06 | Phase 1 (v1.0) | Complete |
-| NLR-01 | TBD | Pending |
-| NLR-02 | TBD | Pending |
-| NLR-03 | TBD | Pending |
-| NLR-04 | TBD | Pending |
-| NLR-05 | TBD | Pending |
-| DEAL-01 | TBD | Pending |
-| DEAL-02 | TBD | Pending |
-| DEAL-03 | TBD | Pending |
-| DEAL-04 | TBD | Pending |
-| DEAL-05 | TBD | Pending |
-| DEAL-06 | TBD | Pending |
-| DEAL-07 | TBD | Pending |
-| COACH-01 | TBD | Pending |
-| COACH-02 | TBD | Pending |
-| COACH-03 | TBD | Pending |
-| COACH-04 | TBD | Pending |
-| STRAT-01 | TBD | Pending |
-| STRAT-02 | TBD | Pending |
-| STRAT-03 | TBD | Pending |
-| STRAT-04 | TBD | Pending |
-| STRAT-05 | TBD | Pending |
-| MEM-01 | TBD | Pending |
-| MEM-02 | TBD | Pending |
-| MEM-03 | TBD | Pending |
-| MEM-04 | TBD | Pending |
-| PRO-01 | TBD | Pending |
-| PRO-02 | TBD | Pending |
-| PRO-03 | TBD | Pending |
-| PRO-04 | TBD | Pending |
-| ADM-01 | TBD | Pending |
-| ADM-02 | TBD | Pending |
-| ADM-03 | TBD | Pending |
+| NLR-01 | Phase 5 | Pending |
+| NLR-02 | Phase 5 | Pending |
+| NLR-03 | Phase 3 | Pending |
+| NLR-04 | Phase 5 | Pending |
+| NLR-05 | Phase 5 | Pending |
+| DEAL-01 | Phase 4 | Pending |
+| DEAL-02 | Phase 4 | Pending |
+| DEAL-03 | Phase 4 | Pending |
+| DEAL-04 | Phase 4 | Pending |
+| DEAL-05 | Phase 4 | Pending |
+| DEAL-06 | Phase 4 | Pending |
+| DEAL-07 | Phase 4 | Pending |
+| COACH-01 | Phase 6 | Pending |
+| COACH-02 | Phase 6 | Pending |
+| COACH-03 | Phase 6 | Pending |
+| COACH-04 | Phase 6 | Pending |
+| STRAT-01 | Phase 6 | Pending |
+| STRAT-02 | Phase 6 | Pending |
+| STRAT-03 | Phase 6 | Pending |
+| STRAT-04 | Phase 6 | Pending |
+| STRAT-05 | Phase 6 | Pending |
+| MEM-01 | Phase 7 | Pending |
+| MEM-02 | Phase 7 | Pending |
+| MEM-03 | Phase 7 | Pending |
+| MEM-04 | Phase 7 | Pending |
+| PRO-01 | Phase 8 | Pending |
+| PRO-02 | Phase 8 | Pending |
+| PRO-03 | Phase 8 | Pending |
+| PRO-04 | Phase 8 | Pending |
+| ADM-01 | Phase 9 | Pending |
+| ADM-02 | Phase 9 | Pending |
+| ADM-03 | Phase 9 | Pending |
 
 **Coverage:**
-- v2 requirements: 28 total
-- Mapped to phases: 0 (awaiting roadmap)
-- Unmapped: 28
+- v2 requirements: 32 total (NLR: 5, DEAL: 7, COACH: 4, STRAT: 5, MEM: 4, PRO: 4, ADM: 3)
+- Mapped to phases: 32/32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-24*
-*Last updated: 2026-02-24 after v2.0 milestone initialization*
+*Last updated: 2026-02-24 — traceability complete after v2.0 roadmap*
