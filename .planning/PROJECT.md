@@ -1,76 +1,94 @@
-# Deal Quest Bot — Pipeline Observability & Testing
+# Deal Quest Bot — AI Sales Partner
 
 ## What This Is
 
-An observability, tracing, and automated testing system for Deal Quest Bot's AI pipelines. Lets the admin and developer see exactly what every pipeline step does, how long it takes, and whether anything is broken — first via Telegram `/admin` commands, later surfaced in the Telegram Mini App.
+A conversational AI sales partner inside Telegram that helps salespeople manage deals, prepare for calls, practice selling skills, and get proactive coaching — all through natural language. Instead of navigating commands, the salesperson just talks to the bot like a colleague. An orchestrator LLM routes requests to specialist agents (Deal, Coach, Strategy, Memory) that execute via tool-use loops.
 
 ## Core Value
 
-Know exactly where time is spent and what went wrong in every pipeline execution, so bottlenecks can be identified and fixed before users notice.
+A salesperson can chat naturally in Telegram about any sales need — deals, training, strategy, follow-ups — and the AI partner understands, routes to the right specialist, and acts. No commands required.
+
+## Current Milestone: v2.0 AI Sales Partner
+
+**Goal:** Transform the command-driven bot into a conversation-driven AI sales partner with multi-agent orchestration, CRM capabilities, and proactive coaching.
+
+**Target features:**
+- Natural language routing via Orchestrator → Specialist agents
+- Deal management (CRM inside the bot — InsForge backend)
+- Proactive coaching (daily combined brief + context-triggered nudges)
+- Strategy assistance (call prep, deal analysis, competitive intel)
+- Persistent memory (learns salesperson's patterns and context)
+- Observability admin tools (folded from previous Phase 2)
 
 ## Requirements
 
 ### Validated
 
-- ✓ Telegram bot with aiogram 3 FSM-based handlers — existing
-- ✓ Agent pipeline system (PipelineRunner, YAML configs, sequential/parallel/background execution) — existing
-- ✓ Three agent pipelines: learn (trainer), train (trainer), support (strategist) — existing
-- ✓ Voice transcription via AssemblyAI — existing
-- ✓ InsForge (PostgREST) data layer with repository pattern — existing
-- ✓ Admin handler with username-based authorization — existing
-- ✓ Real-time progress updates during processing (ProgressUpdater) — existing
-- ✓ User API key encryption/decryption (CryptoService) — existing
-- ✓ Background tasks (followup scheduler, scenario generation) — existing
+- ✓ Telegram bot with aiogram 3 FSM-based handlers — v1.0
+- ✓ Agent pipeline system (PipelineRunner, YAML configs, sequential/parallel/background execution) — v1.0
+- ✓ Three agent pipelines: learn (trainer), train (trainer), support (strategist) — v1.0
+- ✓ Voice transcription via AssemblyAI — v1.0
+- ✓ InsForge (PostgREST) data layer with repository pattern — v1.0
+- ✓ Admin handler with username-based authorization — v1.0
+- ✓ Real-time progress updates during processing (ProgressUpdater) — v1.0
+- ✓ User API key encryption/decryption (CryptoService) — v1.0
+- ✓ Background tasks (followup scheduler, scenario generation) — v1.0
+- ✓ Pipeline tracing with step-level timing and agent I/O capture — v1.0
+- ✓ Trace persistence to InsForge pipeline_traces/pipeline_spans tables — v1.0
 
 ### Active
 
-- [ ] Pipeline tracing — instrument every step (handler entry, LLM call, DB write, message edit) with timing
-- [ ] Trace persistence — store traces in InsForge `pipeline_traces` table
-- [ ] Admin health command — `/admin health` shows bot uptime, recent error rate, avg response times
-- [ ] Admin traces command — `/admin traces` shows recent pipeline executions with per-step timing
-- [ ] Admin test command — `/admin test` runs predefined synthetic test cases through real pipelines with real LLM calls
-- [ ] Synthetic test suite — 5-10 predefined test scenarios covering learn text, learn voice, train text, train voice, support text, support voice, support photo, support regeneration
-- [ ] Real interaction recording — capture traces from actual user sessions for later analysis
-- [ ] Per-step timing breakdown — see time for: message parsing, LLM generation, DB operations, Telegram API calls
-- [ ] Agent I/O capture — store full prompt/response for each agent step (for later TMA deep-dive)
-- [ ] Summary view in /admin — step name + timing per step + total end-to-end timing
-- [ ] Error tracking — surface failed pipelines with error context in /admin
+- [ ] Orchestrator agent — LLM-driven message routing to specialist agents
+- [ ] Deal Agent — CRM operations: create/update deals, log notes, track pipeline stages
+- [ ] Coach Agent — training, practice sessions, objection handling, skill assessment
+- [ ] Strategy Agent — deal analysis, call preparation, competitive intel, re-engagement plans
+- [ ] Memory Agent — learns salesperson patterns, preferences, deal history context
+- [ ] Natural language message handling — catch-all handler routes to orchestrator instead of FSM
+- [ ] Tool-use loop architecture — agents execute tools iteratively until task complete
+- [ ] Confirmation-first writes — inline keyboards for approval before CRM mutations
+- [ ] Daily combined briefing — morning message with deal status + coaching nudge + alerts
+- [ ] Context-triggered nudges — proactive messages when deals go stale or practice streaks break
+- [ ] Admin traces/health commands — debugging tools for the new agent system
+- [ ] Conversation history — sliding window context management per user
 
 ### Out of Scope
 
-- Web dashboard — will be in TMA (Telegram Mini App) later, not this project
-- Full I/O display in /admin — Telegram messages too small for full prompts; save data for TMA
+- External CRM sync (HubSpot, Pipedrive, etc.) — planned for future milestone, bot is CRM for now
+- TMA changes — this milestone is purely Telegram chat, TMA evolves separately
 - Distributed tracing (OpenTelemetry/Jaeger) — overkill for single-process bot
-- Real-time alerting/PagerDuty — manual /admin checks sufficient for current scale
-- Load testing — not needed at current user count
+- Full PipelineRunner rewrite — new agent system works alongside existing pipelines
+- Multi-language support — English only for now
 
 ## Context
 
 - Bot runs as a single Python async process with aiogram long polling
 - All data persists in InsForge (PostgREST over PostgreSQL)
-- Three main pipelines: learn, train, support — each runs 2-3 agents sequentially/in parallel
-- Voice messages add a transcription step before pipeline execution
-- The ProgressUpdater already touches the status message during processing — tracing hooks into the same flow
-- Admin handler already exists at `bot/handlers/admin.py` with team analytics
-- A Telegram Mini App (TMA) is being built in `packages/webapp/` — trace data should be structured for future TMA consumption
-- Synthetic tests will use the shared OpenRouter API key and a real pipeline execution path
+- Existing pipelines (learn, train, support) will be wrapped by the new Coach/Strategy agents
+- Voice messages supported via AssemblyAI transcription — should work with natural language routing
+- Admin handler already exists at `bot/handlers/admin.py`
+- Reference architecture: ClickUp MCP bot at `/Users/dmytrolevin/Desktop/clickup mcp/` — TypeScript/grammY implementation of the same pattern (Orchestrator + BaseAgent + tool-use loops + confirmation messages)
+- The ClickUp bot uses OpenRouter for LLM calls, agents.yaml for config, markdown prompt templates with {{token}} substitution
+- Current default LLM: z-ai/glm-5 via OpenRouter
 
 ## Constraints
 
-- **Stack**: Python/aiogram — must integrate with existing async patterns
-- **Storage**: InsForge tables — consistent with existing data layer
-- **Telegram limits**: /admin output must fit 4096-char messages; use pagination or summaries
-- **LLM costs**: Synthetic tests call real LLMs — must be triggered manually, never automated/scheduled
-- **No PipelineRunner rewrite**: Instrument via wrapping/hooks, don't restructure the runner itself
+- **Stack**: Python/aiogram 3 — must integrate with existing async patterns (ClickUp ref is TypeScript, needs adaptation)
+- **Storage**: InsForge tables — consistent with existing data layer, no local SQLite
+- **Telegram limits**: 4096-char messages, inline keyboards for confirmations
+- **LLM costs**: All agent calls go through OpenRouter — cost-aware routing needed
+- **Backward compatibility**: Existing /learn, /train, /support commands should still work as shortcuts alongside natural language
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| InsForge for trace storage | Consistent with existing data layer, accessible from future TMA | — Pending |
-| Real LLM calls for synthetic tests | Need actual latency data, not just plumbing tests | — Pending |
-| Summary-only in /admin, full I/O stored for TMA | Telegram message limits make full I/O impractical | — Pending |
-| Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does | — Pending |
+| InsForge for trace storage | Consistent with existing data layer, accessible from future TMA | ✓ Good |
+| Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does | ✓ Good |
+| Bot is the CRM (InsForge) | External CRM sync deferred to future milestone | — Pending |
+| Multi-agent orchestrator pattern (inspired by ClickUp MCP) | Proven architecture for natural language → action routing, already working in production | — Pending |
+| Python adaptation of TypeScript BaseAgent pattern | Same concept (tool-use loops, agent config YAML) adapted to aiogram/async Python | — Pending |
+| Confirmation-first for CRM writes | Prevents accidental deal mutations, builds user trust | — Pending |
+| Existing commands as shortcuts | Backward compatibility, power users keep fast paths | — Pending |
 
 ---
-*Last updated: 2026-02-02 after initialization*
+*Last updated: 2026-02-24 after milestone v2.0 initialization*
