@@ -1,596 +1,419 @@
-# Feature Landscape: Pipeline Observability & Testing for Bot Systems
+# Feature Landscape: AI Sales Partner Bot (v2.0)
 
-**Domain:** AI Agent/Bot Observability & Automated Testing
-**Project:** Deal Quest Bot (aiogram 3 + 3 AI pipelines)
-**Researched:** 2026-02-02
+**Domain:** AI Sales Partner / Conversational CRM / Sales Coaching Bot
+**Project:** Deal Quest Bot v2.0 — multi-agent natural language sales partner
+**Researched:** 2026-02-24
 **Overall Confidence:** HIGH
-
-## Executive Summary
-
-Pipeline observability and automated testing for AI agent systems have matured significantly in 2026, with clear patterns emerging for what admins and developers need. The landscape distinguishes between **table stakes** (basic visibility without which the system is unmanageable) and **differentiators** (advanced features that provide competitive advantage).
-
-For Deal Quest Bot's three AI pipelines (learn/train/support), the admin needs real-time health visibility and error tracking, while developers need deep trace data for bottleneck analysis. The current Telegram `/admin` interface is appropriate for MVP, with future expansion to Telegram Mini App dashboard as adoption grows.
-
-**Key insight:** In 2026, the observability bar has risen. Users expect trace visualization, per-step timing, and error tracking as baseline. Differentiators focus on AI-specific capabilities (hallucination detection, prompt effectiveness, RAG quality) and autonomous features (self-healing tests, AI-powered anomaly detection).
 
 ---
 
-## Table Stakes Features
+## Context: What This Milestone Is
 
-Features users expect. Missing these means admins can't effectively operate the system.
+This is a SUBSEQUENT MILESTONE research file. v1.0 already shipped:
+- `/learn` — structured training with learning tracks
+- `/train` — random scenario practice with scoring
+- `/support` — deal analysis flow (text/voice/image)
+- `/leads` — basic lead management
+- `/stats` — progress display
+- `/settings` — provider management
+- `/admin` — admin panel with analytics
+- Voice transcription, XP scoring, pipeline tracing
 
-### 1. Health Status Dashboard
-**Why Expected:** Admins need to know "is the bot working?" at a glance
-**Complexity:** Low
-**Implementation Notes:**
-- Overall system status (UP/DOWN/DEGRADED)
-- Per-pipeline status (learn/train/support)
-- Last successful run timestamp for each pipeline
-- Error count in last 24h/7d
-**User Story:** Admin checks dashboard daily. Green = no action needed. Red = investigate immediately.
-**Sources:** [AI Agent Monitoring Best Practices](https://uptimerobot.com/knowledge-hub/monitoring/ai-agent-monitoring-best-practices-tools-and-metrics/), [Chatbot Analytics 2026](https://botpress.com/blog/chatbot-analytics)
+v2.0 transforms this into a **conversation-driven AI sales partner** with:
+- Natural language routing (Orchestrator → specialist agents)
+- Deal management (lightweight CRM inside the bot)
+- Proactive coaching and daily briefings
+- Persistent memory that learns the salesperson's patterns
 
-### 2. Error Tracking & Logging
-**Why Expected:** When something breaks, admins need to see what failed and why
-**Complexity:** Low-Medium
-**Implementation Notes:**
-- Capture all exceptions with stack traces
-- Log error message, timestamp, user context, pipeline step
-- Error rate monitoring (errors per hour/day)
-- Structured logging (JSON format recommended)
-- Separate Telegram channel for critical alerts
-**User Story:** Pipeline fails at 3am. Admin wakes up to alert, checks error log, sees "OpenAI API timeout at training step 2", knows exactly where to investigate.
-**Sources:** [AI Observability Complete Guide](https://uptimerobot.com/knowledge-hub/observability/ai-observability-the-complete-guide/), [Telegram Bot Monitoring Best Practices](https://alexhost.com/faq/what-are-the-best-practices-for-building-secure-telegram-bots/)
+**Reference architecture analyzed:** ClickUp MCP bot (`/Users/dmytrolevin/Desktop/clickup mcp/`) — production TypeScript/grammY implementation of the exact multi-agent pattern planned here (Orchestrator + BaseAgent tool-use loops + confirmation-first writes + graph memory). Patterns documented below transfer directly.
 
-### 3. Per-Step Timing/Latency Tracking
-**Why Expected:** Bottleneck identification is essential for performance optimization
-**Complexity:** Medium
-**Implementation Notes:**
-- Track execution time for each pipeline step
-- Store: step_name, start_time, end_time, duration_ms
-- Calculate percentiles (p50, p95, p99) over time
-- Visual timeline showing where time is spent
-- Alert when step exceeds threshold (e.g., >5s for user-facing operations)
-**User Story:** Developer notices support pipeline is slow. Checks timing dashboard. Sees "RAG retrieval" takes 4.2s (95th percentile). Optimizes vector search, reduces to 800ms.
-**Sources:** [LangSmith Trace Visualization](https://research.aimultiple.com/agentic-monitoring/), [Performance Benchmarking Metrics](https://www.datarobot.com/blog/how-to-measure-agent-performance/)
+---
 
-### 4. Request/Response Logging (Agent I/O Capture)
-**Why Expected:** Debugging requires seeing exactly what the agent received and produced
-**Complexity:** Low-Medium
-**Implementation Notes:**
-- Log: user_input, agent_output, intermediate_steps, model_used, tokens_consumed
-- Structured format (JSON) for easy querying
-- Include trace_id to connect related logs
-- Privacy consideration: sanitize PII if storing long-term
-- Retention policy (e.g., 30 days full logs, 90 days aggregated metrics)
-**User Story:** User complains "bot gave wrong answer." Developer searches logs by user_id, finds conversation, sees agent misunderstood question due to unclear prompt. Updates prompt template.
-**Sources:** [LLM Observability Best Practices](https://www.patronus.ai/llm-testing/llm-observability), [Chatbot Monitoring with Advanced Observability](https://langfuse.com/faq/all/chatbot-analytics)
+## Table Stakes
 
-### 5. Basic Synthetic Test Runner
-**Why Expected:** Automated health checks catch regressions before users do
-**Complexity:** Medium
-**Implementation Notes:**
-- Test suite with 3-5 critical user journeys per pipeline
-- Run on schedule (e.g., every hour in production, on deploy in staging)
-- Pass/fail status per test case
-- Alert on test failure (Telegram notification)
-- Simple test format (input → expected output contains X)
-**User Story:** Dev deploys new code. Synthetic tests run automatically. Test "support pipeline should respond to greeting" fails. Deploy is rolled back before users are affected.
-**Sources:** [Synthetic Testing Best Practices](https://microsoft.github.io/code-with-engineering-playbook/automated-testing/synthetic-monitoring-tests/), [AI Test Automation Tools 2026](https://testguild.com/7-innovative-ai-test-automation-tools-future-third-wave/)
+Features the target users (individual salespeople) will expect. Missing any of these
+makes the bot feel unfinished relative to existing AI sales tools (Gong, Highspot, Pipedrive AI).
 
-### 6. Token Usage & Cost Tracking
-**Why Expected:** LLM costs can explode unexpectedly; admins need budget visibility
-**Complexity:** Low-Medium
-**Implementation Notes:**
-- Track input/output tokens per request
-- Calculate cost based on model pricing (e.g., $0.01/1K tokens)
-- Daily/weekly/monthly cost aggregation
-- Alert when cost exceeds threshold (e.g., >$50/day)
-- Cost per pipeline visibility (learn vs train vs support)
-**User Story:** Admin notices monthly bill jumped from $200 to $800. Checks cost dashboard. Sees "train pipeline" token usage spiked 4x. Investigates, finds bug causing repeated API calls. Fixes bug, cost normalizes.
-**Sources:** [LLM Observability Platforms](https://www.truefoundry.com/blog/best-ai-observability-platforms-for-llms-in-2026), [AI Agent Observability](https://research.aimultiple.com/agentic-monitoring/)
+| Feature | Why Expected | Complexity | Depends On |
+|---------|--------------|------------|------------|
+| Natural language message routing | The whole premise: "just talk to it" | High | Orchestrator agent |
+| Conversational deal creation | "I just got off a call with Acme, 50K deal, Q2 close" | Medium | Deal Agent + InsForge deals table |
+| Deal status queries | "What's the status of my Acme deal?" | Low | Deal Agent read tools |
+| Deal stage updates | "Move Acme to negotiation" + confirmation inline keyboard | Medium | Deal Agent write tools + confirmation flow |
+| Note logging on deals | "Log that Acme wants a discount" | Low | Deal Agent write tools |
+| Stale deal detection & nudge | Proactive alert when deal hasn't moved in N days | Medium | Background scheduler + Deal Agent |
+| Daily morning briefing | Combined deal status + coaching nudge + alerts | Medium | Background scheduler + all agents |
+| Objection handling practice | "Practice the pricing objection" | Low | Wraps existing /train Coach Agent |
+| Call preparation briefing | "Prep me for my Acme call in 30 min" | Medium | Strategy Agent + deal context |
+| Backward compat: /learn, /train, /support | Power users keep fast paths | Low | Existing handlers as shortcuts |
+| Conversation history (sliding window) | Context carries across messages | Medium | ConversationHistory store per user |
+| Confirmation before CRM writes | "Create deal: Acme $50K Q2 — Confirm?" + keyboard | Medium | Inline keyboard + write tools |
+| Voice message routing | Send voice note, gets routed to right agent | Low | Existing AssemblyAI → transcribe → orchestrator |
 
-### 7. Basic Alerting System
-**Why Expected:** Admins can't stare at dashboards 24/7; need push notifications
-**Complexity:** Low-Medium
-**Implementation Notes:**
-- Alert channels: Telegram (primary), email (backup)
-- Alert triggers: system down, error rate spike, test failure, cost threshold
-- Alert severity levels (critical/warning/info)
-- Rate limiting to avoid alert fatigue (max 1 alert per issue per hour)
-- Configurable thresholds per alert type
-**User Story:** Bot crashes at midnight. Admin receives Telegram alert within 60 seconds: "Deal Quest Bot DOWN - last heartbeat 2m ago." Admin restarts service, confirms bot is back up via health check.
-**Sources:** [AI Observability Implementation](https://uptimerobot.com/knowledge-hub/observability/ai-observability-the-complete-guide/), [Telegram Bot Error Handling](https://giddi.net/posts/monitoring-servers-using-telegram/)
+**Sources:**
+- [13 AI Sales Assistant Tools 2026](https://www.outdoo.ai/blog/ai-sales-assistants) — "AI sales assistants aren't just nice-to-haves anymore" + CRM automation as table stakes
+- [AI Deal Intelligence](https://www.salesloft.com/resources/guides/how-ai-reshapes-deal-management) — stale deal detection and next-best-action as expected features
+- [AI Sales Coaching 2026](https://www.highspot.com/blog/ai-sales-coaching/) — call prep, objection practice, real-time guidance as minimum expectations
+- ClickUp MCP bot (`bot/src/agents/orchestrator.ts`) — confirmation-first write pattern in production
 
 ---
 
 ## Differentiators
 
-Features that set the system apart. Not expected, but provide significant value when present.
+Features that set this bot apart from generic AI assistants and existing v1.0.
+Not expected by default, but create clear "wow" moments.
 
-### 8. Trace Visualization (Execution Graph)
-**Why Valuable:** Visual representation makes complex multi-step pipelines understandable at a glance
-**Complexity:** High
-**Implementation Notes:**
-- Visual timeline showing all steps in execution order
-- Hierarchical view for nested calls (LLM → tool → sub-tool)
-- Click to expand step details (input/output/timing)
-- Color coding (green=success, red=error, yellow=slow)
-- Search/filter by trace_id, user_id, pipeline_type
-**User Story:** Developer debugging "train pipeline sometimes fails." Opens trace visualization, sees failed traces all have same pattern: step 3 timeout → retry → cascade failure. Adds better error handling at step 3.
-**Differentiator Strength:** HIGH - Visual debugging reduces MTTR by 50%+ according to industry research
-**Sources:** [Braintrust Visual Timeline](https://www.braintrust.dev/articles/best-llm-tracing-tools-2026), [Langfuse Trace Displays](https://research.aimultiple.com/agentic-monitoring/)
+| Feature | Value Proposition | Complexity | Depends On |
+|---------|-------------------|------------|------------|
+| Memory Agent — learns rep's patterns | Knows preferred close tactics, top objections, historical deal context | High | Memory Agent + structured InsForge memory table |
+| Deal win probability scoring | LLM-assessed probability based on deal age, stage, engagement | Medium | Deal Agent + Strategy Agent analysis |
+| Competitive intel retrieval | "What do we say when they compare us to Competitor X?" | Medium | Strategy Agent + company_knowledge.md |
+| Re-engagement drafting | "Draft a follow-up email for the Acme deal that went cold" | Medium | Strategy Agent |
+| Context-triggered nudges | "Your Acme deal has been silent 5 days — want to draft a follow-up?" | High | Background scheduler + Memory Agent + Deal Agent |
+| Deal pattern recognition | "You tend to lose deals when pricing is raised before value is established" | High | Memory Agent + long-term data |
+| Multi-deal portfolio briefing | "Show me all deals at risk this week" | Medium | Deal Agent multi-query tools |
+| Admin traces/health tools | `/admin traces`, `/admin agents` for debugging new agent system | Low | Extends existing admin handler |
+| Orchestrator fallback to direct answer | If specialist fails/times out, orchestrator answers from context | Medium | Circuit breaker + fallback in orchestrator |
 
-### 9. Bottleneck Analysis Dashboard
-**Why Valuable:** Automatically identifies slowest components without manual log digging
-**Complexity:** Medium-High
-**Implementation Notes:**
-- Analyze timing data across all traces
-- Rank steps by p95 latency, frequency, total time consumed
-- Highlight anomalies (step usually fast, suddenly slow)
-- Trend analysis (getting slower over time?)
-- Recommendations ("Step X is slowest, optimize first")
-**User Story:** PM asks "why is bot slower this month?" Developer opens bottleneck dashboard, sees vector search latency increased 3x since dataset grew to 50K documents. Plans index optimization sprint.
-**Differentiator Strength:** MEDIUM - Nice to have, can be done manually with queries
-**Sources:** [Performance Metrics for Agents](https://www.datarobot.com/blog/how-to-measure-agent-performance/), [Observability Tools 2026](https://research.aimultiple.com/agentic-monitoring/)
-
-### 10. RAG Quality Monitoring
-**Why Valuable:** AI-specific metric - retrieval quality directly impacts answer accuracy
-**Complexity:** High
-**Implementation Notes:**
-- Track retrieval metrics: recall, precision, relevance scores
-- Document match quality (semantic similarity score)
-- Retrieval latency per query
-- Alert on poor retrieval (low relevance scores)
-- A/B test different retrieval strategies
-**User Story:** Support pipeline giving wrong answers. Developer checks RAG quality dashboard, sees average relevance score dropped from 0.85 to 0.62. Embeddings are stale. Re-indexes knowledge base, relevance returns to normal.
-**Differentiator Strength:** HIGH for RAG-heavy bots - critical quality signal
-**Sources:** [RAG Monitoring in AI Agents](https://research.aimultiple.com/agentic-monitoring/), [LLM Observability Platforms](https://www.getmaxim.ai/articles/top-5-llm-observability-platforms-in-2026/)
-
-### 11. Hallucination Detection
-**Why Valuable:** Proactively catch when LLM makes things up before user reports it
-**Complexity:** High
-**Implementation Notes:**
-- Compare agent output to source documents (factual consistency)
-- Confidence scoring for responses
-- Flag unsupported claims (statement not in retrieved docs)
-- Human review queue for flagged responses
-- Track hallucination rate over time
-**User Story:** Bot tells user "training session costs $50" but pricing doc says "$30." Hallucination detector flags this, queues for review. Admin sees flag, fixes prompt to stick closer to source material.
-**Differentiator Strength:** VERY HIGH - protects reputation, critical for trust
-**Sources:** [AI Agent Monitoring - Catching Hallucinations](https://uptimerobot.com/knowledge-hub/monitoring/ai-agent-monitoring-best-practices-tools-and-metrics/), [Safety & Governance Monitoring](https://www.truefoundry.com/blog/best-ai-observability-platforms-for-llms-in-2026)
-
-### 12. Prompt Effectiveness Tracking
-**Why Valuable:** Know which prompts work well vs need improvement
-**Complexity:** Medium
-**Implementation Notes:**
-- Track metrics per prompt template: success rate, avg tokens, user satisfaction
-- A/B test prompt variations
-- Visualize prompt performance over time
-- Automatic prompt regression detection (prompt X used to work, now failing more)
-**User Story:** Team experiments with 3 different system prompts for support pipeline. Effectiveness tracker shows prompt B has 15% higher task completion rate with 20% fewer tokens. Team adopts prompt B as default.
-**Differentiator Strength:** MEDIUM - helpful for optimization, not critical for operations
-**Sources:** [Prompt Monitoring Best Practices](https://www.patronus.ai/llm-testing/llm-observability), [LLM Observability Guide](https://portkey.ai/blog/the-complete-guide-to-llm-observability/)
-
-### 13. Self-Healing Test Automation
-**Why Valuable:** Tests maintain themselves as system evolves, reducing maintenance burden
-**Complexity:** Very High
-**Implementation Notes:**
-- AI-powered element detection for UI tests (if Mini App)
-- Auto-update expected outputs when system behavior changes intentionally
-- Detect test failures due to test issues vs actual bugs
-- Suggest test fixes when flaky
-- Learn from production traffic to generate new test cases
-**User Story:** Dev changes response format slightly (adds emoji). Traditional tests would break. Self-healing tests detect format change, verify output is still semantically correct, auto-update assertion. No dev intervention needed.
-**Differentiator Strength:** MEDIUM - Nice to have, but manual test maintenance is acceptable for MVP
-**Sources:** [Self-Healing Test Automation 2026](https://testguild.com/automation-testing-trends/), [AI-Powered Test Maintenance](https://www.virtuosoqa.com/post/best-ai-testing-tools)
-
-### 14. Agentic Anomaly Detection
-**Why Valuable:** AI spots problems humans would miss in high-volume data
-**Complexity:** High
-**Implementation Notes:**
-- ML model learns normal system behavior baseline
-- Detect anomalies: unusual error patterns, latency spikes, traffic changes
-- Predict failures before they happen (degradation trends)
-- Auto-correlate anomalies across metrics (error spike + latency spike + traffic drop = deployment issue)
-- Reduce false positive alerts by understanding context
-**User Story:** Anomaly detector notices subtle pattern: every Tuesday at 2pm, support pipeline latency increases 30%. Humans hadn't noticed. Detector alerts team, they discover scheduled DB backup causes resource contention. Reschedule backup, issue resolved.
-**Differentiator Strength:** MEDIUM-HIGH - Powerful but requires significant data to train
-**Sources:** [AI in Observability 2026](https://newrelic.com/blog/ai/ai-in-observability), [Anomaly Detection Platforms](https://www.integrate.io/blog/data-pipeline-monitoring-tools/)
-
-### 15. User Satisfaction Tracking
-**Why Valuable:** Technical metrics don't tell you if users are happy
-**Complexity:** Low-Medium
-**Implementation Notes:**
-- In-chat feedback buttons (thumbs up/down after response)
-- Optional feedback text ("What went wrong?")
-- Track satisfaction score per pipeline, over time
-- Correlate satisfaction with technical metrics (slow response = lower satisfaction?)
-- Alert on satisfaction drop
-**User Story:** Satisfaction score for support pipeline drops from 85% to 65% over one week. No error rate change. Team investigates, finds LLM updated, giving more verbose but less helpful answers. Revert to previous model version, satisfaction recovers.
-**Differentiator Strength:** MEDIUM - Bridges technical and business metrics
-**Sources:** [Chatbot Performance Metrics](https://www.chatbench.org/what-are-the-most-important-metrics-for-assessing-ai-chatbot-performance/), [User Engagement Metrics](https://verge-ai.com/blog/45-chatbot-analytics-to-monitor-in-2024-to-maximize-your-roi/)
-
-### 16. Multi-Modal Trace Support
-**Why Valuable:** If bot handles images/voice/files, need to capture those in traces too
-**Complexity:** High
-**Implementation Notes:**
-- Store non-text inputs (images, voice, documents) alongside traces
-- Thumbnail previews in trace viewer
-- Audio playback for voice inputs
-- Visual diff for image processing steps
-- Large file handling (store reference, not full file in DB)
-**User Story:** User reports "bot misunderstood my photo." Developer opens trace, sees uploaded image thumbnail, clicks to full size, realizes image was upside down. Bot behavior was correct given input. Documents issue pattern for future handling.
-**Differentiator Strength:** LOW for text-only bots, HIGH if multi-modal
-**Sources:** [Multi-Modal Agent Monitoring](https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/)
+**Sources:**
+- [Inside the AI Sales Agent](https://www.vivun.com/blog/inside-the-ai-sales-agent-memory-reasoning-real-work) — knowledge graphs tracking objections, stakeholders, deal events as differentiator
+- [AI Sales Coaching Benchmarks 2026](https://www.hyperbound.ai/blog/sales-coaching-benchmarks-2026) — personalized coaching based on rep-specific patterns
+- [Agentic CRM 2026](https://aimultiple.com/agentic-crm) — predictive churn prevention, proactive intervention as differentiators
+- ClickUp MCP (`bot/src/agents/orchestrator.ts` L200-230) — timeout + fallback pattern in production
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build. Common mistakes in this domain.
+Features to explicitly NOT build in this milestone. Common traps in this domain.
 
-### 1. Over-Detailed Real-Time Dashboards
-**Why Avoid:** Complexity overwhelms users; admins need simple status, not 50 graphs
-**Problem:** Teams build dashboards with every possible metric, thinking "more data = better." Result: analysis paralysis, no one uses dashboard.
-**What to Do Instead:**
-- Start with 5-7 key metrics (health, error rate, latency, cost, satisfaction)
-- Progressive disclosure: summary view → detailed view → trace-level view
-- "At a glance" principle: admin should understand system state in <10 seconds
-**Sources:** [Observability Anti-Patterns](https://chronosphere.io/learn/three-pesky-observability-anti-patterns-that-impact-developer-efficiency/), [Bad Observability](https://squaredup.com/blog/bad-observability/)
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| External CRM sync (HubSpot, Pipedrive) | API complexity, OAuth dance, mapping mismatch — full scope bloat | Bot is the CRM for now; sync is its own future milestone |
+| Autonomous deal mutations without confirmation | Users lose trust instantly if bot changes their data without asking | Always confirm writes via inline keyboard (ClickUp pattern proven) |
+| Win probability as hard number ("73% chance") | LLM confidence scores are noise without calibration data; users will rely on them wrong | Qualitative risk flags ("at risk: no activity 7 days") instead |
+| Full pipeline funnel analytics dashboard | Admin complexity overkill for a Telegram bot at this scale | Simple portfolio summary: "5 active deals, 2 at risk" |
+| Replacing /learn, /train, /support commands | Breaks existing power user workflows; FSM handlers are fast and reliable | Keep them as shortcuts; Coach Agent wraps them for NL routing |
+| Auto-sending follow-up emails | Autonomous external communication is a trust/legal risk before product-market fit | Draft email text for rep to send manually |
+| Multi-user team features | Sharing deals between reps requires permissions model — high scope | Single-user bot for now; team features are future milestone |
+| LLM-only memory (no persistence) | Conversation window memory = amnesia between sessions | InsForge-backed structured memory: user_memory table, deals table |
+| Building a scheduling/calendar agent | Calendar APIs (Google, Outlook) are complex integrations that add scope without core value | "Prep for my call in 30 min" = deal context brief, not calendar booking |
+| Over-engineering agent routing (12 specialist agents) | Too many agents = routing errors + latency + complexity | 4 specialists max (Deal, Coach, Strategy, Memory) — ClickUp uses 3 successfully |
 
-### 2. Logging Everything Without Structure
-**Why Avoid:** Unstructured logs = unfindable information; storage costs explode
-**Problem:** "Let's log everything just in case" → 500GB logs/month, no way to query efficiently
-**What to Do Instead:**
-- Structured logging only (JSON format)
-- Log levels (DEBUG/INFO/WARN/ERROR) with appropriate usage
-- Retention tiers (7d full logs, 30d aggregated, 90d metrics only)
-- Sample high-volume low-value logs (e.g., keep 1% of successful requests)
-**Sources:** [Excessive Logging Anti-Pattern](https://devops.com/7-api-observability-anti-patterns-to-avoid/), [Observability Best Practices](https://portkey.ai/blog/the-complete-guide-to-llm-observability/)
-
-### 3. Alert Fatigue Configuration
-**Why Avoid:** Too many alerts = admins ignore all alerts, including critical ones
-**Problem:** Alert on every error → 200 alerts/day → admin disables notifications → real outage missed
-**What to Do Instead:**
-- Alert on impact, not symptoms (alert when 5% error rate, not on individual errors)
-- Aggregate similar alerts (1 alert for "10 errors in 5 min" not 10 separate alerts)
-- Rate limiting and alert cooldowns
-- Severity tiers (critical = page immediately, warning = review tomorrow)
-**Sources:** [Monitoring Anti-Patterns](https://www.oreilly.com/library/view/practical-monitoring/9781491957349/ch01.html), [Alert Management Best Practices](https://uptimerobot.com/knowledge-hub/monitoring/ai-agent-monitoring-best-practices-tools-and-metrics/)
-
-### 4. Vanity Metrics Over Outcome Metrics
-**Why Avoid:** Tracking "messages processed" means nothing if users aren't getting value
-**Problem:** Dashboard shows "10K messages/day, 99.9% uptime" but user satisfaction is 40% - metrics look good but business is failing
-**What to Do Instead:**
-- Focus on outcome metrics: task completion rate, user satisfaction, goal achievement
-- Connect technical metrics to business impact (faster response → higher satisfaction → more referrals)
-- Track "customer impact" not just "system health"
-**Sources:** [Not Focusing on Customer Impact](https://observability-antipatterns.github.io/), [Outcome-Focused Metrics](https://www.datarobot.com/blog/how-to-measure-agent-performance/)
-
-### 5. Reinventing Standard Telemetry Formats
-**Why Avoid:** Custom formats lock you into proprietary tools, prevent integration
-**Problem:** Build custom trace format → can't use any standard observability tools → stuck maintaining custom tooling forever
-**What to Do Instead:**
-- Use OpenTelemetry standard for traces/metrics/logs
-- Adopt standard formats (JSON for logs, OTLP for telemetry)
-- Embrace ecosystem compatibility (can swap backends without changing instrumentation)
-**Sources:** [Use Open Standards](https://www.patronus.ai/llm-testing/llm-observability), [OpenTelemetry Integration](https://research.aimultiple.com/agentic-monitoring/)
-
-### 6. Skipping Pre-Production Observability
-**Why Avoid:** Finding bugs in production is 10x more expensive than in dev/staging
-**Problem:** Only monitor production → bugs deploy to prod → users hit them → scramble to debug
-**What to Do Instead:**
-- Same observability in dev/staging/prod (different retention/alerting)
-- Run synthetic tests in staging on every deploy
-- Distributed tracing in development for debugging
-- Catch issues before user impact
-**Sources:** [Not Using Observability in Pre-Production](https://devops.com/7-api-observability-anti-patterns-to-avoid/)
-
-### 7. Access-Restricted Observability
-**Why Avoid:** Only ops team can see dashboards → devs can't debug own code → slow iteration
-**Problem:** "Only senior devs get dashboard access" → junior dev ships bug → can't investigate → escalates to senior → 2 hour delay
-**What to Do Instead:**
-- Democratize observability: all team members can view dashboards
-- Role-based access (devs: read traces; admins: configure alerts)
-- Self-service debugging reduces escalations
-**Sources:** [Limited Access Anti-Pattern](https://lightstep.com/blog/observability-mythbusters-observability-anti-patterns)
-
-### 8. Monolithic Test Suites
-**Why Avoid:** One giant test suite → slow, brittle, high maintenance, low signal
-**Problem:** 500 tests in one suite → 45min to run → fails frequently → devs stop running tests
-**What to Do Instead:**
-- Tiered testing: fast smoke tests (<1min) → integration tests (<5min) → full E2E (<15min)
-- Run appropriate tier for context (smoke on every commit, E2E nightly)
-- Parallel execution where possible
-**Sources:** [Synthetic Monitoring Best Practices](https://microsoft.github.io/code-with-engineering-playbook/automated-testing/synthetic-monitoring-tests/)
+**Sources:**
+- [2026 AI Pilots Failure Analysis](https://theaihat.com/the-2026-sales-reckoning-why-95-of-ai-pilots-fail-and-how-to-join-the-5-who-win/) — autonomous agent failures from lack of human-in-the-loop
+- [Agentic AI Failure Patterns](https://www.concentrix.com/insights/blog/12-failure-patterns-of-agentic-ai-systems/) — escalation/handoff problems, bot detection, over-automation
+- [AI Oversell Reality](https://www.isaca.org/resources/news-and-trends/industry-news/2025/the-reality-of-ai-oversold-and-underdelivered) — validation failures from building without customer discovery
+- PROJECT.md `Out of Scope` section — these are explicitly deferred by design
 
 ---
 
 ## Feature Dependencies
 
-Understanding what builds on what helps prioritization.
+What must exist before what else can be built. Build order follows the dependency graph.
 
 ```
-FOUNDATION TIER (Build these first - everything else depends on them)
-├── Structured Logging
-├── Trace ID Generation
-└── Basic Metrics Collection
+FOUNDATION — Build first, everything depends on this
+├── Orchestrator Agent
+│   ├── Natural language routing
+│   ├── Conversation history (sliding window)
+│   ├── Context building (workspace + memory context)
+│   └── Fallback to direct answer on specialist timeout
+│
+├── InsForge deals table (new schema)
+│   ├── Deal creation
+│   ├── Deal stage tracking
+│   └── Deal notes/activity log
+│
+└── Catch-all message handler (replaces FSM for non-command messages)
 
-CORE OBSERVABILITY (Depends on Foundation)
-├── Health Status Dashboard → requires Basic Metrics
-├── Error Tracking → requires Structured Logging + Trace IDs
-├── Per-Step Timing → requires Trace IDs + Metrics Collection
-└── Request/Response Logging → requires Structured Logging + Trace IDs
+SPECIALIST AGENTS — Require Foundation
+├── Deal Agent (requires: Orchestrator + deals table)
+│   ├── create_deal tool
+│   ├── update_deal tool (confirmation-first)
+│   ├── log_note tool
+│   ├── list_deals tool
+│   └── get_deal_details tool
+│
+├── Coach Agent (requires: Orchestrator + existing /learn, /train pipelines)
+│   ├── objection_practice tool (wraps existing train pipeline)
+│   ├── skill_assessment tool (wraps existing learn pipeline)
+│   └── get_coaching_tip tool
+│
+├── Strategy Agent (requires: Orchestrator + deals table + playbook)
+│   ├── deal_analysis tool (extends existing /support pipeline)
+│   ├── call_prep tool (uses deal context + playbook)
+│   ├── competitive_intel tool (uses company_knowledge.md)
+│   └── draft_followup tool
+│
+└── Memory Agent (requires: Orchestrator + user_memory table)
+    ├── update_memory tool (background, no confirmation needed)
+    ├── get_memory_context tool (read-only)
+    └── pattern_recognition (long-term, accumulative)
 
-OPERATIONAL FEATURES (Depends on Core Observability)
-├── Token Usage & Cost Tracking → requires Request/Response Logging
-├── Basic Alerting → requires Health Status + Error Tracking
-└── Synthetic Test Runner → requires Health Status to check against
-
-ADVANCED ANALYSIS (Depends on Operational Features)
-├── Trace Visualization → requires Per-Step Timing + Request/Response Logging
-├── Bottleneck Analysis → requires Per-Step Timing + historical data
-└── RAG Quality Monitoring → requires Request/Response Logging
-
-AI-POWERED FEATURES (Depends on Advanced Analysis + significant data volume)
-├── Hallucination Detection → requires Request/Response Logging + RAG Quality
-├── Prompt Effectiveness → requires Request/Response Logging + User Satisfaction
-├── Self-Healing Tests → requires Synthetic Test Runner + historical data
-└── Agentic Anomaly Detection → requires all Core Observability + time series data
-
-USER FEEDBACK (Independent, but enhances everything)
-└── User Satisfaction Tracking → can be built anytime, improves other features
+PROACTIVE FEATURES — Require Specialist Agents
+├── Daily Briefing (requires: Deal Agent + Coach Agent + background scheduler)
+│   ├── Morning deal portfolio summary
+│   ├── Coaching tip of the day
+│   └── Stale deal alerts
+│
+├── Context-Triggered Nudges (requires: Deal Agent + Memory Agent + scheduler)
+│   ├── Stale deal detection (deal inactive > N days)
+│   ├── Practice streak break alert
+│   └── Re-engagement prompt
+│
+└── Admin Tools (requires: Orchestrator + all agents)
+    ├── /admin agents — agent health status
+    └── /admin traces — trace viewer for new agent system
 ```
 
-**Critical Path for MVP:**
-1. Structured Logging + Trace IDs (foundation)
-2. Health Status + Error Tracking (admin needs these immediately)
-3. Per-Step Timing (developer debugging)
-4. Basic Alerting (production readiness)
-5. Synthetic Test Runner (regression prevention)
+**Critical path for working MVP:**
+Orchestrator → deals table → Deal Agent → Confirmation flow → Conversation history
 
-**Defer to Post-MVP:**
-- Trace Visualization (nice to have, can query logs manually initially)
-- AI-powered features (need data volume first)
-- Multi-modal support (if text-only bot initially)
+Everything else builds on top of that sequence.
+
+---
+
+## ClickUp MCP Patterns That Transfer Directly
+
+The ClickUp bot is a production reference for the exact architecture being built.
+These patterns transfer to the sales domain with adaptation notes.
+
+### Pattern 1: BaseAgent Tool-Use Loop
+**What (ClickUp):** `BaseAgent.run()` — while loop calling LLM, executing tools, accumulating
+messages until no tool calls returned. Max iterations cap prevents runaway loops.
+
+**Transfer to Sales:** Identical pattern. Each sales specialist (Deal, Coach, Strategy, Memory)
+extends the same loop. Config-driven via agents.yaml (model, tools list, max_iterations, prompt_file).
+
+**Python adaptation:** Replace TypeScript class with Python async class. `while iterations < max_iterations:`
+loop with `await llm_router.complete()` + tool dispatch dict.
+
+**Source:** `bot/src/agents/base-agent.ts` L205-471
+
+---
+
+### Pattern 2: Confirmation-First Writes
+**What (ClickUp):** Write tools return `{confirmation_needed: true, action, details}` JSON instead
+of executing. Orchestrator short-circuits, calls `buildConfirmationMessage()`, returns inline keyboard.
+On user "Confirm" tap, handler executes the actual write.
+
+**Transfer to Sales:** All Deal Agent write tools (create_deal, update_deal, log_note) use this
+pattern. "Create deal: Acme $50K Q2 close — Confirm?" before any InsForge mutation.
+
+**Python adaptation:** `InlineKeyboardBuilder` in aiogram 3, callback_query handler executes
+pending action stored in user session or in a `pending_confirmations` InsForge table keyed by user_id.
+
+**Source:** `bot/src/tools/write-tools.ts` (all write tools), `bot/src/agents/confirmation-message.ts`,
+`bot/src/agents/orchestrator.ts` L757-775 (short-circuit on confirmation payload)
+
+---
+
+### Pattern 3: Orchestrator Summary Injection
+**What (ClickUp):** Orchestrator builds `orchestratorSummary` string, injects it into specialist
+agent system prompt via `{{orchestrator_context}}` placeholder. Specialist gets routing context
+("user wants to update a task in the Engineering list") without re-reading full conversation.
+
+**Transfer to Sales:** Orchestrator summarizes intent before invoking Deal/Coach/Strategy agents.
+"User wants to log a note on their Acme deal — they mentioned competitor pricing came up."
+
+**Source:** `bot/src/agents/base-agent.ts` L252-254 (prompt template substitution)
+
+---
+
+### Pattern 4: Specialist Timeout + Fallback
+**What (ClickUp):** Each specialist invocation has a 30s timeout. On timeout or error,
+orchestrator receives `{error: "Specialist timed out — handle directly"}` and LLM answers from
+its workspace context knowledge without the specialist.
+
+**Transfer to Sales:** Same pattern. If Deal Agent times out during "What are my active deals?",
+orchestrator answers from memory context. Prevents user-facing errors on LLM provider flakiness.
+
+**Source:** `bot/src/agents/orchestrator.ts` L191-229 (`invokeSpecialistTool` with `Promise.race`)
+
+---
+
+### Pattern 5: Graph Memory + Short-Term Activity Digest
+**What (ClickUp):** Two memory layers injected into every prompt:
+1. `graphContext` — PostgreSQL knowledge graph (persons, projects, decisions, blockers) queried
+   by keyword analysis on current message
+2. `recentActivityDigest` — last 24h sessions summary (what was worked on recently)
+
+**Transfer to Sales:** Translate directly:
+1. `dealContext` — deals table + user_memory table (patterns, preferences, top objections)
+2. `recentActivityDigest` — last session summary (what deals were discussed, what was practiced)
+
+Keyword routing for graph queries is a proven shortcut to avoid LLM for memory retrieval.
+
+**Source:** `bot/src/graph/memory.ts` L36-80, `bot/src/agents/orchestrator.ts` L289-306
+
+---
+
+### Pattern 6: Agents.yaml Config-Driven Architecture
+**What (ClickUp):** `agents.yaml` defines each agent: `model`, `prompt_file`, `tools: [list]`,
+`max_iterations`. `config-loader.ts` reads this at startup. Adding a new agent = new YAML entry.
+
+**Transfer to Sales:** Same structure. `bot/data/agents.yaml` (or alongside existing pipelines).
+Each agent definition says which model, which prompt file, which tools it can call.
+
+**Source:** `bot/src/agents/config-loader.ts`, ClickUp `agent/config/` directory
 
 ---
 
 ## MVP Recommendation
 
-For Deal Quest Bot MVP (Telegram `/admin` interface):
-
-### Phase 1: Minimum Viable Observability (Week 1-2)
+### Phase 1: Core Infrastructure (Build first — everything depends on this)
 
 **Must Have:**
-1. **Health Status** - `/admin status` command shows: bot UP/DOWN, each pipeline status, error count last 24h
-2. **Error Tracking** - All exceptions logged with trace_id, pipeline, step, timestamp to database
-3. **Alerting** - Telegram channel for critical alerts (bot down, error rate >10/hour)
-4. **Per-Step Timing** - Log duration for each pipeline step, queryable for bottleneck analysis
+1. Orchestrator Agent — routes natural language to specialists
+2. Catch-all message handler — intercepts non-command messages, sends to orchestrator
+3. Conversation history — sliding window (last 10 turns) per user in memory
+4. InsForge deals table — schema for deals, stages, notes
+5. Basic Deal Agent — read tools only (list deals, get deal details)
+6. Agents.yaml config — Python adaptation of ClickUp config pattern
 
-**Implementation:**
-- Python `structlog` for structured logging
-- PostgreSQL table for traces/metrics (or separate time-series DB like TimescaleDB)
-- Simple `/admin` commands: `/status`, `/errors [hours]`, `/slowest [pipeline]`
-- Telegram bot sends to alert channel on critical events
+**Why this order:** Can demo "tell me about my deals" without write tools yet. Validates
+routing before adding CRM mutations.
 
-### Phase 2: Operational Maturity (Week 3-4)
+**Existing features preserved as:** Commands stay as shortcuts. `/support` still works. NL
+"help me with my Acme deal" → Strategy Agent → wraps existing support pipeline.
+
+---
+
+### Phase 2: CRM Writes + Coaching Integration (Add value)
 
 **Must Have:**
-5. **Request/Response Logging** - Full agent I/O capture with privacy filters
-6. **Token Tracking** - Cost per pipeline per day, alert at $50/day threshold
-7. **Synthetic Tests** - 3 tests per pipeline (9 total), run hourly, alert on failure
+7. Deal Agent write tools (create_deal, update_deal, log_note) + confirmation flow
+8. Coach Agent — wraps /learn and /train for NL routing ("practice the pricing objection")
+9. Strategy Agent — wraps /support + adds call prep + competitive intel tools
+10. Memory Agent — background memory updates after each conversation
 
-**Nice to Have:**
-8. **Basic Dashboard** - Web view (even simple Flask app) showing key metrics in graphs
-9. **User Satisfaction** - In-chat thumbs up/down after agent responses
+**Why this order:** Confirmation flow is highest-risk implementation (inline keyboards, pending
+state management) — get it right before adding more write operations.
 
-### Phase 3: Scale & Polish (Month 2)
+---
+
+### Phase 3: Proactive Features (The differentiators)
+
+**Must Have:**
+11. Daily briefing — morning combined message (deal summary + coaching nudge)
+12. Stale deal nudges — background scheduler checks deals inactive > 5 days
 
 **Defer until proven need:**
-- Trace Visualization (build if team requests it after using text logs gets painful)
-- Bottleneck Analysis Dashboard (initially just run SQL queries manually)
-- RAG Quality Monitoring (add when RAG retrieval quality becomes a concern)
-
-**Telegram Mini App Transition:**
-When user base justifies it, migrate dashboard from `/admin` commands to Mini App with:
-- Real-time graphs (Chart.js or similar)
-- Drill-down from health status → error list → trace details
-- Test runner UI with manual trigger + results history
+- Win probability scoring (requires enough deal history to be meaningful)
+- Deal pattern recognition (requires weeks of data)
+- Context-triggered nudges beyond stale deals (complex signal detection)
+- Admin agent traces tools (can extend existing admin handler ad hoc)
 
 ---
 
 ## Complexity Assessment
 
-| Feature | Dev Time | Maintenance | Value |
-|---------|----------|-------------|-------|
-| **TABLE STAKES** |
-| Health Status Dashboard | 2-3 days | Low | Critical |
-| Error Tracking & Logging | 1-2 days | Low | Critical |
-| Per-Step Timing | 2-3 days | Low | High |
-| Request/Response Logging | 1-2 days | Low | High |
-| Basic Synthetic Test Runner | 3-5 days | Medium | High |
-| Token Usage & Cost Tracking | 2-3 days | Low | High |
-| Basic Alerting System | 2-3 days | Low | Critical |
-| **DIFFERENTIATORS** |
-| Trace Visualization | 1-2 weeks | Medium | High |
-| Bottleneck Analysis Dashboard | 1 week | Low | Medium |
-| RAG Quality Monitoring | 1-2 weeks | Medium | High (if RAG-heavy) |
-| Hallucination Detection | 2-3 weeks | High | Very High |
-| Prompt Effectiveness Tracking | 1 week | Low | Medium |
-| Self-Healing Test Automation | 3-4 weeks | High | Medium |
-| Agentic Anomaly Detection | 3-4 weeks | Medium | Medium-High |
-| User Satisfaction Tracking | 3-4 days | Low | Medium |
-| Multi-Modal Trace Support | 1-2 weeks | Medium | Low (text-only) |
+| Feature | Dev Time | Risk | Value | Phase |
+|---------|----------|------|-------|-------|
+| Orchestrator Agent | 3-4 days | High (LLM routing quality) | Critical | 1 |
+| Catch-all handler + routing | 1 day | Low | Critical | 1 |
+| Conversation history | 1 day | Low | High | 1 |
+| Deals InsForge table | 1-2 days | Low | Critical | 1 |
+| Deal Agent read tools | 2 days | Low | High | 1 |
+| Agents.yaml config system | 1 day | Low | High | 1 |
+| Deal Agent write tools + confirmation | 2-3 days | Medium | High | 2 |
+| Coach Agent (wraps existing) | 1-2 days | Low | High | 2 |
+| Strategy Agent (wraps existing) | 2 days | Low | High | 2 |
+| Memory Agent | 2-3 days | Medium | Medium | 2 |
+| Daily briefing scheduler | 1-2 days | Low | High | 3 |
+| Stale deal nudges | 1 day | Low | High | 3 |
+| Admin agent health tools | 1 day | Low | Medium | 3 |
 
-**Total MVP (Phase 1-2):** ~3-4 weeks dev time for core observability
-**Advanced Features (Phase 3+):** 2-3 months for differentiators if all built
+**Total Phase 1:** ~8-10 days (2 weeks)
+**Total Phase 2:** ~7-10 days (2 weeks)
+**Total Phase 3:** ~3-4 days (1 week)
+
+**Total v2.0:** 5-6 weeks
 
 ---
 
-## Technology Recommendations
+## Feature-to-Existing-Code Dependencies
 
-### Observability Stack for aiogram Bot
+Existing v1.0 code that v2.0 builds on (do not break):
 
-**Instrumentation:**
-- `structlog` - Structured logging for Python (JSON output)
-- `opentelemetry-api` + `opentelemetry-sdk` - Standard telemetry if want ecosystem compatibility
-- Custom decorators for trace_id injection and timing capture
+| Existing Feature | How v2.0 Uses It |
+|-----------------|-----------------|
+| `bot/agents/strategist.py` | Strategy Agent wraps this — `/support` pipeline still fires, just routed via NL |
+| `bot/agents/trainer.py` | Coach Agent wraps this — `/learn` + `/train` pipelines reused |
+| `bot/agents/memory.py` | Memory Agent extends this — background memory updates continue |
+| `bot/services/llm_router.py` | All new agents use this for LLM calls — no new HTTP client needed |
+| `bot/pipeline/runner.py` | Existing pipelines still run through PipelineRunner for /learn /train /support |
+| `bot/tracing/` | `@traced_span` decorators apply to new agents unchanged |
+| `bot/storage/repositories.py` | New repositories extend same pattern (DealRepo, ConversationRepo) |
+| `bot/handlers/admin.py` | New admin commands (traces, agents) extend existing admin handler |
+| `followup_scheduler.py` | Daily briefing and stale deal nudges extend existing scheduler pattern |
 
-**Storage:**
-- **Logs/Traces:** PostgreSQL (structured JSON column) or Elasticsearch if high volume
-- **Metrics:** TimescaleDB (PostgreSQL extension for time-series) or Prometheus
-- **Cost:** Keep it simple for MVP, single PostgreSQL can handle 100K+ events/day
-
-**Visualization:**
-- **MVP:** Telegram bot `/admin` commands + SQL queries
-- **Phase 2:** Simple web dashboard (Flask + Chart.js) or Grafana
-- **Phase 3:** Telegram Mini App with live updates
-
-**Testing:**
-- `pytest` + `aiogram-tests` for unit/integration tests
-- Custom synthetic test framework (simple: stored test cases → run → compare output)
-- Consider `pytest-asyncio` for async test support
-
-**Alerting:**
-- Telegram Bot API for in-app alerts (simplest for Telegram bot)
-- Email backup via SMTP for critical alerts
-- Webhook integration if want to expand to other channels later
-
-### Off-the-Shelf vs Custom
-
-**Use Off-the-Shelf if:**
-- Budget for SaaS ($50-500/month): Consider Langfuse, LangSmith, or AgentOps
-- Team familiar with observability tools: Use Datadog, New Relic, Grafana stack
-- Want instant advanced features: Hallucination detection, RAG monitoring
-
-**Build Custom if:**
-- Budget-constrained (common for MVP)
-- Telegram-native experience required (Mini App dashboard)
-- Simple pipelines (3 pipelines, not 100)
-- Want full control over data privacy
-
-**Recommendation for Deal Quest Bot MVP:** Start custom (low investment), validate need, then consider SaaS for advanced features once revenue justifies cost.
+**Critical constraint:** New orchestrator catch-all handler must NOT intercept messages
+intended for existing FSM-based flows (/learn, /train wizard steps). Solution from ClickUp:
+orchestrator only handles messages NOT in active FSM state. Check `state is None` before routing.
 
 ---
 
-## Risk Assessment
+## Confidence Assessment
 
-### High-Risk Decisions
-
-**1. Over-Engineering Early**
-- **Risk:** Build trace visualization and AI features before basic monitoring
-- **Mitigation:** Strict MVP scope, defer advanced features until pain is proven
-- **Validation:** If team never asks "can we visualize this?", don't build it
-
-**2. Under-Logging Critical Data**
-- **Risk:** Missing key debugging info (user_id, pipeline state, model params)
-- **Mitigation:** Log comprehensive structured data from day 1, cheap to store
-- **Validation:** Can you debug any user issue with just logs? If not, add more.
-
-**3. Alert Fatigue**
-- **Risk:** Too many alerts → ignore all → miss real outage
-- **Mitigation:** Start with minimal alerts (bot down, error rate spike only)
-- **Validation:** If alert doesn't require immediate action, it's not an alert
-
-### Medium-Risk Decisions
-
-**4. Storage Scaling**
-- **Risk:** Logs fill disk, system crashes
-- **Mitigation:** Retention policy from day 1 (auto-delete old logs)
-- **Validation:** Monitor storage usage, plan upgrade path
-
-**5. Performance Overhead**
-- **Risk:** Observability code slows down bot
-- **Mitigation:** Async logging, batch metrics, profile instrumentation
-- **Validation:** Trace timing should add <10ms overhead per request
+| Area | Confidence | Rationale |
+|------|------------|-----------|
+| Table stakes features | HIGH | Multiple 2026 sources agree; ClickUp production reference confirms patterns |
+| Differentiator features | HIGH | Vivun, Highspot, aimultiple sources confirm; ClickUp graph memory is working production code |
+| Anti-features | HIGH | 2026 failure analysis + PROJECT.md explicit out-of-scope decisions |
+| ClickUp pattern transfer | HIGH | Source code analyzed directly; same language patterns (LLM tool-use, confirmation, memory) |
+| Complexity estimates | MEDIUM | Estimates based on ClickUp implementation scale + existing bot codebase familiarity |
+| Phase ordering | HIGH | Dependency graph is clear; confirmed by working ClickUp implementation order |
 
 ---
 
-## Quality Gates Checklist
+## Open Questions
 
-- [x] **Categories are clear** - Table stakes vs differentiators vs anti-features defined
-- [x] **Complexity noted for each feature** - Dev time estimates provided
-- [x] **Dependencies between features identified** - Dependency graph included
-- [x] **MVP path defined** - Clear recommendation for phase 1-3 priorities
-- [x] **Technology recommendations** - Specific tools for aiogram bot context
-- [x] **Risk assessment** - High-risk decisions flagged with mitigation
-- [x] **Confidence levels** - Sources cited, 2026-current research
+1. **Deals table schema:** What pipeline stages match this product's domain? (e.g., Prospecting → Qualifying → Proposal → Negotiation → Closed Won/Lost) — define before building Deal Agent write tools.
+
+2. **Conversation history storage:** ClickUp uses in-memory `ConversationHistory` singleton (lost on restart). Should v2.0 persist to InsForge for durability? For a single-process aiogram bot, in-memory is fine; flag if restart frequency is a concern.
+
+3. **Orchestrator model selection:** ClickUp uses OpenRouter with a capable model for orchestrator (routing quality matters most here). Current default `z-ai/glm-5` may not be strong enough for reliable routing — consider using `openai/gpt-oss-120b` (already the new default from recent commit) specifically for orchestrator.
+
+4. **Memory Agent trigger:** When does Memory Agent run — after every message (costly), or only on conversation end signal? ClickUp runs background memory updates. Recommend: background task after each agent response, same pattern as existing `bot/agents/memory.py`.
+
+5. **Stale deal threshold:** What is "stale" — 3 days? 7 days? Should be configurable per user or per deal stage. Define sensible defaults in config.
 
 ---
 
 ## Sources
 
-### AI Agent Observability (High Confidence - Current 2026)
-- [Top 5 AI Agent Observability Platforms 2026](https://o-mega.ai/articles/top-5-ai-agent-observability-platforms-the-ultimate-2026-guide)
-- [15 AI Agent Observability Tools: AgentOps & Langfuse](https://research.aimultiple.com/agentic-monitoring/)
-- [AI Agent Monitoring Best Practices 2026](https://uptimerobot.com/knowledge-hub/monitoring/ai-agent-monitoring-best-practices-tools-and-metrics/)
-- [AI Observability Complete Guide 2026](https://uptimerobot.com/knowledge-hub/observability/ai-observability-the-complete-guide/)
+### AI Sales Assistant Feature Landscape (2026)
+- [13 AI Sales Assistant Tools 2026 — Outdoo AI](https://www.outdoo.ai/blog/ai-sales-assistants) — table stakes vs differentiators
+- [Top 11 AI Sales Assistants 2026 — Sintra AI](https://sintra.ai/blog/top-11-ai-sales-assistants-in-2025) — feature comparison
+- [Best AI Sales Tools 2026 — Sybill](https://www.sybill.ai/blogs/ai-sales-tools) — deal management features
+- [15 Best AI Sales Tools 2026 — SPOTIO](https://spotio.com/blog/ai-sales-tools/) — coaching and pipeline features
 
-### Trace Visualization & Tools (High Confidence)
-- [7 Best LLM Tracing Tools 2026](https://www.braintrust.dev/articles/best-llm-tracing-tools-2026)
-- [LangSmith Trace Visualization](https://research.aimultiple.com/agentic-monitoring/)
-- [Maxim AI Observability Dashboard](https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/)
+### AI Sales Coaching
+- [AI Sales Coaching — Highspot](https://www.highspot.com/blog/ai-sales-coaching/) — must-have features, 36% win rate improvement
+- [AI Sales Coaching Platforms 2026 — Cirrus Insight](https://www.cirrusinsight.com/blog/ai-sales-coaching) — proactive coaching trend
+- [Sales Coaching Benchmarks 2026 — Hyperbound](https://www.hyperbound.ai/blog/sales-coaching-benchmarks-2026) — objection practice, roleplay
 
-### LLM Observability Best Practices (High Confidence)
-- [LLM Observability Tools 2026 Comparison](https://lakefs.io/blog/llm-observability-tools/)
-- [Complete Guide to LLM Observability 2026](https://portkey.ai/blog/the-complete-guide-to-llm-observability/)
-- [LLM Observability Tutorial & Best Practices](https://www.patronus.ai/llm-testing/llm-observability)
-- [Top 5 LLM Observability Platforms 2026](https://www.getmaxim.ai/articles/top-5-llm-observability-platforms-in-2026/)
+### Agentic CRM / Deal Management
+- [Agentic CRM Platforms 2026 — aimultiple](https://aimultiple.com/agentic-crm) — agentic vs traditional CRM
+- [Agentic AI CRM 2026 — SaasPodium](https://www.saaspodium.com/crm-software/agentic-ai-crm-agentic-ai-sales-automation-2026) — explainable AI, human-in-loop as table stakes
+- [AI Deal Intelligence — Salesloft](https://www.salesloft.com/resources/guides/how-ai-reshapes-deal-management) — stale deal detection, next-best-action
 
-### Testing & Synthetic Monitoring (High Confidence)
-- [12 Best AI Test Automation Tools 2026](https://testguild.com/7-innovative-ai-test-automation-tools-future-third-wave/)
-- [14 Best AI Testing Tools 2026](https://www.virtuosoqa.com/post/best-ai-testing-tools)
-- [Synthetic Monitoring Tests - Engineering Fundamentals](https://microsoft.github.io/code-with-engineering-playbook/automated-testing/synthetic-monitoring-tests/)
-- [Latest Trends in Test Automation 2026](https://white-test.com/for-qa/useful-articles-for-qa/latest-trends-in-test-automation/)
+### AI Sales Agent Memory & Architecture
+- [Inside the AI Sales Agent — Vivun](https://www.vivun.com/blog/inside-the-ai-sales-agent-memory-reasoning-real-work) — persistent memory, knowledge graphs, proactive action
+- [AI Agent Memory — IBM](https://www.ibm.com/think/topics/ai-agent-memory) — LTM vs STM patterns
+- [Context Personalization — OpenAI Cookbook](https://cookbook.openai.com/examples/agents_sdk/context_personalization) — state management with long-term memory
 
-### Error Tracking & Monitoring (High Confidence)
-- [Guide to Chatbot Analytics 2026](https://botpress.com/blog/chatbot-analytics)
-- [Chatbot Monitoring with Advanced Observability](https://langfuse.com/faq/all/chatbot-analytics)
-- [12 Must-Know Metrics for AI Chatbot Performance 2026](https://www.chatbench.org/what-are-the-most-important-metrics-for-assessing-ai-chatbot-performance/)
+### Multi-Agent Architecture Reference
+- ClickUp MCP Bot source: `/Users/dmytrolevin/Desktop/clickup mcp/bot/src/agents/` — production implementation
+  - `base-agent.ts` — tool-use loop pattern
+  - `orchestrator.ts` — routing, timeout/fallback, confirmation short-circuit
+  - `confirmation-message.ts` — confirmation message builder
+  - `graph/memory.ts` — dual-memory (graph + session) pattern
+  - `memory/store.ts` — SQLite-backed memory index (adapt to InsForge)
 
-### Performance Benchmarking (High Confidence)
-- [AI Agent Performance: Success Rates & ROI 2026](https://research.aimultiple.com/ai-agent-performance/)
-- [How to Measure Agent Performance: Key Metrics](https://www.datarobot.com/blog/how-to-measure-agent-performance/)
-- [AI Agent Benchmarks Guide](https://galileo.ai/learn/benchmark-ai-agents)
-
-### Observability Anti-Patterns (High Confidence)
-- [Observability Antipatterns Official Site](https://observability-antipatterns.github.io/)
-- [Three Pesky Observability Anti-Patterns](https://chronosphere.io/learn/three-pesky-observability-anti-patterns-that-impact-developer-efficiency/)
-- [7 API Observability Anti-Patterns to Avoid](https://devops.com/7-api-observability-anti-patterns-to-avoid/)
-- [Monitoring Anti-Patterns - O'Reilly](https://www.oreilly.com/library/view/practical-monitoring/9781491957349/ch01.html)
-
-### Telegram Bot Monitoring (Medium Confidence)
-- [Telegram Bot Security Best Practices](https://alexhost.com/faq/what-are-the-best-practices-for-building-secure-telegram-bots/)
-- [Monitoring Servers with Telegram](https://giddi.net/posts/monitoring-servers-using-telegram/)
-- [UptimeRobot Telegram Integration](https://uptimerobot.com/blog/new-feature-telegram-integration/)
-
-### Pipeline & Dashboard Monitoring (Medium Confidence)
-- [10 Best Data Pipeline Monitoring Tools 2026](https://www.integrate.io/blog/data-pipeline-monitoring-tools/)
-- [Monitor Pipelines with Grafana](https://www.rudderstack.com/blog/using-grafana-to-monitor-the-health-and-status-of-your-customer-data-pipelines/)
-
----
-
-## Confidence Assessment by Area
-
-| Area | Confidence | Rationale |
-|------|------------|-----------|
-| Table Stakes Features | **HIGH** | Consistent across multiple 2026 sources, industry consensus clear |
-| Differentiator Features | **HIGH** | Well-documented in current platforms, proven value |
-| Anti-Features | **HIGH** | Validated by observability anti-pattern research and post-mortems |
-| Technology Recommendations | **MEDIUM** | aiogram-specific guidance limited, but general Python/bot patterns strong |
-| Cost/Complexity Estimates | **MEDIUM** | Based on industry experience, actual may vary by team |
-| MVP Prioritization | **HIGH** | Dependencies clear, validated against bot development patterns |
-
----
-
-## Open Questions for Implementation Phase
-
-1. **Data Retention:** How long to keep full traces vs aggregated metrics? (Affects storage cost)
-2. **Privacy Requirements:** Does system handle PII that needs redaction from logs?
-3. **Scale Projections:** Expected users/messages per day in 6 months? (Determines if PostgreSQL sufficient or need specialized time-series DB)
-4. **Team Size:** Solo dev vs team affects tool choice (solo: keep simple; team: consider SaaS for collaboration)
-5. **Budget:** $0-50/month suggests custom build; $50-500/month enables SaaS tools with advanced features
-
-**Recommendation:** Answer these questions during requirements definition phase to refine technology stack choices.
+### Failure Analysis (Anti-Features)
+- [2026 AI Pilot Failure — The AI Hat](https://theaihat.com/the-2026-sales-reckoning-why-95-of-ai-pilots-fail-and-how-to-join-the-5-who-win/)
+- [Agentic AI Failure Patterns — Concentrix](https://www.concentrix.com/insights/blog/12-failure-patterns-of-agentic-ai-systems/)
+- [AI Oversell Reality 2025 — ISACA](https://www.isaca.org/resources/news-and-trends/industry-news/2025/the-reality-of-ai-oversold-and-underdelivered)

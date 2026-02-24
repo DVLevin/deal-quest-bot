@@ -1,371 +1,296 @@
 # Project Research Summary
 
-**Project:** Deal Quest Bot - Pipeline Observability & Automated Testing
-**Domain:** AI Agent Observability & Testing for Async Python Telegram Bots
-**Researched:** 2026-02-02
+**Project:** Deal Quest Bot v2.0 — Multi-Agent AI Sales Partner
+**Domain:** AI sales partner / conversational CRM / multi-agent orchestration on Telegram
+**Researched:** 2026-02-24
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Deal Quest Bot is an aiogram 3 async Telegram bot with three AI agent pipelines (learn/train/support). Research reveals that modern pipeline observability for async Python bots requires a four-tier architecture: instrumentation via decorators/context managers, in-process trace collection with batching, PostgreSQL-based storage leveraging existing InsForge infrastructure, and a simple admin interface for visualization. The 2026 standard emphasizes structured logging with contextvars for async context propagation, lightweight tracing using OpenTelemetry span models without full distributed tracing overhead, and native Python timing instrumentation.
+Deal Quest Bot v2.0 transforms an existing, production-grade v1.0 Telegram bot (commands, FSM flows, pipeline-based agents) into a conversational AI sales partner. The core shift is from discrete command-triggered pipelines to a natural language orchestrator that routes any user message to one of four specialist agents: Deal, Coach, Strategy, and Memory. The research has a concrete reference architecture to port from: the ClickUp MCP TypeScript bot (`/Users/dmytrolevin/Desktop/clickup mcp/`), which implements the exact same multi-agent pattern (Orchestrator + BaseAgent tool-use loops + confirmation-first writes + graph memory) in production. All major patterns transfer directly to Python/aiogram 3.
 
-For testing, the recommended approach is async-first with pytest-asyncio 1.x, aiogram-specific mocking via aiogram-tests, and LLM-specific evaluation using deepeval for synthetic test case generation. The critical insight is to avoid distributed tracing complexity (Jaeger, Zipkin) since this is a single-process application, and instead focus on in-process instrumentation with PostgreSQL-based trace storage. The key risk is async context loss during trace propagation across task boundaries, which requires explicit context management using Python's contextvars and careful testing of context propagation patterns.
+The recommended approach is additive, not a rewrite. All existing /command handlers remain unchanged. A single new `natural_language.router` is registered last in `main.py`, catching all non-FSM messages and routing them through the Orchestrator. The Orchestrator runs a tool-use loop against OpenRouter using the existing `llm_router.py` HTTP client (extended with a `complete_with_tools()` method). Specialist agents each implement their own tool-use loops. The only new dependency is `apscheduler>=3.10,<4.0` for cron-based daily briefings. Everything else reuses existing libraries, patterns, and infrastructure.
 
-The architecture must follow the existing ProgressUpdater pattern: wrap call sites with decorators/context managers without modifying PipelineRunner internals, ensuring minimal invasiveness. Storage explosion from full I/O capture and Telegram's 4096-character message limit for admin commands are critical constraints that must inform schema design and UI implementation from day one.
+The primary risks are architectural, not technical. Seven compounding complexities are added simultaneously: LLM-driven routing (vs FSM), tool-use loops (vs single-pass pipelines), CRM schema (vs flat lead registry), proactive messaging (vs reactive only), conversation history (vs stateless), cost-per-message (vs cost-per-command), and backward compatibility. The three most dangerous failure modes are (1) catch-all handler eating command messages due to wrong router registration order, (2) infinite tool-use loops without hard iteration caps, and (3) LLM routing misclassification sending messages to the wrong specialist. All three have clear prevention strategies detailed in PITFALLS.md.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The 2025-2026 standard stack for single-process async Python applications with LLM pipelines emphasizes lightweight, in-process observability tools over distributed tracing infrastructure. Key technologies include structlog 25.5.0+ for structured logging with native contextvars support (5x faster than stdlib in async apps), OpenTelemetry SDK 1.29.0+ for industry-standard trace generation without external collectors, and time.perf_counter() for high-precision timing per PEP 418. For testing, pytest-asyncio 1.3.0+ provides modern async patterns, aiogram-tests 1.2.0+ handles bot-specific mocking, respx 0.22.0+ mocks httpx async calls, and deepeval 3.8.3+ enables LLM pipeline evaluation with synthetic test generation.
+The v2.0 stack adds exactly one new dependency to what already runs in production. The existing `httpx` async client in `llm_router.py` is extended with a `complete_with_tools()` method to support OpenAI-compatible function calling on OpenRouter. Agent configuration moves to `data/agents.yaml` using the already-present `pyyaml`. Per-user conversation history is an in-memory `dict[int, deque]` using Python stdlib — no Redis, no new framework. The sole new package is `apscheduler>=3.10,<4.0` (pinned below v4 alpha) for time-of-day cron scheduling that raw `asyncio.sleep()` cannot handle reliably.
+
+See `.planning/research/STACK.md` for full details, code patterns, and rejected alternatives.
 
 **Core technologies:**
-- **structlog 25.5.0+**: Structured logging with async support - native contextvars for per-request context propagation, JSON output for queryability
-- **OpenTelemetry SDK 1.29.0+**: Core tracing library - vendor-neutral, generates traces without external collectors, works in single-process mode
-- **pytest-asyncio 1.3.0+**: Async test support - modern 1.x release with clean API, handles async setup/teardown
-- **aiogram-tests 1.2.0+**: aiogram-specific mocking - MockedBot pattern for testing Telegram interactions without real API
-- **respx 0.22.0+**: HTTPX mocking - clean async support for mocking Anthropic API and PostgREST calls
-- **deepeval 3.8.3+**: LLM evaluation - pytest integration, 14+ RAG metrics, synthetic test case generation
-- **postgrest-py 0.18.0+**: PostgREST client - official Supabase client with async support for InsForge integration
-- **asyncpg 0.31.0+ (optional)**: Direct PostgreSQL access - 5x faster than psycopg3 for complex trace queries
-
-**Critical principle:** Avoid distributed tracing complexity (Jaeger, Zipkin, Datadog APM) - overkill for single-process bot. Focus on in-process instrumentation, structured logging, and PostgreSQL-based trace storage.
+- `OpenRouterProvider.complete_with_tools()` (extend existing): single-method addition enabling tool-use loops — no new HTTP library
+- `collections.deque` (Python stdlib): O(1) sliding-window conversation history per user — no Redis, no DB round-trips
+- `apscheduler>=3.10,<4.0`: only new dependency; `AsyncIOScheduler` + cron trigger for daily briefings; v4 is explicitly pre-release alpha and must not be used
+- `pyyaml` (existing): new `data/agents.yaml` config file following identical pattern to existing `data/pipelines/*.yaml`
+- `aiogram` FSM + inline keyboards (existing): confirmation flow uses `InlineKeyboardMarkup` + FSM state storage — zero new patterns
+- New Pydantic models `DealModel`, `DealNoteModel` in existing `bot/storage/models.py` — direct extension of the 11 existing model classes
 
 ### Expected Features
 
-Pipeline observability and automated testing for AI agent systems in 2026 distinguish between table stakes (basic visibility without which the system is unmanageable) and differentiators (advanced features providing competitive advantage). For Deal Quest Bot's admin needs, the baseline includes real-time health visibility, error tracking with structured logging, per-step timing for bottleneck identification, request/response logging for debugging, basic synthetic test runner, token usage tracking, and alerting via Telegram. Differentiators include trace visualization (timeline/flamegraph), RAG quality monitoring, hallucination detection, and agentic anomaly detection.
+The 2026 AI sales tool landscape (Gong, Highspot, Pipedrive AI, Salesloft) defines what individual sales reps expect from an AI partner. The ClickUp MCP reference confirms which patterns are validated in production.
+
+See `.planning/research/FEATURES.md` for the full feature table with sources.
 
 **Must have (table stakes):**
-- **Health Status Dashboard** - Overall system status, per-pipeline status, last successful runs, error counts (users expect this)
-- **Error Tracking & Logging** - Structured JSON logs with stack traces, error rate monitoring, Telegram alerts (essential for operations)
-- **Per-Step Timing** - Track execution time for each pipeline step, calculate p50/p95/p99 latencies (bottleneck identification)
-- **Request/Response Logging** - Full agent I/O capture with trace_id correlation (debugging requires seeing exact inputs/outputs)
-- **Basic Synthetic Test Runner** - 3-5 critical user journeys per pipeline, manual trigger only (catch regressions before users)
-- **Token Usage & Cost Tracking** - Track tokens per request, calculate costs, daily/weekly aggregation (LLM costs can explode)
-- **Basic Alerting System** - Telegram notifications for system down, error spikes, test failures (admins can't monitor 24/7)
+- Natural language message routing — the core premise: any message gets handled intelligently
+- Conversational deal creation — "just got off a call with Acme, 50K, Q2 close"
+- Deal status queries and stage updates with confirmation keyboard before any write
+- Note logging on deals (call logs, meeting notes, insights)
+- Stale deal detection and nudge — proactive alert when deal goes cold
+- Daily morning briefing — deals + coaching nudge combined
+- Conversation history (sliding window) — context carries across messages in a session
+- Backward compatibility — `/learn`, `/train`, `/support`, `/leads` must keep working as command shortcuts
 
-**Should have (competitive differentiators):**
-- **Trace Visualization** - Gantt chart timeline showing execution flow, flamegraph for performance analysis (reduces MTTR by 50%+)
-- **Bottleneck Analysis Dashboard** - Automatically identify slowest components, trend analysis over time (nice to have, can query manually)
-- **RAG Quality Monitoring** - Track retrieval metrics, relevance scores, alert on poor retrieval (critical for RAG-heavy bots)
-- **Hallucination Detection** - Compare outputs to source documents, flag unsupported claims (protects reputation)
-- **User Satisfaction Tracking** - In-chat thumbs up/down feedback, correlate with technical metrics (bridges technical and business)
+**Should have (differentiators):**
+- Memory Agent that learns rep patterns — top objections, preferred close tactics, deal history
+- Competitive intel retrieval from `company_knowledge.md`
+- Re-engagement email drafting for cold deals
+- Call prep briefing using deal context + playbook
+- Multi-deal portfolio view ("show me all deals at risk")
+- Specialist timeout + fallback so provider flakiness does not surface as user-facing errors
 
-**Defer (v2+ or only if proven need):**
-- **Prompt Effectiveness Tracking** - A/B test prompts, track success rates per template (helpful but not critical)
-- **Self-Healing Test Automation** - AI-powered test maintenance and auto-updating (nice to have, manual maintenance acceptable for MVP)
-- **Agentic Anomaly Detection** - ML model learns normal behavior, predicts failures (powerful but requires significant data volume)
-- **Multi-Modal Trace Support** - Store images/voice/files in traces (only needed if bot becomes multi-modal)
-
-**MVP recommendation:** Focus on all table stakes features in Phase 1-2 (3-4 weeks), defer differentiators to Phase 3+ after validating core system works. Start with Telegram /admin commands, consider Telegram Mini App dashboard later if user base justifies investment.
+**Defer to future milestone:**
+- External CRM sync (HubSpot, Pipedrive) — full OAuth + API scope; explicitly out of scope per PROJECT.md
+- Win probability as a hard number — requires calibrated data not yet available
+- Multi-user team features — needs a permissions model
+- Calendar/scheduling agent — Google/Outlook APIs add scope without core value
+- Deal pattern recognition — requires weeks of accumulated data
+- Context-triggered nudges beyond stale deals — complex signal detection
 
 ### Architecture Approach
 
-Pipeline observability systems for async Python applications follow a four-tier architecture: Instrumentation (wraps call sites without modifying internals), Collector (aggregates spans with batching), Storage (persists to PostgreSQL/InsForge), and Visualization (admin UI for viewing traces). The optimal approach for Deal Quest Bot uses decorator/context-manager-based instrumentation similar to the existing ProgressUpdater pattern, an in-process TraceCollector service for batching and background flushing, normalized PostgreSQL schema with separate tables for traces/spans/attributes/events, and a React admin panel integrated with existing /admin routes.
+The architecture is a clean layered addition to the existing dispatcher tree. A new `natural_language.router` (registered last) catches all non-FSM text/voice messages and routes them to a singleton `Orchestrator` class. The Orchestrator builds context (conversation history + user memory + minimal deal context — no 70K-token knowledge base), runs a tool-use loop via `complete_with_tools()`, and dispatches to specialist agents via `invoke_*` tool calls. Specialist agents each run their own tool-use loops against domain-specific tools. All tools write to InsForge via the existing repository pattern. A new `ProactiveService` handles scheduled messaging using `APScheduler`. Existing v1.0 pipelines (strategist, trainer) are wrapped by specialist agents, not replaced.
+
+See `.planning/research/ARCHITECTURE.md` for component boundaries, full code patterns, and data flow diagrams.
 
 **Major components:**
-
-1. **Instrumentation Layer** - Python decorators and context managers (TraceContext) that wrap PipelineRunner methods to capture trace data. Uses contextvars for async-safe context propagation. Creates hierarchical spans (pipeline → steps → agents). Records timing, inputs, outputs, errors. Follows ProgressUpdater pattern: wraps call sites, doesn't modify PipelineRunner internals.
-
-2. **Trace Collector (In-Process Service)** - Receives spans from instrumentation, batches them to reduce database write frequency (buffer of 50 spans or 10-second flush interval), enriches spans with metadata, handles async background flushing. Implemented as Python class with asyncio background task. NOT a separate OpenTelemetry Collector process - simpler deployment, lower latency, direct PostgreSQL integration.
-
-3. **Storage Layer (PostgreSQL/InsForge)** - Four tables: traces (one per pipeline run), spans (hierarchical operations), span_attributes (flexible key-value metadata), span_events (point-in-time occurrences like exceptions). Uses PostgreSQL partitioning by timestamp for efficient querying. BRIN indexes for time-series data. Retention policies: 30 days for traces, 7 days for full I/O data.
-
-4. **Admin UI (React + InsForge API)** - Trace list view with filters (date range, user, status, duration), trace detail view with Gantt timeline and span tree, error drill-down with stack traces, performance dashboard showing p50/p95/p99 latencies. Integrated with existing /admin route. Respects Telegram 4096-character limit with pagination and progressive disclosure.
-
-**Key design principle:** Follow existing ProgressUpdater pattern - wrap call sites with context managers, don't modify PipelineRunner internals. Minimal invasiveness, easy to disable if needed.
+1. `NaturalLanguageHandler` (`bot/handlers/natural_language.py`) — catch-all entry point; per-chat processing lock + queue; voice/photo preprocessing; typing indicator every 4s; renders orchestrator response as Telegram message or confirmation keyboard
+2. `Orchestrator` (`bot/agents/orchestrator.py`) — singleton; builds AgentContext (no knowledge base); runs tool-use loop; routes to specialists via `invoke_*` tools; holds per-chat `ConversationHistory`; returns `OrchestratorResponse`
+3. `ToolUseAgent` base class (`bot/agents/tool_use_agent.py`) — new base class replacing old `BaseAgent` ABC for v2 agents; implements `while iterations < max_iterations` loop; loads config from `agents.yaml`; exits immediately on confirmation payload (no extra LLM call)
+4. `DealAgent` (`bot/agents/deal_agent.py`) — CRM operations; confirmation-first writes; reads/writes `deals` and `deal_notes` via new `DealRepo`/`DealNoteRepo`
+5. `CoachAgent` (`bot/agents/coach_agent.py`) — wraps existing `TrainerAgent` pipelines for NL routing; no duplication of training logic
+6. `StrategyAgent` (`bot/agents/strategy_agent.py`) — wraps existing `StrategistAgent` pipeline; adds call prep and competitive intel tools
+7. `MemoryAgent` (`bot/agents/memory.py`) — MODIFIED: add inactivity-timer trigger (5 min after last message) replacing per-pipeline background trigger
+8. `AgentContextBuilder` (`bot/agents/context_builder.py`) — assembles orchestrator context; critical: NO knowledge base for orchestrator (routing only); full domain knowledge for specialist agents only
+9. `ProactiveService` (`bot/services/proactive.py`) — APScheduler-based daily briefing; per-user try/except to prevent a single failure halting all deliveries
+10. Two new InsForge tables: `deals` (with PostgreSQL CHECK constraint on stage enum), `deal_notes`
 
 ### Critical Pitfalls
 
-Research identified 12 pitfalls across critical/moderate/minor severity levels. The top five critical pitfalls that can cause rewrites or outages are: async context loss in trace propagation (68% of production incidents in async Python apps), storage explosion from full I/O capture (5GB+/month at moderate scale), Telegram 4096-char limit overflow in admin commands, test isolation failure with shared event loop state (flaky tests), and LLM cost runaway in synthetic tests (60% of teams overpay 5-10x).
+See `.planning/research/PITFALLS.md` for all 18 pitfalls with full prevention strategies and per-phase warnings.
 
-1. **Async Context Loss in Trace Propagation** - Trace IDs get lost crossing async boundaries (task creation, background tasks), resulting in orphaned spans. Use contextvars explicitly, store trace_id in aiogram middleware data dict, copy context when creating tasks. Test context propagation with integration tests. Address in Phase 1 (Foundation).
+1. **Catch-all router registered before command routers** — All `/learn`, `/train`, `/support` commands route to the LLM orchestrator instead of their dedicated handlers. Prevention: `dp.include_router(natural_language.router)` must be the LAST include call in `main.py`; add `StateFilter(default_state)`; smoke test on day one that `/learn` hits `TrainerAgent`, not the orchestrator.
 
-2. **Storage Explosion from Full I/O Capture** - Storing complete LLM prompts/responses causes PostgreSQL bloat and cost spikes. Store only metadata in main traces table, put full I/O in separate table with 7-day retention. Implement sampling (100% errors, 10% success). Use PostgreSQL partitioning by timestamp. Address in Phase 1 (Schema Design).
+2. **Tool-use loop with no hard iteration cap** — Agent loops indefinitely; per-message LLM cost spikes to $1–2; Telegram user gets no response. Prevention: `max_iterations` per agent in `agents.yaml` (default 5); `asyncio.wait_for(90s)` on all specialist invocations; detect repetitive tool call sequences and short-circuit.
 
-3. **Telegram 4096-Char Limit Overflow** - Admin command output exceeds Telegram message limit, causing truncation. Design for pagination from day one with inline keyboards. Show summaries in list view (10 traces/page), full details on demand. Test with 50+ traces before deployment. Address in Phase 2 (Admin Commands).
+3. **LLM routing misclassification** — "Move Acme to Proposal stage" routes to Coach Agent instead of Deal Agent. Prevention: non-overlapping specialist descriptions with explicit negative examples in orchestrator prompt; lightweight keyword pre-filter before LLM routing call; log and review first 50 real routing decisions.
 
-4. **Test Isolation Failure with Shared Event Loop State** - Async fixtures share state across tests, causing flaky tests that pass individually but fail in suite. Use pytest-asyncio with function-scoped fixtures, explicitly cancel background tasks in teardown. Use pytest-random-order to catch isolation issues early. Address in Phase 2 (Test Infrastructure Setup).
+4. **Confirmation flow race condition** — User sends a revision before confirming; stale confirmation executes the wrong CRM mutation. Prevention: TTL-keyed pending confirmations dict (5-min expiry); invalidate any pending confirmation on any new user message; verify `confirmation_id` on button press.
 
-5. **LLM Cost Runaway in Synthetic Tests** - Real LLM calls in tests cost $5-20 per run, developers run 50 times, accidentally spend $100-1000. Manual trigger only (/admin test command), never automated. Add cost tracking and confirmation prompt. Use dry-run mode with mocked responses for development. Address in Phase 2 (Test Implementation).
+5. **Full 70K-token knowledge base injected into orchestrator** — Routing call costs 10x more than needed; context rot degrades routing accuracy. Prevention: orchestrator prompt contains NO knowledge base — only agent descriptions and conversation history (target <2000 tokens); specialists receive only domain-relevant knowledge.
 
-**Additional key pitfalls:**
-- Synchronous tracing overhead in hot path (50-200ms latency increase) - use async background writes with batching
-- No partitioning strategy for time-series data (queries slow from 50ms to 2000ms) - implement daily/weekly partitions from day one
-- Missing correlation between ProgressUpdater and traces (conflicting information) - share step names between both systems
+6. **Memory agent triggered on every message** — At 20 msgs/day/user, doubles total LLM cost. Prevention: inactivity timer pattern from ClickUp reference — fire memory update 5 minutes after last user message, not after every message; abort in-flight update when user sends a new message.
+
+7. **CRM stage stored as freeform string** — Future migrations are painful; filter queries are fragile. Prevention: PostgreSQL CHECK constraint enum (`prospecting | qualified | proposal | negotiation | won | lost | stalled`) from day one; validate at repository layer, never pass raw strings from agent output.
+
+---
 
 ## Implications for Roadmap
 
-Based on research findings, pipeline observability and testing naturally decompose into three phases with clear dependencies. Phase 1 establishes the foundation (storage, instrumentation, collection), Phase 2 adds operational maturity (admin commands, synthetic tests, alerting), and Phase 3 focuses on advanced features and optimization (visualization, AI-powered features, performance tuning).
+All four research files converge on the same three-phase structure. The feature dependency graph, architectural component ordering, and pitfall phase-mapping all align.
 
-### Phase 1: Foundation - Tracing Infrastructure & Storage
+### Phase 1: NL Routing Foundation
 
-**Rationale:** All other components depend on storage schema and trace collection infrastructure. Must be designed correctly from day one to avoid costly migrations. Schema design must address storage explosion and partitioning from the start to prevent performance degradation at scale.
+**Rationale:** Everything in v2.0 depends on the orchestrator existing and routing correctly. No specialist agent, CRM feature, or proactive feature can be built or tested without this layer in place. This phase also establishes all critical infrastructure guards (processing lock, iteration cap, router ordering) that prevent the highest-severity pitfalls. The ClickUp reference architecture shows this is exactly the right starting point — routing reliability must be proven before adding domain complexity.
 
-**Delivers:**
-- PostgreSQL tables in InsForge (traces, spans, span_attributes, span_events)
-- In-process TraceCollector service with batching and background flushing
-- Decorator/context-manager instrumentation (TraceContext) following ProgressUpdater pattern
-- Structured logging with structlog configured for JSON output and contextvars
-- Basic timing instrumentation using time.perf_counter()
-- Context propagation strategy for async boundaries (explicitly tested)
+**Delivers:** Any text or voice message routes to the correct specialist agent. Conversation context carries across turns within a session. Existing commands are fully unaffected. A `"thinking..."` typing indicator shows during LLM calls. All orchestrator calls are traced.
 
-**Addresses features:**
-- Storage foundation for all observability features
-- Per-step timing tracking (table stakes)
-- Error tracking & logging (table stakes)
-- Request/response logging (table stakes)
+**Addresses (from FEATURES.md):**
+- Natural language message routing (table stakes)
+- Conversation history sliding window (table stakes)
+- Voice message routing via existing AssemblyAI integration
+- Backward compatibility for all existing /commands
 
-**Avoids pitfalls:**
-- Pitfall #2: Storage explosion from full I/O capture - separate tables with different retention policies
-- Pitfall #1: Async context loss - explicit contextvars usage and testing
-- Pitfall #7: No partitioning strategy - implement daily/weekly partitions from day one
-- Pitfall #12: Timestamp precision mismatch - normalize to milliseconds everywhere
+**Implements (from ARCHITECTURE.md):**
+- `NaturalLanguageHandler` with per-chat processing lock + queue
+- `Orchestrator` singleton with tool-use loop and `max_iterations` cap
+- `ToolUseAgent` base class
+- `AgentContextBuilder` (no knowledge base for orchestrator)
+- `ConversationHistory` in-memory store (`collections.deque`)
+- `agents.yaml` config system using existing `pyyaml`
+- `complete_with_tools()` method on existing `OpenRouterProvider`
 
-**Stack elements used:**
-- structlog 25.5.0+ for structured logging
-- OpenTelemetry span model (not full OTel ecosystem)
-- PostgreSQL via InsForge (postgrest-py client)
-- time.perf_counter() for timing
+**Avoids (from PITFALLS.md):**
+- Pitfall 1: Router ordering — register NL router LAST; add StateFilter
+- Pitfall 2: Infinite loops — max_iterations from day one; 90s wait_for timeout
+- Pitfall 3: Routing misclassification — precise non-overlapping descriptions + keyword pre-filter
+- Pitfall 5: FSM dead zone — design FSM/NL boundary at implementation time; document `/cancel` in FSM entry messages
+- Pitfall 7: In-memory history restart loss — document explicitly; keep window short (10 turns)
+- Pitfall 9: Duplicate concurrent requests — `processing_users: set[int]` + latest-wins queue before first deploy
+- Pitfall 11: Context window bloat — orchestrator gets no knowledge base; orchestrator prompt target <2000 tokens
+- Pitfall 12: Memory agent per-message — design inactivity timer before first memory update call
+- Pitfall 15: No typing indicator — 4-second repeating `send_chat_action` on NL handler entry
+- Pitfall 16: Missing traces — wrap orchestrator invocations in `TraceContext` from first deployment
 
-**Architecture component:** Instrumentation Layer + Trace Collector + Storage Layer
-
-**Complexity:** Medium (2-3 weeks)
-
-**Research flag:** STANDARD PATTERNS - Well-documented async instrumentation and PostgreSQL storage patterns. Skip deep research, implement based on current findings.
-
----
-
-### Phase 2: Operations - Admin Commands & Synthetic Testing
-
-**Rationale:** With trace collection working, add operational tools that admins need daily. Admin commands provide immediate value for debugging, while synthetic tests prevent regressions. Must address Telegram API constraints (4096-char limit, rate limits) and LLM cost management from the start.
-
-**Delivers:**
-- Telegram /admin commands: /status, /errors, /traces, /test
-- Health status dashboard (via /admin status)
-- Error tracking with pagination and filtering
-- Trace list view with inline keyboard pagination
-- Basic synthetic test runner (manual trigger only)
-- Test cost tracking and confirmation prompts
-- Basic alerting to Telegram channel (critical errors, test failures)
-- Token usage and cost tracking
-
-**Addresses features:**
-- Health Status Dashboard (table stakes)
-- Error Tracking & Logging (table stakes)
-- Basic Synthetic Test Runner (table stakes)
-- Token Usage & Cost Tracking (table stakes)
-- Basic Alerting System (table stakes)
-
-**Avoids pitfalls:**
-- Pitfall #3: Telegram 4096-char limit overflow - pagination with inline keyboards from day one
-- Pitfall #5: LLM cost runaway - manual trigger only, cost tracking, confirmation prompt
-- Pitfall #4: Test isolation failures - function-scoped fixtures, pytest-random-order
-- Pitfall #9: Telegram API rate limits - use aiogram rate limiter, edit messages instead of sending new ones
-- Pitfall #11: No dry-run mode - implement mocked responses for development
-
-**Stack elements used:**
-- pytest 8.3.0+ with pytest-asyncio 1.3.0+ for test framework
-- aiogram-tests 1.2.0+ for bot mocking (MockedBot pattern)
-- respx 0.22.0+ for mocking httpx calls to Anthropic API and PostgREST
-- deepeval 3.8.3+ for LLM evaluation (optional in Phase 2, focus on basic tests first)
-
-**Architecture component:** Admin UI (Telegram commands) + Test Infrastructure
-
-**Complexity:** Medium (2-3 weeks)
-
-**Research flag:** STANDARD PATTERNS - Telegram bot commands and pytest testing are well-documented. Some trial-and-error expected with aiogram-tests (sparse docs) and respx patterns for PostgREST mocking.
+**Research flag:** Standard patterns. Router registration, aiogram FSM, in-memory deque, and `complete_with_tools()` extension are all documented and validated. Skip `/gsd:research-phase` for this phase.
 
 ---
 
-### Phase 3: Enhancement - Visualization & Optimization
+### Phase 2: CRM Writes and Specialist Integration
 
-**Rationale:** Core system is operational. Now add advanced features that improve developer experience and system performance. Focus on proven needs from Phase 1-2 usage. Trace visualization and bottleneck analysis reduce MTTR significantly. Performance optimization ensures tracing overhead remains <5%.
+**Rationale:** Phase 1 proves routing works. Phase 2 adds the primary value-delivering features: full deal lifecycle management and NL access to all coaching and strategy capabilities. The confirmation flow (highest-risk new interaction pattern) is built here, isolated to Deal Agent writes before any other feature depends on it. Existing v1.0 agents are wrapped by specialists, not rewritten — this is the lowest-risk integration approach.
 
-**Delivers:**
-- Trace visualization (Gantt timeline, flamegraph)
-- Bottleneck analysis dashboard (slowest operations, trends)
-- User satisfaction tracking (in-chat thumbs up/down)
-- Performance optimization (sampling strategy, batch tuning)
-- Advanced alerting (error rate thresholds, anomaly detection basics)
-- Trace export and comparison features
-- Retention policy automation (delete old traces)
+**Delivers:** Full deal lifecycle in-bot (create, update, log notes, query portfolio). Natural language access to coaching (objection practice, skill assessment). Natural language access to strategy (call prep, competitive intel, re-engagement drafts). Background memory consolidation after conversations end.
 
-**Addresses features:**
-- Trace Visualization (differentiator - high value)
-- Bottleneck Analysis Dashboard (differentiator - medium value)
-- User Satisfaction Tracking (differentiator - bridges technical and business)
+**Addresses (from FEATURES.md):**
+- Conversational deal creation with confirmation keyboard
+- Deal status queries and stage updates
+- Note logging (call logs, meeting notes, AI insights)
+- Objection handling practice via NL ("practice pricing objection")
+- Call preparation briefing
+- Competitive intel retrieval from company knowledge
+- Re-engagement email drafting
+- Memory Agent learning rep patterns and preferences
 
-**Avoids pitfalls:**
-- Pitfall #6: Synchronous tracing overhead - implement sampling (100% errors, 10% success)
-- Pitfall #8: Missing correlation between ProgressUpdater and traces - ensure consistent step names
-- Anti-pattern: "Store everything for later analysis" - aggressive retention policies
+**Implements (from ARCHITECTURE.md):**
+- `DealAgent` with confirmation-first write tools
+- `CoachAgent` wrapping existing `TrainerAgent`
+- `StrategyAgent` wrapping existing `StrategistAgent`
+- `MemoryAgent` modification with inactivity-timer trigger
+- `deal_tools.py`, `coach_tools.py`, `strategy_tools.py`, `memory_tools.py` in `bot/agents/tools/`
+- `DealModel`, `DealNoteModel` in `bot/storage/models.py`
+- `DealRepo`, `DealNoteRepo` in `bot/storage/repositories.py`
+- `deals` and `deal_notes` InsForge table migrations with stage CHECK constraint
+- Extended `InsForgeClient` with PostgREST comparison operators (`gte`, `lt`, date arithmetic)
 
-**Stack elements used:**
-- React components for visualization (integrate with existing admin panel)
-- Recharts or similar for timeline/flamegraph rendering
-- PostgreSQL aggregation queries for bottleneck analysis
+**Avoids (from PITFALLS.md):**
+- Pitfall 4: Confirmation race condition — TTL dict + invalidate on new user message + confirmation_id verification
+- Pitfall 6: Freeform CRM stages — PostgreSQL CHECK constraint written into migration, not application layer
+- Pitfall 8: Per-message LLM cost — cheap routing model for orchestrator; expensive models for specialist execution only
+- Pitfall 13: PostgREST filtering limitations — extend `InsForgeClient` before building Deal Agent query tools
+- Pitfall 14: Tool output too long — cap all list tools at 10 items; return text summary, not raw JSON
+- Pitfall 17: /support backward compat — decide and document whether /support becomes an orchestrator shortcut
+- Pitfall 18: Duplicate deal race condition — `UNIQUE(user_id, prospect_company)` constraint at DB level
 
-**Architecture component:** Admin UI (Web visualization) + Performance optimization layer
-
-**Complexity:** High (3-4 weeks)
-
-**Research flag:** NEEDS RESEARCH - Trace visualization UI patterns need deeper investigation. Evaluate existing open-source components (Jaeger UI, Grafana traces) vs custom implementation. Performance optimization for async Python needs profiling-driven approach.
+**Research flag:** One gap requires early validation. Verify PostgREST operator syntax (`gte`, `lt`, date arithmetic) against the live InsForge instance before writing Deal Agent query tools. The existing `InsForgeClient.query()` only exposes equality filters — the extension is straightforward but the exact operator format must be confirmed before tool design is finalized.
 
 ---
 
-### Phase 4 (Future): AI-Powered Features
+### Phase 3: Proactive Features
 
-**Defer to post-MVP unless proven need emerges:**
-- RAG Quality Monitoring (if retrieval quality becomes concern)
-- Hallucination Detection (if accuracy issues arise)
-- Prompt Effectiveness Tracking (if A/B testing prompts)
-- Self-Healing Test Automation (if test maintenance becomes burden)
-- Agentic Anomaly Detection (requires significant data volume)
+**Rationale:** Proactive messaging is what makes the bot feel like a persistent sales partner rather than a reactive tool. It requires all specialist agents to be working and stable — daily briefings aggregate Deal Agent and Coach Agent output; stale deal nudges require Deal Agent read queries. These are the differentiators. Building them last ensures the foundation is solid before adding scheduled complexity.
 
-**Rationale:** These features require substantial data volume (months of traces) and advanced ML/AI capabilities. Implement only if specific pain points emerge from Phase 1-3 usage. Most are "nice to have" rather than critical for operations.
+**Delivers:** Bot proactively surfaces deal status every morning. Users are nudged when deals go stale. The bot feels like a sales partner that monitors the pipeline independently, not just a Q&A interface. Admin tooling gives visibility into the new agent system.
+
+**Addresses (from FEATURES.md):**
+- Daily morning briefing (deal summary + coaching nudge + stale alerts)
+- Stale deal detection and nudge
+- Multi-deal portfolio view ("show me all deals at risk")
+- Admin tooling: `/admin agents` health status, `/admin traces` for new agent system
+
+**Implements (from ARCHITECTURE.md):**
+- `ProactiveService` (`bot/services/proactive.py`) with `APScheduler AsyncIOScheduler`
+- Daily briefing job: cron at 06:00 UTC; per-user try/except; outer crash recovery loop
+- Stale deal detection: query deals inactive >5 days; nudge via bot
+- Admin command extensions to `bot/handlers/admin.py`
+
+**Avoids (from PITFALLS.md):**
+- Pitfall 10: Scheduler crash silently stops delivery — per-user `try/except TelegramForbiddenError`; mark blocked users as inactive; outer `while True` wrapper with 60s sleep on crash
+- Pitfall 8: LLM cost guardrails — per-user daily NL message limit; command shortcuts remain free; cheap routing model for orchestrator
+
+**Research flag:** Low risk. APScheduler 3.x `AsyncIOScheduler` + aiogram is a documented community pattern. Confirm `scheduler.start()` timing relative to event loop start in Railway deployment before Phase 3 goes live — minimal investigation, not a full research phase.
 
 ---
 
 ### Phase Ordering Rationale
 
-**Why this order:**
-1. **Phase 1 first** - Storage schema and instrumentation are foundational. Everything depends on them. Schema mistakes are expensive to fix later (migrations, downtime). Async context propagation must work from day one or traces are useless.
+- **Dependency graph drives order.** The orchestrator must exist before any specialist can be invoked. CRM tables must exist before the Deal Agent can write. Specialists must be stable before proactive features can aggregate their outputs. This ordering is not arbitrary — it follows hard technical dependencies.
 
-2. **Phase 2 second** - Admin commands and tests provide immediate operational value. Admins need debugging tools as soon as tracing is collecting data. Synthetic tests prevent regressions during active development. Both have critical constraints (Telegram limits, LLM costs) that must be addressed before deployment.
+- **Pitfall severity drives guard sequencing.** The three critical pitfalls (router ordering, infinite loops, routing misclassification) all belong to Phase 1. Building their guards into Phase 1 prevents them from being discovered in Phase 2 or 3 when they are harder to isolate and fix.
 
-3. **Phase 3 third** - Visualization and optimization are valuable but not blocking. Can operate effectively with /admin commands and SQL queries initially. Build advanced UI only after validating that basic system works and identifying real bottlenecks from usage data.
+- **Backward compat is a Phase 1 constraint, not Phase 3 cleanup.** The catch-all router design must account for all existing FSM states and command handlers from day one. Retrofitting this after Phase 2 is written would require touching every handler.
 
-4. **Phase 4 deferred** - AI-powered features require data volume and sophistication that won't exist at launch. Implement reactively based on proven needs, not speculatively.
+- **Confirmation flow belongs to Phase 2, isolated.** The highest-risk new interaction pattern (inline keyboard + pending state + TTL + race condition prevention) is introduced on the first CRM write operation, where it can be tested in isolation before being depended on by more tools.
 
-**Dependency chain:**
-- Phase 2 depends on Phase 1 (needs trace storage to query)
-- Phase 3 depends on Phase 1-2 (needs data and basic UI foundation)
-- Phase 4 depends on months of Phase 1-3 usage data
+- **Proactive features are last because they depend on everything.** Daily briefings aggregate Deal Agent and Coach Agent output. Stale deal nudges require Deal Agent. Memory personalization of briefings requires Memory Agent. All must be independently stable first.
 
-**How this avoids pitfalls:**
-- Addresses storage design and async context issues in Phase 1 before they cause problems
-- Implements Telegram constraints and cost controls in Phase 2 before deployment
-- Defers expensive visualization work until validating core system
-- Prevents over-engineering by deferring AI features until proven need
+- **The ClickUp MCP reference confirms this ordering.** The TypeScript implementation was built in exactly this sequence: routing first, CRM writes second, proactive third. This is not coincidental — it reflects the natural dependency graph of the domain.
+
+---
 
 ### Research Flags
 
-**Phases with standard patterns (skip deep research):**
-- **Phase 1 (Foundation)** - Async Python instrumentation and PostgreSQL storage are well-documented. OpenTelemetry concepts are industry-standard. Proceed with implementation based on current research findings.
-- **Phase 2 (Operations)** - Telegram bot commands are straightforward. pytest-asyncio testing has clear patterns. Some trial-and-error expected with aiogram-tests and respx mocking, but manageable.
+Phases needing `/gsd:research-phase` during planning:
 
-**Phases needing deeper research:**
-- **Phase 3 (Visualization)** - Trace visualization UI is complex. Research needed on: existing open-source components (Jaeger UI components, Grafana traces panel, Tempo traces), React libraries for timeline/Gantt charts, flamegraph rendering libraries, integration with Telegram Mini App if going that route. Investigate before implementation to avoid reinventing solved problems.
-- **Phase 4 (AI Features)** - Only research if implementing. RAG quality metrics, hallucination detection algorithms, anomaly detection for observability data all require specialized investigation. Defer research until proven need.
+- **Phase 2 (CRM tools — one specific gap):** Verify PostgREST operator support (`gte`, `lt`, `cs`, date arithmetic) against the live InsForge instance before writing Deal Agent query tools. The existing `InsForgeClient.query()` only supports equality filters and this gap must be confirmed before tool schema is designed. Not a full research phase — targeted validation only.
 
-**Ongoing research needs:**
-- Monitor postgrest-py async patterns during Phase 1 implementation (docs are sparse, may need experimentation)
-- Track aiogram 3 middleware patterns for context injection during Phase 1
-- Validate performance overhead claims during Phase 3 (profile actual impact, not just estimates)
+Phases with standard, well-documented patterns (skip research):
+
+- **Phase 1 (NL routing):** aiogram router registration order, `StateFilter`, FSM interaction, in-memory `deque`, OpenRouter function calling format — all documented and validated in existing codebase and ClickUp reference. No unknowns.
+
+- **Phase 3 (proactive messaging):** APScheduler 3.x `AsyncIOScheduler` + cron + aiogram is documented and widely used. The pattern fits directly into existing `main.py`. Confirm Railway deployment timing but do not run a research phase.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | **HIGH** | All libraries verified via PyPI as of 2026-02-02. structlog, OpenTelemetry, pytest-asyncio, deepeval are current 2025-2026 releases with mature async support. Only postgrest-py has sparse async docs (MEDIUM confidence), may require trial-and-error. |
-| Features | **HIGH** | Consistent findings across 20+ current sources (2025-2026 research). Table stakes vs differentiators clear from industry consensus. MVP priorities validated against AI agent observability best practices. |
-| Architecture | **HIGH** | Four-tier architecture (instrumentation/collector/storage/visualization) is industry-standard pattern. Decorator-based instrumentation verified in multiple sources (Langfuse, OpenTelemetry). In-process collector recommended for single-process apps. PostgreSQL storage schema validated against OpenTelemetry trace model. |
-| Pitfalls | **HIGH** | Critical pitfalls verified with authoritative sources: async context loss (Python docs, OpenTelemetry GitHub issues), storage bloat (ClickHouse, Observe Inc studies), Telegram limits (official API docs), test isolation (pytest-asyncio official docs), LLM costs (industry benchmarks). Medium pitfalls based on community practices and APM tool documentation. |
+| Stack | HIGH | One new dependency (`apscheduler`). All other decisions extend existing validated code. Official docs confirmed for OpenRouter tool calling and APScheduler 3.x. ClickUp reference provides working TypeScript equivalents for every new Python pattern. |
+| Features | HIGH | Multiple 2026 industry sources (Highspot, Salesloft, Vivun, aimultiple, Hyperbound) plus direct ClickUp reference code inspection. Feature table has traceable sources for every entry. Anti-features validated by 2026 AI pilot failure analysis. |
+| Architecture | HIGH | Reference TypeScript implementation read and analyzed line by line. Component boundaries, file names, and Python equivalents all specified with code samples. aiogram 3 patterns confirmed from official docs and existing production codebase. |
+| Pitfalls | HIGH | 18 pitfalls documented. Top 7 confirmed from multiple independent sources: ClickUp reference code (direct observation), arxiv study 2503.13657 (150+ production multi-agent traces), ZenML production report, and direct codebase inspection of `support.py`, `main.py`, `followup_scheduler.py`. |
 
-**Overall confidence:** **HIGH**
-
-All recommendations use 2025-2026 current technologies and patterns. No outdated libraries or deprecated approaches. Primary risk areas:
-- postgrest-py async usage (MEDIUM confidence - official client but docs are limited)
-- aiogram-tests integration (MEDIUM confidence - active repo but sparse documentation)
-- Performance overhead estimates (need validation through profiling)
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-Research identified several areas needing validation or decision during planning/implementation:
+- **PostgREST operator support:** InsForge's actual support for `gte`, `lt`, and date arithmetic operators is not confirmed against the live instance. Validate early in Phase 2 before writing Deal Agent query tools.
 
-1. **Data retention specifics** - Research recommends 30 days for traces, 7 days for full I/O, but exact numbers should be validated against expected usage volume and storage costs. Calculate: 100 users × 10 interactions/day × 5KB per trace = 5GB/month at full retention. Adjust retention based on actual budget.
+- **Pipeline stage enum definition:** The exact stage set (e.g., whether "prospecting" and "qualified" are separate stages, or whether "stalled" is a stage vs a flag) must be decided before the `deals` table migration is written. PITFALLS.md suggests 7 values; finalize before Phase 2 schema work begins.
 
-2. **Sampling strategy details** - "100% errors, 10% success" is recommended starting point, but optimal sampling rate depends on traffic volume and debugging needs. Start with 100% tracing at launch, add sampling if performance overhead exceeds 5% or storage costs spike.
+- **Orchestrator model selection:** The `openai/gpt-oss-120b` default (set in a recent commit) should be validated as sufficient for routing quality. The orchestrator performs classification, not generation — a cheaper, faster model may produce better routing. Decide before Phase 1 deployment, not after.
 
-3. **PostgreSQL vs specialized time-series DB** - Research recommends PostgreSQL with partitioning for MVP (sufficient for 100K+ traces/day), but migration path to TimescaleDB or ClickHouse should be considered if scale exceeds expectations. Monitor query performance at 10K, 50K, 100K traces to validate.
+- **Conversation history persistence decision:** In-memory history is lost on Railway restarts. If restart frequency is high (Railway free tier restarts frequently), adding an InsForge `conversation_history` table becomes Phase 1 scope, not Phase 3+. Assess Railway restart frequency before finalizing Phase 1 scope.
 
-4. **Telegram Mini App vs Web Admin vs /admin commands** - Research suggests starting with /admin commands for MVP, consider Mini App later. Decision should factor in: user base size (worthwhile for 100+ users), mobile-first usage patterns, development time trade-off (Mini App = 2-3 weeks extra). Validate /admin command UX with real admins before investing in Mini App.
-
-5. **Full OpenTelemetry vs custom lightweight tracing** - Research strongly recommends custom lightweight approach for single-process bot, but migration path to full OTel should be documented if bot becomes multi-service or needs integration with external observability platforms. Document: how to upgrade from custom TraceContext to OTel SDK if needed.
-
-6. **LLM evaluation scope** - deepeval offers 14+ metrics (faithfulness, hallucination, answer relevance, tool correctness). Which metrics are most valuable for Deal Quest Bot's specific use cases? Needs domain expert input during Phase 2. Start with faithfulness and hallucination detection for casebook accuracy.
-
-7. **Privacy and PII handling** - Research mentions need for redacting PII from logs. Deal Quest Bot processes negotiation scenarios - what constitutes PII? User messages, deal terms, company information? Define PII policy and implement structlog processors for auto-redaction in Phase 1.
-
-## Sources
-
-### Primary Sources (HIGH confidence)
-
-**Technology Stack:**
-- [structlog PyPI](https://pypi.org/project/structlog/) - Current version 25.5.0, features, async support
-- [Structlog ContextVars: Python Async Logging 2026](https://johal.in/structlog-contextvars-python-async-logging-2026/) - Best practices for async context
-- [OpenTelemetry asyncio Instrumentation](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asyncio/asyncio.html) - Official docs
-- [opentelemetry-instrumentation-asyncio PyPI](https://pypi.org/project/opentelemetry-instrumentation-asyncio/) - Version 0.60b1 (Dec 2025)
-- [PEP 418 – Add monotonic time, performance counter](https://peps.python.org/pep-0418/) - Official timing recommendation
-- [pytest-asyncio PyPI](https://pypi.org/project/pytest-asyncio/) - Current version 1.3.0
-- [aiogram-tests PyPI](https://pypi.org/project/aiogram-tests/) - Bot testing library
-- [deepeval PyPI](https://pypi.org/project/deepeval/) - LLM evaluation framework
-
-**Feature Landscape:**
-- [Top 5 AI Agent Observability Platforms 2026](https://o-mega.ai/articles/top-5-ai-agent-observability-platforms-the-ultimate-2026-guide) - Industry comparison
-- [15 AI Agent Observability Tools](https://research.aimultiple.com/agentic-monitoring/) - AgentOps, Langfuse analysis
-- [AI Agent Monitoring Best Practices 2026](https://uptimerobot.com/knowledge-hub/monitoring/ai-agent-monitoring-best-practices-tools-and-metrics/) - Table stakes features
-- [AI Observability Complete Guide 2026](https://uptimerobot.com/knowledge-hub/observability/ai-observability-the-complete-guide/) - Comprehensive overview
-- [7 Best LLM Tracing Tools 2026](https://www.braintrust.dev/articles/best-llm-tracing-tools-2026) - Trace visualization patterns
-- [Complete Guide to LLM Observability 2026](https://portkey.ai/blog/the-complete-guide-to-llm-observability/) - Best practices
-
-**Architecture:**
-- [Observability Pipeline: What It Is & How to Build One](https://spacelift.io/blog/observability-pipeline) - Build order and dependencies
-- [OpenTelemetry Traces Concepts](https://opentelemetry.io/docs/concepts/signals/traces/) - Trace and span model
-- [OpenTelemetry Context Propagation](https://opentelemetry.io/docs/concepts/context-propagation/) - Core concepts
-- [Langfuse Decorator-Based Python Integration](https://langfuse.com/docs/sdk/python/decorators) - Context manager patterns
-- [Using Decorators to Instrument Python Code With OpenTelemetry Traces](https://digma.ai/using-decorators-to-instrument-python-code-with-opentelemetry-traces/) - Non-invasive instrumentation
-
-**Pitfalls:**
-- [Structlog ContextVars: Python Async Logging 2026](https://johal.in/structlog-contextvars-python-async-logging-2026/) - Context propagation (68% of async Python issues)
-- [Context detach error - OpenTelemetry Python Issue #2606](https://github.com/open-telemetry/opentelemetry-python/issues/2606) - Async context issues
-- [Telegram Limits — Telegram Info](https://limits.tginfo.me/en) - Official 4096-char limit documentation
-- [pytest-asyncio test isolation concepts](https://pytest-asyncio.readthedocs.io/en/stable/concepts.html) - Test isolation patterns
-- [LLM Cost Optimization: Stop Overpaying 5-10x in 2026](https://byteiota.com/llm-cost-optimization-stop-overpaying-5-10x-in-2026/) - Cost management
-- [Lost Logs: Log Retention vs Observability Cost](https://www.observeinc.com/blog/lost-logs-retention-vs-cost) - Storage bloat economics
-- [Observability Antipatterns Official Site](https://observability-antipatterns.github.io/) - Common mistakes
-
-### Secondary Sources (MEDIUM confidence)
-
-**Testing:**
-- [12 Best AI Test Automation Tools 2026](https://testguild.com/7-innovative-ai-test-automation-tools-future-third-wave/) - Testing landscape
-- [Essential pytest asyncio tips](https://articles.mergify.com/pytest-asyncio-2/) - 2025 testing patterns
-- [Synthetic Monitoring Tests - Engineering Fundamentals](https://microsoft.github.io/code-with-engineering-playbook/automated-testing/synthetic-monitoring-tests/) - Best practices
-
-**Performance:**
-- [Python Performance Monitoring - SigNoz](https://signoz.io/guides/python-performance-monitoring/) - Overhead estimates
-- [Tuning PostgreSQL for Write Heavy Workloads](https://www.cloudraft.io/blog/tuning-postgresql-for-write-heavy-workloads) - Storage optimization
-- [Tracing asynchronous Python code with Datadog APM](https://www.datadoghq.com/blog/tracing-async-python-code/) - Async tracing challenges
-
-**Observability Patterns:**
-- [Chatbot Monitoring with Advanced Observability](https://langfuse.com/faq/all/chatbot-analytics) - Bot-specific patterns
-- [How to Measure Agent Performance: Key Metrics](https://www.datarobot.com/blog/how-to-measure-agent-performance/) - Performance metrics
-
-### Tertiary Sources (context only, low confidence)
-
-**General Background:**
-- [Telegram Bot Security Best Practices](https://alexhost.com/faq/what-are-the-best-practices-for-building-secure-telegram-bots/) - Bot development context
-- [postgrest-py Documentation](https://postgrest-py.readthedocs.io/en/latest/api/client.html) - Client API (sparse async docs)
+- **`/support` backward compat decision:** Two parallel paths will exist post-v2.0 for deal analysis: `/support` → StrategistAgent pipeline, and NL "analyze my Acme deal" → Orchestrator → StrategyAgent (PITFALLS.md Pitfall 17). This divergence must be resolved before Phase 2. Recommended resolution: `/support` injects a context hint and routes through the orchestrator, eliminating the parallel path.
 
 ---
 
-**Research completed:** 2026-02-02
-**Ready for roadmap:** Yes
+## Sources
 
-**Next steps:**
-1. Use SUMMARY.md as input for roadmap creation
-2. Create Phase 1 (Foundation) detailed plans focusing on storage schema and instrumentation
-3. Consider `/gsd:research-phase` for Phase 3 (Visualization) when ready - needs deeper investigation of UI components
-4. Validate postgrest-py async patterns through prototyping in Phase 1
-5. Monitor actual usage data from Phase 1-2 to inform Phase 3-4 priorities
+### Primary (HIGH confidence — official docs or direct code inspection)
+
+- ClickUp MCP reference bot (`/Users/dmytrolevin/Desktop/clickup mcp/bot/src/`) — direct code inspection of `orchestrator.ts`, `base-agent.ts`, `conversation-history.ts`, `copilot.ts`, `circuit-breaker.ts`, `graph/memory.ts`, `write-tools.ts`, `confirmation-message.ts`
+- OpenRouter API tool calling format: https://openrouter.ai/docs/api/reference/overview
+- APScheduler 3.x AsyncIOScheduler: https://apscheduler.readthedocs.io/en/3.x/userguide.html
+- APScheduler 4.x pre-release warning: https://apscheduler.readthedocs.io/en/master/migration.html
+- aiogram 3 Router documentation: https://docs.aiogram.dev/en/latest/dispatcher/router.html
+- aiogram 3 FSM documentation: https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html
+- Existing codebase (direct read): `bot/services/llm_router.py`, `bot/pipeline/runner.py`, `bot/storage/models.py`, `bot/main.py`, `bot/services/followup_scheduler.py`, `bot/handlers/support.py`
+
+### Secondary (HIGH confidence — multiple 2026 industry sources agree)
+
+- AI Sales Coaching — Highspot: https://www.highspot.com/blog/ai-sales-coaching/
+- AI Deal Intelligence — Salesloft: https://www.salesloft.com/resources/guides/how-ai-reshapes-deal-management
+- Inside the AI Sales Agent — Vivun: https://www.vivun.com/blog/inside-the-ai-sales-agent-memory-reasoning-real-work
+- Agentic CRM 2026 — aimultiple: https://aimultiple.com/agentic-crm
+- Sales Coaching Benchmarks 2026 — Hyperbound: https://www.hyperbound.ai/blog/sales-coaching-benchmarks-2026
+- 13 AI Sales Assistant Tools 2026 — Outdoo AI: https://www.outdoo.ai/blog/ai-sales-assistants
+
+### Research reports (HIGH confidence — academic and production analysis)
+
+- "Why Do Multi-Agent LLM Systems Fail?" arxiv 2503.13657: https://arxiv.org/html/2503.13657v1 — 18 failure modes from 150+ production traces
+- ZenML "The Agent Deployment Gap": https://www.zenml.io/blog/the-agent-deployment-gap — infinite loop examples, state management failures
+- 2026 AI Pilot Failure Analysis — The AI Hat: https://theaihat.com/the-2026-sales-reckoning-why-95-of-ai-pilots-fail-and-how-to-join-the-5-who-win/
+- Agentic AI Failure Patterns — Concentrix: https://www.concentrix.com/insights/blog/12-failure-patterns-of-agentic-ai-systems/
+
+---
+*Research completed: 2026-02-24*
+*Ready for roadmap: yes*

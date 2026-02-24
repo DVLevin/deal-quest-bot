@@ -1,585 +1,533 @@
-# Technology Stack: Pipeline Observability & Automated Testing
+# Technology Stack — Multi-Agent AI Sales Partner (v2.0)
 
-**Project:** Deal Quest Bot - Observability & Testing Layer
-**Researched:** 2026-02-02
-**Context:** Adding observability and automated testing to existing aiogram 3 async Telegram bot with AI agent pipelines
-
-## Executive Summary
-
-For a single-process Python async application with LLM agent pipelines, the 2025-2026 standard stack emphasizes:
-- **Structured logging** with contextvars for async context propagation (structlog)
-- **Lightweight tracing** using OpenTelemetry without full distributed tracing overhead
-- **Native Python timing** instrumentation with time.perf_counter()
-- **Async-first testing** with pytest-asyncio 1.x and specialized aiogram test frameworks
-- **LLM-specific evaluation** frameworks for synthetic test case generation
-
-**Key principle:** Avoid distributed tracing complexity (Jaeger, Zipkin) since this is single-process. Focus on in-process instrumentation, structured logging, and PostgreSQL-based trace storage.
+**Project:** Deal Quest Bot v2.0 — Multi-Agent Orchestration Milestone
+**Researched:** 2026-02-24
+**Scope:** NEW additions only. Existing validated stack is NOT re-researched.
 
 ---
 
-## Recommended Stack
+## What Is Already In Place (Do Not Re-Add)
 
-### Structured Logging
+These are validated, production-running dependencies. The roadmap must NOT replace or duplicate them:
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **structlog** | 25.5.0+ | Structured logging with async support | Industry-standard for async Python. Native contextvars support for per-request context propagation. 5x faster than stdlib logging in async apps. Sub-microsecond overhead. JSON output for queryability. |
-| **python-json-logger** | 3.2.1+ | JSON formatter fallback | Lightweight alternative if structlog is too heavyweight. Works with stdlib logging. |
-
-**Rationale:**
-- structlog 25.5.0 (released Oct 2025) has mature async support with contextvars integration
-- Critical for aiogram: Can inject `user_id`, `chat_id`, `pipeline_id` into every log entry automatically
-- Works perfectly with single-process apps - no distributed context needed
-- JSON output can be directly stored in PostgreSQL JSONB columns
-
-**Confidence:** HIGH (verified via PyPI, structlog docs, and 2026 best practices articles)
-
-### Tracing & Instrumentation
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **OpenTelemetry SDK** | 1.29.0+ | Core tracing library | Vendor-neutral, future-proof. Can generate traces without external collectors. Works in single-process mode. |
-| **opentelemetry-instrumentation-asyncio** | 0.60b1+ | Automatic asyncio tracing | Auto-instruments asyncio tasks, coroutines, and futures. Provides timing metrics (duration, count) without manual instrumentation. |
-| **time.perf_counter()** | stdlib | High-precision timing | Python stdlib. Monotonic clock with highest resolution (nanosecond precision on most platforms). Best practice for benchmarking per PEP 418. |
-
-**Rationale:**
-- **OpenTelemetry** is the 2025-2026 standard (OpenTracing deprecated)
-- **Don't use full OTel Collector/Jaeger/Zipkin** - overkill for single-process bot
-- Instead: Use OTel SDK to generate trace objects, serialize to JSON, store in PostgreSQL
-- `opentelemetry-instrumentation-asyncio` (released Dec 2025) auto-traces asyncio without code changes
-- `time.perf_counter()` is the official PEP 418 recommendation for timing - more precise than monotonic()
-
-**What NOT to use:**
-- Datadog APM, New Relic - expensive, designed for distributed systems
-- OpenTracing - deprecated since 2021
-- Jaeger/Zipkin - distributed tracing backends not needed for single-process app
-
-**Confidence:** HIGH (verified via official OTel docs, PyPI, and PEP 418)
-
-### Testing Framework
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **pytest** | 8.3.0+ | Test framework | Industry standard. Best plugin ecosystem. |
-| **pytest-asyncio** | 1.3.0+ | Async test support | Latest 1.x (Nov 2025) removes event_loop fixture, uses modern asyncio patterns. Handles async setup/teardown cleanly. |
-| **aiogram-tests** | 1.2.0+ | aiogram-specific mocking | Mocks aiogram bot interactions (messages, callbacks). Uses MockedBot pattern. Actively maintained for aiogram 3. |
-| **respx** | 0.22.0+ | HTTPX mocking | Mocks httpx async HTTP calls (Anthropic API, PostgREST). Clean async support. Pattern-based request matching. |
-| **pytest-cov** | 6.0.0+ | Coverage reporting | Standard coverage tool. Async-aware. |
-
-**Rationale:**
-- **pytest-asyncio 1.3.0** (Nov 2025) is the stable modern version - 1.0 released May 2025 with significant API cleanup
-- **aiogram-tests** provides `MockedBot` and `MessageHandler` for testing Telegram interactions without real API calls
-- **respx** is the standard for mocking httpx - critical since bot uses httpx for Anthropic API
-- Alternative considered: `aiogram-unittest` - less actively maintained, older patterns
-
-**Migration note:** pytest-asyncio 1.x removed `event_loop` fixture. Use `asyncio.get_running_loop()` instead.
-
-**Confidence:** HIGH (verified via PyPI, pytest-asyncio docs, aiogram-tests GitHub)
-
-### LLM Testing & Evaluation
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **deepeval** | 3.8.3+ | LLM pipeline evaluation | "pytest for LLMs". 14+ RAG metrics (faithfulness, answer relevance, hallucination). Agentic metrics (tool correctness). Runs locally. CI/CD integration. Synthetic dataset generation. |
-
-**Rationale:**
-- DeepEval 3.8.3 (Jan 2026) is actively maintained and production-ready
-- Key feature: **Synthetic test case generation** for LLM pipelines
-- Perfect fit: Can test Deal Quest Bot's scenario/negotiation agents with pre-defined evaluation criteria
-- Runs locally - no external API calls needed for evaluation
-- Apache 2.0 license
-
-**When to use:**
-- Regression testing: Does the negotiation agent still produce coherent responses?
-- Quality gates: Is the answer faithful to the casebook context?
-- Hallucination detection: Does the agent invent deal terms not in the scenario?
-
-**What NOT to use:**
-- LangSmith - proprietary, requires external service
-- Weights & Biases - overkill for small bot
-- Manual eval - doesn't scale to regression testing
-
-**Confidence:** HIGH (verified via PyPI, DeepEval docs, and GitHub repo)
-
-### Database Client
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **postgrest-py** | 0.18.0+ | PostgREST async client | Official Supabase client. Async/await support. ORM-like interface. Built on httpx. |
-| **asyncpg** | 0.31.0+ | Direct PostgreSQL access (optional) | If bypassing PostgREST. 5x faster than psycopg3. Native async. Best connection pooling. |
-
-**Rationale:**
-- Project uses InsForge (PostgREST + PostgreSQL)
-- **postgrest-py** is the official client - maintained by Supabase
-- Supports `AsyncPostgrestClient` for async/await patterns
-- Alternative: `asyncpg` if you need direct SQL access (e.g., complex trace queries)
-
-**Best practice:** Use postgrest-py for CRUD, asyncpg for analytics queries
-
-**Confidence:** MEDIUM (postgrest-py docs are sparse, but it's the official client)
+| Capability | Already Solved By |
+|---|---|
+| Telegram bot framework | `aiogram>=3.4.0` |
+| HTTP client for LLM calls | `httpx>=0.27.0` (AsyncClient, connection pooling, retry) |
+| LLM provider abstraction | `bot/services/llm_router.py` (ClaudeProvider + OpenRouterProvider) |
+| YAML pipeline config | `pyyaml>=6.0.1` + `bot/pipeline/config_loader.py` |
+| Data validation + models | `pydantic>=2.6.0` + `pydantic-settings>=2.2.0` |
+| Database (all tables) | InsForge PostgREST via `bot/storage/insforge_client.py` |
+| Background interval tasks | `asyncio.create_task()` + `while True` loops in `followup_scheduler.py` |
+| Tracing/observability | `bot/tracing/` (TraceContext, traced_span, TraceCollector) |
+| Agent ABC + registry | `bot/agents/base.py`, `bot/agents/registry.py` |
+| Pipeline execution | `bot/pipeline/runner.py` (sequential/parallel/background) |
+| Voice transcription | AssemblyAI via `bot/services/transcription.py` |
+| Encryption | `cryptography>=42.0.0` (Fernet) |
 
 ---
 
-## Alternatives Considered
+## New Capabilities Required
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Structured Logging | structlog | python-json-logger | structlog has better async support, contextvars integration |
-| Tracing | OpenTelemetry SDK | Datadog APM | Datadog is expensive, designed for distributed systems, overkill for single-process bot |
-| Tracing Backend | PostgreSQL + custom | Jaeger, Zipkin | Distributed tracing backends not needed. PostgreSQL already in stack. |
-| Timing | time.perf_counter() | time.monotonic() | perf_counter has higher resolution (PEP 418 recommendation for benchmarking) |
-| Async Testing | pytest-asyncio | asyncio.run() manually | pytest-asyncio handles event loop lifecycle, fixtures, cleanup automatically |
-| Bot Testing | aiogram-tests | aiogram-unittest | aiogram-tests more actively maintained, better aiogram 3 support |
-| HTTP Mocking | respx | pytest-httpx | respx has cleaner pattern matching, better async support |
-| LLM Eval | deepeval | LangSmith, manual eval | DeepEval runs locally, open-source, pytest integration, synthetic data generation |
-| PostgreSQL Client | postgrest-py | asyncpg raw SQL | postgrest-py matches existing InsForge architecture, less SQL boilerplate |
+### 1. Tool-Use Loop Engine (OpenRouter Function Calling)
 
----
+**What is needed:** The existing `OpenRouterProvider.complete()` returns parsed JSON from a single LLM call. The new orchestrator agents need multi-turn tool-use loops: call LLM with tools array → execute tool calls → append results → call LLM again → repeat until no more tool calls (or `max_iterations` reached).
 
-## Installation
+**Verdict: Extend existing `llm_router.py` with a new method — no new library.**
 
-```bash
-# Core observability
-pip install structlog==25.5.0
-pip install opentelemetry-api==1.29.0
-pip install opentelemetry-sdk==1.29.0
-pip install opentelemetry-instrumentation-asyncio==0.60b1
+The existing `httpx.AsyncClient` in `OpenRouterProvider` already handles the HTTP transport. OpenRouter supports OpenAI-compatible function calling natively (verified at openrouter.ai/docs/api/reference). The reference TypeScript ClickUp bot uses raw `fetch` with this exact format — the Python equivalent is identical except using `httpx`.
 
-# Testing framework
-pip install pytest==8.3.0
-pip install pytest-asyncio==1.3.0
-pip install pytest-cov==6.0.0
-
-# Bot-specific testing
-pip install aiogram-tests==1.2.0
-pip install respx==0.22.0
-
-# LLM evaluation
-pip install deepeval==3.8.3
-
-# Database clients
-pip install postgrest-py==0.18.0
-pip install asyncpg==0.31.0  # Optional for direct SQL access
-```
-
-**Dev dependencies only:**
-```bash
-pip install -D pytest pytest-asyncio pytest-cov aiogram-tests respx deepeval
-```
-
----
-
-## Architecture Patterns
-
-### 1. Structured Logging Setup
-
-**Pattern: ContextVars for per-request context**
+**New method to add to `OpenRouterProvider`:**
 
 ```python
-import structlog
-from contextvars import ContextVar
+async def complete_with_tools(
+    self,
+    messages: list[dict],   # full OpenAI-format message thread
+    tools: list[dict],       # JSON Schema tool definitions (type: "function")
+    *,
+    tool_choice: str = "auto",
+) -> dict:
+    """Single LLM call returning raw choice message with possible tool_calls list."""
+    resp = await self._client.post("/chat/completions", json={
+        "model": self.model,
+        "messages": messages,
+        "tools": tools,
+        "tool_choice": tool_choice,
+        "max_tokens": 4096,
+    })
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]
+    # Returns: {"role": "assistant", "content": str|None, "tool_calls": [...]}
+```
 
-# Configure structlog once at startup
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.JSONRenderer()
-    ],
-    context_class=dict,
-    logger_factory=structlog.PrintLoggerFactory(),
+The tool-use loop logic (while iterations < max_iterations) lives in each agent class, not in the provider — matching the TypeScript pattern exactly. The provider is just an HTTP call wrapper.
+
+**OpenRouter tool_calls response format** (verified from official docs):
+```json
+{
+  "role": "assistant",
+  "content": null,
+  "tool_calls": [
+    {
+      "id": "call_abc123",
+      "type": "function",
+      "function": {
+        "name": "create_deal",
+        "arguments": "{\"title\": \"Acme Corp\", \"stage\": \"qualified\"}"
+      }
+    }
+  ]
+}
+```
+
+**Confidence:** HIGH — OpenRouter tool calling format is documented and matches OpenAI spec. Existing httpx client handles it without changes.
+
+---
+
+### 2. Agent Config Loader (agents.yaml)
+
+**What is needed:** YAML-defined agent configs: model, prompt_file, tools list, max_iterations, description. Reference: `bot/src/agents/config-loader.ts` in ClickUp bot.
+
+**Verdict: No new library — reuse existing `pyyaml`.**
+
+The existing bot uses PyYAML for pipeline configs (`bot/pipeline/config_loader.py`). Add `bot/agents/config_loader.py` following the same module-level cache pattern. The new `data/agents.yaml` mirrors the TypeScript `AgentConfig` interface.
+
+**`data/agents.yaml` structure:**
+
+```yaml
+agents:
+  orchestrator:
+    model: "openai/gpt-oss-120b"
+    prompt_file: "orchestrator.md"
+    tools:
+      - "invoke_deal_agent"
+      - "invoke_coach_agent"
+      - "invoke_strategy_agent"
+      - "invoke_memory_agent"
+    description: "Routes user messages to specialist agents"
+    max_iterations: 5
+
+  deal_agent:
+    model: "openai/gpt-oss-120b"
+    prompt_file: "deal_agent.md"
+    tools:
+      - "create_deal"
+      - "update_deal"
+      - "list_deals"
+      - "add_deal_note"
+      - "update_deal_stage"
+    description: "CRM: create/update deals, log notes, track pipeline"
+    max_iterations: 8
+
+  coach_agent:
+    model: "openai/gpt-oss-120b"
+    prompt_file: "coach_agent.md"
+    tools:
+      - "start_training_session"
+      - "run_practice_scenario"
+      - "get_progress_summary"
+    description: "Training, practice, objection handling"
+    max_iterations: 5
+
+  strategy_agent:
+    model: "openai/gpt-oss-120b"
+    prompt_file: "strategy_agent.md"
+    tools:
+      - "analyze_deal"
+      - "prep_call"
+      - "generate_re_engagement"
+    description: "Deal analysis, call prep, competitive intel"
+    max_iterations: 6
+
+  memory_agent:
+    model: "openai/gpt-oss-120b"
+    prompt_file: "memory_agent.md"
+    tools:
+      - "read_memory"
+      - "update_memory"
+    description: "Learns salesperson patterns, maintains long-term context"
+    max_iterations: 4
+```
+
+**`bot/agents/config_loader.py` pattern:**
+
+```python
+from __future__ import annotations
+import yaml
+from pathlib import Path
+from dataclasses import dataclass
+
+@dataclass
+class AgentConfig:
+    model: str
+    prompt_file: str
+    tools: list[str]
+    description: str
+    max_iterations: int
+
+_cache: dict[str, AgentConfig] | None = None
+
+def load_agent_configs() -> dict[str, AgentConfig]:
+    global _cache
+    if _cache is not None:
+        return _cache
+    path = Path(__file__).parent.parent.parent / "data" / "agents.yaml"
+    raw = yaml.safe_load(path.read_text())
+    _cache = {
+        name: AgentConfig(**cfg)
+        for name, cfg in raw["agents"].items()
+    }
+    return _cache
+
+def get_agent_config(name: str) -> AgentConfig | None:
+    return load_agent_configs().get(name)
+```
+
+**Confidence:** HIGH — direct adaptation of validated TypeScript pattern using already-present PyYAML.
+
+---
+
+### 3. Conversation History Manager
+
+**What is needed:** Per-user sliding window of the last N message turns in OpenAI format, persisted across handler calls within a process lifetime. Must handle concurrent async access safely.
+
+**Verdict: Custom Python class using stdlib `collections.deque` — no new library.**
+
+The TypeScript reference (`conversation-history.ts`) is a 149-line in-memory class using a `Map`. The Python equivalent uses a module-level `dict[int, deque[dict]]` keyed by `chat_id`. Python's `deque(maxlen=N)` gives O(1) append with automatic eviction — no manual shifting required.
+
+**`bot/services/conversation_history.py`:**
+
+```python
+from __future__ import annotations
+from collections import deque
+from typing import Any
+
+_histories: dict[int, deque[dict[str, Any]]] = {}
+WINDOW_SIZE = 20  # 10 user+assistant turn pairs
+
+class ConversationHistory:
+    @classmethod
+    def add_message(cls, chat_id: int, message: dict[str, Any]) -> None:
+        if chat_id not in _histories:
+            _histories[chat_id] = deque(maxlen=WINDOW_SIZE)
+        _histories[chat_id].append(message)
+
+    @classmethod
+    def get_messages(cls, chat_id: int) -> list[dict[str, Any]]:
+        return list(_histories.get(chat_id, []))
+
+    @classmethod
+    def clear(cls, chat_id: int) -> None:
+        _histories.pop(chat_id, None)
+
+    @classmethod
+    def cleanup_stale(cls, max_age_sec: int = 3600) -> int:
+        # Implement timestamp tracking for stale entry cleanup
+        ...
+```
+
+**Why NOT persist to InsForge:** Conversation history is ephemeral session context, not business data. Process restart = natural session boundary for a sales partner. InsForge round-trips (100-300ms) on every message would add unacceptable latency. The existing `user_memory` table handles structured long-term memory (deals, patterns, preferences) separately.
+
+**Why NOT use aiogram `MemoryStorage`:** FSM storage is key-value per state machine. Conversation history is a list of N messages — a different data structure. Mixing them adds complexity with no benefit.
+
+**Concurrency safety:** Python asyncio is single-threaded event loop. Concurrent async handler calls serialize through the event loop, so read-modify-write on the `dict` is safe without explicit locking — same reasoning the TypeScript implementation uses for Node.js.
+
+**Confidence:** HIGH — standard Python stdlib pattern, direct port of validated TypeScript design.
+
+---
+
+### 4. Proactive Scheduling (Daily Brief + Stale Deal Nudges)
+
+**What is needed:** Send a morning briefing to each active user at a configured UTC time. Also send context-triggered nudges when deals go stale.
+
+**Verdict: Add `APScheduler 3.x` for cron-triggered jobs. Keep existing `asyncio.create_task()` loops for interval jobs.**
+
+**Why APScheduler 3.x and NOT 4.x:**
+APScheduler 4.0 is explicitly pre-release alpha. The official migration guide states verbatim: "do NOT use this release in production." (Verified at apscheduler.readthedocs.io/en/master/migration.html.) APScheduler 3.x (`>=3.10`) has a stable `AsyncIOScheduler` that integrates directly with the running asyncio event loop — no additional thread or process required.
+
+**Why APScheduler and NOT raw `asyncio.sleep()`:**
+The existing `followup_scheduler.py` uses `while True` + `asyncio.sleep(6 * 60 * 60)` — fine for fixed interval jobs. For time-of-day jobs (daily brief at 09:00), `asyncio.sleep(seconds_until_9am)` is fragile: it drifts on restart, does not handle DST changes, and requires manual calculation. APScheduler's cron trigger handles this correctly.
+
+**When to use what:**
+- Keep `asyncio.create_task()` + `while True` + `asyncio.sleep()` for: followup checks (every 6h), scenario pool generation (every 6h). These are already working and don't need cron semantics.
+- Use `APScheduler AsyncIOScheduler` + cron trigger for: daily brief (specific time of day).
+
+**Installation:**
+```
+apscheduler>=3.10,<4.0
+```
+
+**Integration pattern (fits into existing `main.py`):**
+
+```python
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+# In main() after bot initialization:
+scheduler = AsyncIOScheduler(timezone="UTC")
+scheduler.add_job(
+    send_daily_brief,
+    "cron",
+    hour=6,  # 06:00 UTC
+    kwargs={"bot": bot, "user_repo": user_repo, "deal_repo": deal_repo},
 )
+scheduler.start()
 
-# Define context vars
-user_id_ctx = ContextVar("user_id", default=None)
-pipeline_id_ctx = ContextVar("pipeline_id", default=None)
+try:
+    await dp.start_polling(bot)
+finally:
+    scheduler.shutdown(wait=False)
+    await insforge.close()
+```
 
-# Use in middleware/handler
-async def handle_message(message):
-    user_id_ctx.set(message.from_user.id)
-    pipeline_id_ctx.set(f"pipeline_{uuid4()}")
+**Confidence:** MEDIUM — APScheduler 3.x is widely used with aiogram (community pattern confirmed). Version pin `<4.0` is essential. The `scheduler.start()` call must happen after the event loop is running (inside an async context or after `asyncio.run()` starts).
 
-    structlog.contextvars.bind_contextvars(
-        user_id=message.from_user.id,
+---
+
+### 5. CRM Data Models (New InsForge Tables)
+
+**What is needed:** Pydantic models for `deals` and `deal_notes` tables. The existing `LeadRegistryModel` covers basic prospect analysis but lacks structured deal lifecycle: pipeline stages, deal value, probability, next actions.
+
+**Verdict: New Pydantic models in `bot/storage/models.py` — no new library.**
+
+Direct extension of existing pattern (11 existing models, all `pydantic.BaseModel`).
+
+**Models to add to `bot/storage/models.py`:**
+
+```python
+class DealModel(BaseModel):
+    id: int | None = None
+    telegram_id: int
+    user_id: int | None = None
+    title: str                          # "Acme Corp — Enterprise License"
+    prospect_name: str | None = None
+    prospect_company: str | None = None
+    prospect_title: str | None = None
+    stage: str = "prospecting"
+    # Stage values: prospecting | qualified | proposal | negotiation | closed_won | closed_lost
+    value: float | None = None
+    currency: str = "USD"
+    probability: int = 0                # 0-100
+    expected_close_date: str | None = None
+    source: str | None = None           # referral | inbound | outbound | linkedin
+    next_action: str | None = None
+    next_action_due: str | None = None  # ISO datetime
+    lead_id: int | None = None          # Optional link to existing lead_registry row
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class DealNoteModel(BaseModel):
+    id: int | None = None
+    deal_id: int
+    telegram_id: int
+    note_type: str = "note"
+    # note_type values: note | call_log | meeting | email | stage_change | ai_insight
+    content: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    created_at: str | None = None
+```
+
+**New repositories to add to `bot/storage/repositories.py`:**
+- `DealRepo` — CRUD for `deals` table, filter by `telegram_id`, `stage`, `next_action_due`
+- `DealNoteRepo` — append-only log for `deal_notes`, query by `deal_id`
+
+**Database migrations needed:** Two new InsForge tables: `deals` and `deal_notes`. These follow the same PostgREST-accessible pattern as existing tables.
+
+**Confidence:** HIGH — direct extension of existing Pydantic model + repository pattern, proven by 11 existing repository classes.
+
+---
+
+### 6. Inline Keyboard Confirmation Flow (Confirmation-First CRM Writes)
+
+**What is needed:** Before executing a CRM mutation (create deal, update stage, add note), show the user a confirmation keyboard. The confirmation payload must survive between the agent response and the user's button press.
+
+**Verdict: Use existing `aiogram` inline keyboards + `aiogram.fsm` state storage — no new library.**
+
+The existing bot already uses:
+- `aiogram.types.InlineKeyboardMarkup`, `InlineKeyboardButton` for callback keyboards
+- `aiogram.fsm.storage.memory.MemoryStorage` for FSM state
+- `@router.callback_query()` handlers for button presses
+
+The TypeScript ClickUp bot's `confirmationPayload` pattern maps directly to aiogram FSM state:
+
+```python
+# In orchestrator handler, when agent returns confirmation_payload:
+if result.get("confirmation_payload"):
+    await state.set_state(OrchestratorStates.awaiting_confirmation)
+    await state.update_data(pending_action=result["confirmation_payload"])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="Confirm", callback_data="confirm_action"),
+        InlineKeyboardButton(text="Cancel", callback_data="cancel_action"),
+    ]])
+    await message.answer(result["content"], reply_markup=keyboard)
+
+# In callback_query handler:
+@router.callback_query(OrchestratorStates.awaiting_confirmation, F.data == "confirm_action")
+async def on_confirm(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    pending = data["pending_action"]
+    # Execute the CRM mutation
+    await execute_pending_action(pending)
+    await state.clear()
+```
+
+**Confidence:** HIGH — aiogram FSM + inline keyboards are core framework features, zero new dependencies.
+
+---
+
+### 7. Catch-All Message Handler (Natural Language Entry Point)
+
+**What is needed:** A handler that catches any text message not claimed by command handlers or active FSM states, and routes it to the Orchestrator.
+
+**Verdict: Use existing aiogram router with `StateFilter(default_state)` — no new library.**
+
+In aiogram 3, handlers are matched in registration order. The catch-all handler uses:
+
+```python
+from aiogram.filters import StateFilter
+from aiogram.fsm.state import default_state
+
+@router.message(StateFilter(default_state), F.text)
+async def handle_natural_language(message: Message, state: FSMContext, ...):
+    result = await orchestrator.process_message(
         chat_id=message.chat.id,
-        pipeline_id=pipeline_id_ctx.get()
+        telegram_id=message.from_user.id,
+        text=message.text,
     )
-
-    logger = structlog.get_logger()
-    logger.info("processing_message", text=message.text)
-    # All logs in this async context will include user_id, chat_id, pipeline_id
+    # Handle result: text response, confirmation, or error
 ```
 
-### 2. Timing Instrumentation
-
-**Pattern: Decorator for step timing**
+**Critical: this router must be registered LAST in `main.py`** after all command routers. aiogram matches the first handler that passes all filters — command handlers registered earlier will consume `/learn`, `/train`, etc. before the catch-all fires.
 
 ```python
-import time
-import functools
-import structlog
-
-logger = structlog.get_logger()
-
-def timed(step_name: str):
-    """Decorator for timing async functions."""
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            start = time.perf_counter()
-            try:
-                result = await func(*args, **kwargs)
-                duration = time.perf_counter() - start
-                logger.info(
-                    "step_completed",
-                    step=step_name,
-                    duration_ms=round(duration * 1000, 2),
-                    success=True
-                )
-                return result
-            except Exception as e:
-                duration = time.perf_counter() - start
-                logger.error(
-                    "step_failed",
-                    step=step_name,
-                    duration_ms=round(duration * 1000, 2),
-                    error=str(e),
-                    success=False
-                )
-                raise
-        return wrapper
-    return decorator
-
-# Usage in agent
-class NegotiationAgent(BaseAgent):
-    @timed("negotiation_agent")
-    async def run(self, input: AgentInput, ctx: PipelineContext) -> AgentOutput:
-        # Agent logic here
-        pass
+# main.py — registration order matters:
+dp.include_router(start.router)
+dp.include_router(support.router)
+dp.include_router(learn.router)
+dp.include_router(train.router)
+dp.include_router(stats.router)
+dp.include_router(settings.router)
+dp.include_router(leads.router)
+dp.include_router(admin.router)
+dp.include_router(orchestrator.router)  # LAST — catches everything else
 ```
 
-### 3. OpenTelemetry Trace Generation
+**Confidence:** HIGH — aiogram filter ordering is documented behavior, verified in official docs.
 
-**Pattern: Generate trace spans, store as JSON in PostgreSQL**
+---
 
-```python
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+## Summary: Net-New Dependencies
 
-# Setup tracer (once at startup)
-trace.set_tracer_provider(TracerProvider())
-tracer = trace.get_tracer(__name__)
+| Package | Version Pin | Purpose | Justification |
+|---|---|---|---|
+| `apscheduler` | `>=3.10,<4.0` | Daily brief cron scheduling | Only stable asyncio-native cron scheduler; v4 is pre-release alpha; raw `asyncio.sleep()` is fragile for time-of-day jobs |
 
-# In PipelineRunner
-async def _run_step(self, step: StepConfig, ctx: PipelineContext):
-    with tracer.start_as_current_span(
-        f"agent.{step.agent}",
-        attributes={
-            "agent.name": step.agent,
-            "pipeline.id": ctx.pipeline_id,
-            "user.id": ctx.user_id
-        }
-    ) as span:
-        agent = self.registry.get(step.agent)
-        output = await agent.run(agent_input, ctx)
+**Everything else uses existing dependencies or Python stdlib. Zero other new packages.**
 
-        span.set_attribute("agent.success", output.success)
-        span.set_attribute("agent.output_length", len(str(output.data)))
+---
 
-        # Export span to PostgreSQL
-        await self._store_trace_span(span, ctx)
+## Full `requirements.txt` After Milestone
 
-        return output
 ```
+# Deal Quest Bot - Dependencies
 
-### 4. Testing Pattern
+# Telegram Bot Framework (async, v3)
+aiogram>=3.4.0
 
-**Pattern: Async test with mocked bot and HTTP**
+# LLM Providers
+anthropic>=0.40.0
+httpx>=0.27.0
 
-```python
-import pytest
-from aiogram_tests import MockedBot
-from aiogram_tests.handler import MessageHandler
-from respx import MockRouter
+# Config & Validation
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
 
-@pytest.mark.asyncio
-async def test_deal_scenario_pipeline(respx_mock: MockRouter):
-    # Mock Anthropic API
-    respx_mock.post("https://api.anthropic.com/v1/messages").mock(
-        return_value={"content": [{"text": "Mocked Claude response"}]}
-    )
+# Memory/Config
+pyyaml>=6.0.1
+python-dotenv>=1.0.1
 
-    # Mock InsForge (PostgREST)
-    respx_mock.get("http://localhost:3000/scenarios").mock(
-        return_value=[{"id": "001", "title": "Tech Startup Acquisition"}]
-    )
+# Security
+cryptography>=42.0.0
 
-    # Test aiogram handler
-    bot = MockedBot(MessageHandler(start_handler))
-    calls = await bot.query(message=Message(text="/start"))
-    response = calls.send_message.fetchone()
-
-    assert "Choose a scenario" in response.text
-
-@pytest.mark.asyncio
-async def test_agent_timing():
-    """Test that agent completes within acceptable time."""
-    agent = NegotiationAgent()
-
-    start = time.perf_counter()
-    output = await agent.run(test_input, test_context)
-    duration = time.perf_counter() - start
-
-    assert output.success
-    assert duration < 5.0  # Agent must complete in <5s
-```
-
-### 5. LLM Evaluation Pattern
-
-**Pattern: DeepEval synthetic test cases**
-
-```python
-from deepeval import assert_test
-from deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric
-from deepeval.test_case import LLMTestCase
-
-@pytest.mark.asyncio
-async def test_negotiation_agent_faithfulness():
-    """Test that agent responses are faithful to casebook context."""
-
-    # Generate synthetic test case
-    test_case = LLMTestCase(
-        input="What's the valuation of the startup?",
-        actual_output=agent_response,
-        retrieval_context=[casebook_context],
-        expected_output="Valuation is $50M based on last funding round."
-    )
-
-    # Evaluate with DeepEval metrics
-    faithfulness_metric = FaithfulnessMetric(threshold=0.8)
-    relevancy_metric = AnswerRelevancyMetric(threshold=0.7)
-
-    assert_test(test_case, [faithfulness_metric, relevancy_metric])
+# Proactive scheduling (daily brief at specific time of day)
+apscheduler>=3.10,<4.0
 ```
 
 ---
 
-## Trace Storage Schema
+## Alternatives Considered and Rejected
 
-**Pattern: Store traces in PostgreSQL via InsForge**
+| Category | Rejected Option | Reason |
+|---|---|---|
+| Scheduling | `APScheduler>=4.0` | Pre-release alpha. Official docs: "do NOT use in production." |
+| Scheduling | `aiocron` | Small library, limited production track record, no persistent job store |
+| Scheduling | `asyncio.sleep()` raw | Adequate for fixed intervals; fragile for time-of-day (drift on restart, no DST handling) |
+| Conversation history | LangChain `ConversationBufferWindowMemory` | Massive transitive dependency graph for a 20-line dict class; LangChain takes over the architecture |
+| Conversation history | Redis | No Redis in existing stack; InsForge is the single data store; in-memory is correct for per-session context |
+| Conversation history | InsForge persistence | 100-300ms round-trip per message is unacceptable for history reads; ephemeral is semantically correct |
+| Tool use | OpenAI Python SDK (`openai` package) | Already have raw httpx client; SDK adds ~20MB dependency + different async lifecycle; OpenRouter is the provider, not OpenAI |
+| Tool use | LangChain agents / LangGraph | Framework takeover incompatible with existing YAML pipeline system; adds 100+ transitive deps; no benefit for this pattern |
+| CRM models | External CRM SDK (HubSpot, Pipedrive) | Explicitly out of scope per PROJECT.md: "External CRM sync deferred to future milestone" |
+| Confirmation flow | Separate state database | MemoryStorage already handles FSM state; overkill for single-process bot |
+| Agent orchestration | AutoGen, CrewAI, Agentflow | Framework-level take-over; incompatible with existing `BaseAgent` ABC; would require rewriting v1.0 agents |
 
-```sql
--- Table: pipeline_traces
-CREATE TABLE pipeline_traces (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pipeline_id TEXT NOT NULL,
-    user_id BIGINT NOT NULL,
-    started_at TIMESTAMPTZ NOT NULL,
-    completed_at TIMESTAMPTZ,
-    duration_ms INTEGER,
-    status TEXT NOT NULL, -- 'running', 'completed', 'failed'
-    error TEXT,
-    trace_data JSONB NOT NULL, -- Full OTel trace as JSON
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+---
 
--- Table: agent_steps
-CREATE TABLE agent_steps (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pipeline_id TEXT NOT NULL REFERENCES pipeline_traces(pipeline_id),
-    agent_name TEXT NOT NULL,
-    started_at TIMESTAMPTZ NOT NULL,
-    completed_at TIMESTAMPTZ,
-    duration_ms INTEGER,
-    success BOOLEAN NOT NULL,
-    input_data JSONB,
-    output_data JSONB,
-    error TEXT,
-    span_id TEXT, -- OTel span ID for correlation
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+## System Integration Diagram
 
--- Indexes for Telegram /admin queries
-CREATE INDEX idx_pipeline_traces_user_id ON pipeline_traces(user_id);
-CREATE INDEX idx_pipeline_traces_started_at ON pipeline_traces(started_at DESC);
-CREATE INDEX idx_agent_steps_pipeline_id ON agent_steps(pipeline_id);
 ```
+aiogram Dispatcher (existing)
+  │
+  ├── Command routers (existing — registered first, highest priority):
+  │   /start, /support, /learn, /train, /stats, /settings, /leads, /admin
+  │
+  └── Orchestrator router (NEW — registered last, lowest priority)
+        └── catch-all: F.text + StateFilter(default_state)
+              │
+              └── OrchestratorAgent.process_message()
+                    │
+                    ├── ConversationHistory.get_messages() [NEW in-memory]
+                    ├── AgentConfigLoader.get_agent_config() [NEW — uses existing PyYAML]
+                    ├── Tool-use loop via OpenRouterProvider.complete_with_tools() [EXTENDED]
+                    │     │
+                    │     ├── invoke_deal_agent → DealAgent.run()
+                    │     │     └── Tool calls: create_deal, update_deal, list_deals, ...
+                    │     │
+                    │     ├── invoke_coach_agent → CoachAgent.run()
+                    │     │     └── Wraps existing: PipelineRunner(learn/train pipelines)
+                    │     │
+                    │     ├── invoke_strategy_agent → StrategyAgent.run()
+                    │     │     └── Wraps existing: StrategistAgent pipelines
+                    │     │
+                    │     └── invoke_memory_agent → MemoryAgent.run()
+                    │           └── Reads/writes user_memory via existing UserMemoryRepo
+                    │
+                    └── Returns: text | confirmation_payload (triggers FSM keyboard)
 
----
+Background jobs (existing pattern — keep as-is):
+  ├── asyncio.create_task(): followup_scheduler (every 6h)
+  └── asyncio.create_task(): scenario_generator (every 6h)
 
-## Implementation Checklist
+NEW background jobs:
+  └── APScheduler AsyncIOScheduler
+        └── daily_brief_job (cron: hour=6, UTC)
+              └── Reads all active users → sends morning briefing via bot.send_message()
 
-### Phase 1: Structured Logging
-- [ ] Install structlog 25.5.0
-- [ ] Configure JSON processors and contextvars
-- [ ] Add middleware to inject user_id, pipeline_id into context
-- [ ] Replace existing logger.info() calls with structlog
-- [ ] Test async context propagation
-
-### Phase 2: Timing Instrumentation
-- [ ] Create `@timed` decorator using time.perf_counter()
-- [ ] Add decorator to all agents
-- [ ] Add decorator to PipelineRunner._run_step()
-- [ ] Store timing data in PostgreSQL agent_steps table
-
-### Phase 3: Tracing
-- [ ] Install OpenTelemetry SDK + asyncio instrumentation
-- [ ] Configure TracerProvider (no external exporter)
-- [ ] Generate spans for each pipeline step
-- [ ] Serialize spans to JSON
-- [ ] Store traces in pipeline_traces table
-
-### Phase 4: PostgreSQL Storage
-- [ ] Create pipeline_traces and agent_steps tables
-- [ ] Add RLS policies for user isolation
-- [ ] Create PostgREST endpoints
-- [ ] Implement trace storage in PipelineRunner
-- [ ] Add /admin command to query recent traces
-
-### Phase 5: Testing Infrastructure
-- [ ] Install pytest-asyncio 1.3.0, aiogram-tests, respx
-- [ ] Create pytest fixtures for mocked bot
-- [ ] Create fixtures for mocked Anthropic API (respx)
-- [ ] Create fixtures for mocked InsForge (respx)
-- [ ] Write test utilities for pipeline execution
-
-### Phase 6: LLM Evaluation
-- [ ] Install deepeval 3.8.3
-- [ ] Define evaluation metrics (faithfulness, relevancy)
-- [ ] Create synthetic test cases for each agent
-- [ ] Add pytest tests using deepeval.assert_test()
-- [ ] Integrate into CI/CD pipeline
-
----
-
-## Performance Considerations
-
-### Logging Overhead
-- structlog: <1μs per log call with contextvars
-- JSON rendering: ~10μs per log entry
-- **Mitigation:** Use log levels (INFO for production, DEBUG for development)
-
-### Tracing Overhead
-- OpenTelemetry span creation: ~5-10μs per span
-- Asyncio instrumentation: ~2-3% overhead
-- **Mitigation:** Don't trace every coroutine - focus on agent-level spans
-
-### Storage Cost
-- Estimate: 5KB per pipeline trace (10 steps × 500 bytes JSON)
-- 1000 pipelines/day = 5MB/day = 150MB/month
-- **Mitigation:** Add retention policy (delete traces older than 30 days)
-
-### Test Execution Time
-- aiogram-tests mocking: <10ms per test
-- respx mocking: <5ms per test
-- deepeval evaluation: 100-500ms per test case (LLM inference)
-- **Mitigation:** Run deepeval tests in separate CI job (not on every commit)
-
----
-
-## Quality Gates
-
-### Confidence Levels
-
-| Area | Confidence | Rationale |
-|------|-----------|-----------|
-| Structured Logging (structlog) | **HIGH** | Verified via PyPI, official docs, and multiple 2025-2026 best practices articles. Clear async/contextvars support. |
-| Tracing (OpenTelemetry) | **HIGH** | Official OTel docs confirm asyncio instrumentation. Released Dec 2025. Industry standard. |
-| Timing (perf_counter) | **HIGH** | PEP 418 official recommendation. Stdlib, well-documented. |
-| Testing (pytest-asyncio) | **HIGH** | Verified via PyPI. Version 1.3.0 released Nov 2025. Stable API. |
-| Bot Testing (aiogram-tests) | **MEDIUM** | Active GitHub repo, works with aiogram 3, but documentation is sparse. |
-| HTTP Mocking (respx) | **HIGH** | Official httpx recommendation. Well-documented async support. |
-| LLM Eval (deepeval) | **HIGH** | Active development (Jan 2026 release). Clear docs, pytest integration. |
-| PostgREST Client (postgrest-py) | **MEDIUM** | Official Supabase client, but async docs are limited. May need trial-and-error. |
-
-### Version Currency Verification
-
-All versions checked against PyPI as of 2026-02-02:
-- structlog 25.5.0: CURRENT (released Oct 2025)
-- opentelemetry-instrumentation-asyncio 0.60b1: CURRENT (released Dec 2025)
-- pytest-asyncio 1.3.0: CURRENT (released Nov 2025)
-- deepeval 3.8.3: CURRENT (released Jan 2026)
-- respx 0.22.0: CURRENT
-- postgrest-py 0.18.0: CURRENT
-
-**All recommendations use 2025-2026 releases. No outdated libraries.**
-
----
-
-## What NOT to Do
-
-### Anti-Pattern: Distributed Tracing Overhead
-**Don't:** Install Jaeger, Zipkin, or external OTel collectors.
-**Why:** Single-process app doesn't need distributed tracing. Adds complexity, latency, external dependencies.
-**Instead:** Generate OTel traces in-process, store as JSON in PostgreSQL.
-
-### Anti-Pattern: Manual Event Loop Management
-**Don't:** Use `event_loop` fixture with pytest-asyncio 1.x.
-**Why:** Removed in version 1.0. Use `asyncio.get_running_loop()` instead.
-**Instead:** Let pytest-asyncio handle event loop lifecycle automatically.
-
-### Anti-Pattern: Mocking with unittest.mock.AsyncMock
-**Don't:** Use stdlib `AsyncMock` for httpx requests.
-**Why:** Requires verbose setup, doesn't validate request patterns.
-**Instead:** Use `respx` for pattern-based HTTP mocking.
-
-### Anti-Pattern: Manual LLM Evaluation
-**Don't:** Manually inspect LLM outputs for quality.
-**Why:** Doesn't scale to regression testing. Subjective. Time-consuming.
-**Instead:** Use deepeval metrics for automated, quantitative evaluation.
-
-### Anti-Pattern: Logging PII
-**Don't:** Log full user messages or API keys.
-**Why:** GDPR compliance, security risk.
-**Instead:** Log hashes, IDs, or redacted versions. Use structlog processors to auto-redact.
+InsForge tables:
+  Existing: users, user_memory, scenarios_seen, attempts, support_sessions,
+            track_progress, casebook, pipeline_traces, pipeline_spans,
+            lead_registry, lead_activity_log
+  NEW:      deals, deal_notes
+```
 
 ---
 
 ## Sources
 
-### Structured Logging
-- [structlog PyPI](https://pypi.org/project/structlog/) - Current version and features
-- [Structlog ContextVars: Python Async Logging 2026](https://johal.in/structlog-contextvars-python-async-logging-2026/) - Async best practices
-- [Python Logging Best Practices: Complete Guide 2026](https://www.carmatec.com/blog/python-logging-best-practices-complete-guide/) - General logging patterns
-
-### Tracing & Instrumentation
-- [OpenTelemetry asyncio Instrumentation](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asyncio/asyncio.html) - Official docs
-- [opentelemetry-instrumentation-asyncio PyPI](https://pypi.org/project/opentelemetry-instrumentation-asyncio/) - Version info
-- [PEP 418 – Add monotonic time, performance counter](https://peps.python.org/pep-0418/) - Official timing recommendation
-- [Python Timer Functions: Three Ways to Monitor Your Code](https://realpython.com/python-timer/) - Best practices
-
-### Testing
-- [pytest-asyncio PyPI](https://pypi.org/project/pytest-asyncio/) - Current version
-- [Essential pytest asyncio Tips for Modern Async Testing](https://articles.mergify.com/pytest-asyncio-2/) - 2025 patterns
-- [Navigating pytest-asyncio 1.0 and Migration Strategies](https://thinhdanggroup.github.io/pytest-asyncio-v1-migrate/) - Migration guide
-- [aiogram-tests PyPI](https://pypi.org/project/aiogram-tests/) - Bot testing library
-- [respx Documentation](https://lundberg.github.io/respx/) - HTTP mocking guide
-- [Mock HTTPX with respx](https://lundberg.github.io/respx/versions/0.14.0/mocking/) - Usage examples
-
-### LLM Evaluation
-- [deepeval PyPI](https://pypi.org/project/deepeval/) - Current version
-- [DeepEval GitHub](https://github.com/confident-ai/deepeval) - Official repo
-- [LLM Testing in 2026: Top Methods and Strategies](https://www.confident-ai.com/blog/llm-testing-in-2024-top-methods-and-strategies) - Testing approaches
-
-### Database
-- [postgrest-py Documentation](https://postgrest-py.readthedocs.io/en/latest/api/client.html) - Client API
-- [asyncpg PyPI](https://pypi.org/project/asyncpg/) - PostgreSQL async client
-- [asyncpg Usage Guide](https://magicstack.github.io/asyncpg/current/usage.html) - Best practices
-
----
-
-## Next Steps
-
-1. **Validate library versions** - Install all packages in a test venv, verify compatibility
-2. **Prototype structured logging** - Add structlog to one handler, test context propagation
-3. **Design trace schema** - Finalize PostgreSQL tables based on actual pipeline structure
-4. **Write first test** - Create pytest fixture for PipelineRunner, test with mocked LLM
-5. **Benchmark overhead** - Measure actual performance impact of logging + tracing
-
-**Estimated implementation time:** 2-3 weeks for full observability + testing infrastructure.
-
----
-
-**Confidence:** HIGH overall. All libraries are current (2025-2026), widely adopted, and well-documented. Primary risk is postgrest-py async patterns (MEDIUM confidence) - may need trial-and-error.
+- OpenRouter API tool calling format: https://openrouter.ai/docs/api/reference/overview (HIGH — official docs, verified)
+- APScheduler 3.x AsyncIOScheduler: https://apscheduler.readthedocs.io/en/3.x/userguide.html (HIGH — official docs, verified)
+- APScheduler 4.x pre-release warning: https://apscheduler.readthedocs.io/en/master/migration.html (HIGH — official docs state "do NOT use in production")
+- Reference architecture: `/Users/dmytrolevin/Desktop/clickup mcp/bot/src/agents/base-agent.ts` + `orchestrator.ts` + `conversation-history.ts` (HIGH — production code, read directly)
+- aiogram 3 handler/router registration: https://docs.aiogram.dev/en/latest/dispatcher/router.html (MEDIUM — WebSearch confirmed, official docs)
+- aiogram 3 FSM StateFilter: https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html (MEDIUM — WebSearch confirmed, official docs)
+- Existing bot code (HIGH — read directly): `bot/services/llm_router.py`, `bot/pipeline/runner.py`, `bot/storage/models.py`, `bot/main.py`, `bot/services/followup_scheduler.py`
