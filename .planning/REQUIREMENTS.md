@@ -1,111 +1,154 @@
-# Requirements: Deal Quest Bot — Pipeline Observability & Testing
+# Requirements: Deal Quest Bot — AI Sales Partner
 
-**Defined:** 2026-02-02
-**Core Value:** Know exactly where time is spent and what went wrong in every pipeline execution
+**Defined:** 2026-02-24
+**Core Value:** A salesperson can chat naturally in Telegram about any sales need and the AI partner understands, routes, and acts
 
-## v1 Requirements
+## v1 Requirements (v1.0 — Observability)
 
 ### Tracing Infrastructure
 
 - [x] **TRACE-01**: Every pipeline execution generates a trace with unique trace_id, capturing start/end timestamps and overall duration
-- [x] **TRACE-02**: Each pipeline step (handler entry, LLM call, DB write, Telegram API call, transcription) is recorded as a span with name, start/end time, and parent trace_id
-- [x] **TRACE-03**: Trace context propagates across async boundaries using contextvars so spans created in subtasks link to the correct parent trace
-- [x] **TRACE-04**: Agent I/O is captured per span — full prompt sent to LLM and full response received, stored alongside timing data
-- [x] **TRACE-05**: Traces persist in an InsForge `pipeline_traces` table with spans in a `pipeline_spans` table, queryable by trace_id, telegram_id, pipeline name, and date range
-- [x] **TRACE-06**: Trace instrumentation wraps existing call sites (context manager pattern like ProgressUpdater) without modifying PipelineRunner internals
+- [x] **TRACE-02**: Each pipeline step is recorded as a span with name, start/end time, and parent trace_id
+- [x] **TRACE-03**: Trace context propagates across async boundaries using contextvars
+- [x] **TRACE-04**: Agent I/O is captured per span — full prompt and response stored alongside timing data
+- [x] **TRACE-05**: Traces persist in InsForge pipeline_traces/pipeline_spans tables, queryable by trace_id, telegram_id, pipeline name, and date range
+- [x] **TRACE-06**: Trace instrumentation wraps existing call sites without modifying PipelineRunner internals
 
-### Admin Health
+## v2 Requirements (v2.0 — AI Sales Partner)
 
-- [ ] **ADMIN-01**: `/admin health` displays bot uptime, total traces in last 24h, error count in last 24h, and average end-to-end pipeline duration per pipeline type
-- [ ] **ADMIN-02**: `/admin traces` shows the 10 most recent pipeline executions with: pipeline name, user, total duration, step count, and success/fail status
-- [ ] **ADMIN-03**: `/admin traces` supports drill-down — tapping a trace shows per-step breakdown with step name and duration for that specific trace
-- [ ] **ADMIN-04**: `/admin test` triggers the synthetic test suite and reports results inline with per-test timing and pass/fail status
-- [ ] **ADMIN-05**: Failed pipelines surface in `/admin health` with error message and the trace_id for drill-down
+### Natural Language Routing
 
-### Error Tracking
+- [ ] **NLR-01**: User can send any text message and the orchestrator routes it to the correct specialist agent
+- [ ] **NLR-02**: User can send voice messages that get transcribed and routed through the orchestrator
+- [ ] **NLR-03**: Conversation history persists across messages within a session (sliding window per user)
+- [ ] **NLR-04**: Existing /learn, /train, /support commands continue to work as shortcuts alongside natural language
+- [ ] **NLR-05**: Orchestrator gracefully falls back to direct response when specialist fails or times out
 
-- [ ] **ERR-01**: Pipeline exceptions are captured in the trace with error type, message, and truncated stack trace
-- [ ] **ERR-02**: `/admin errors` shows recent pipeline failures with timestamp, pipeline name, user, error message, and trace_id link
-- [ ] **ERR-03**: Errors are classified by type (LLM failure, DB error, transcription failure, Telegram API error, timeout) for filtering
+### Deal Management
 
-### Synthetic Testing
+- [ ] **DEAL-01**: User can create a deal through natural language ("I just got off a call with Acme, 50K deal")
+- [ ] **DEAL-02**: User can query deal status ("What's the status of my Acme deal?")
+- [ ] **DEAL-03**: User can update deal stage with confirmation ("Move Acme to negotiation" → confirm button)
+- [ ] **DEAL-04**: User can log notes on a deal ("Log that Acme wants a discount")
+- [ ] **DEAL-05**: User can view multi-deal portfolio ("Show me all active deals" / "Deals at risk this week")
+- [ ] **DEAL-06**: All CRM write operations require inline keyboard confirmation before execution
+- [ ] **DEAL-07**: Deals have structured stages (lead → qualified → proposal → negotiation → closed-won/lost)
 
-- [ ] **TEST-01**: 5-10 predefined test scenarios exist covering: learn text, learn voice (mock audio), train text, train voice (mock audio), support text, support voice (mock audio), support photo (mock image), support regeneration
-- [ ] **TEST-02**: Each synthetic test executes through the real pipeline with real LLM calls, producing a trace identical to a real user interaction
-- [ ] **TEST-03**: `/admin test` is manual-trigger only — never automated or scheduled — to control LLM costs
-- [ ] **TEST-04**: Test results show per-test: scenario name, total duration, per-step timing, pass/fail, and estimated token cost
-- [ ] **TEST-05**: Tests use the shared OpenRouter API key (not user keys) and a dedicated test telegram_id to avoid polluting real user data
+### Coaching
 
-### Real Interaction Recording
+- [ ] **COACH-01**: User can request objection handling practice through natural language
+- [ ] **COACH-02**: User can request training on specific topics ("Teach me about cold calling")
+- [ ] **COACH-03**: Coach Agent wraps existing /learn and /train pipelines for natural language access
+- [ ] **COACH-04**: User can ask for skill assessment ("How am I doing on objection handling?")
 
-- [ ] **REC-01**: Every real user pipeline execution is automatically traced and stored (not just synthetic tests)
-- [ ] **REC-02**: Real interaction traces include the same step-level timing and agent I/O as synthetic tests
-- [ ] **REC-03**: Traces are linked to telegram_id so admin can filter traces by specific user
+### Strategy
 
-### Cost Tracking
+- [ ] **STRAT-01**: User can request call preparation ("Prep me for my Acme call")
+- [ ] **STRAT-02**: User can ask for competitive intel ("What do we say when they compare us to CompetitorX?")
+- [ ] **STRAT-03**: User can request re-engagement drafts ("Draft a follow-up for the cold Acme deal")
+- [ ] **STRAT-04**: User can get deal risk assessment (qualitative flags, not hard percentages)
+- [ ] **STRAT-05**: Strategy Agent leverages deal context and company knowledge for advice
 
-- [ ] **COST-01**: Each trace records estimated token usage (prompt tokens + completion tokens) for LLM calls within the pipeline
-- [ ] **COST-02**: `/admin test` results include per-test estimated cost based on token count and model pricing
+### Memory
 
-## v2 Requirements
+- [ ] **MEM-01**: Memory Agent learns salesperson's patterns and preferences over time
+- [ ] **MEM-02**: Memory updates happen in the background (inactivity timer, not per-message)
+- [ ] **MEM-03**: Memory context is injected into specialist agent prompts for personalization
+- [ ] **MEM-04**: Memory persists across sessions in InsForge
+
+### Proactive
+
+- [ ] **PRO-01**: Daily combined morning briefing (deal status + coaching nudge + alerts)
+- [ ] **PRO-02**: Stale deal detection and nudge when deal hasn't moved in N days
+- [ ] **PRO-03**: Context-triggered alerts (deal went silent, practice streak breaking)
+- [ ] **PRO-04**: Proactive messages use per-user error isolation (one failure doesn't kill scheduler)
+
+### Admin & Observability
+
+- [ ] **ADM-01**: Admin can view recent agent execution traces via /admin traces
+- [ ] **ADM-02**: Admin can check bot health and agent performance via /admin health
+- [ ] **ADM-03**: Admin can see agent routing statistics and error rates
+
+## Future Requirements
+
+### External CRM Sync
+
+- **CRM-01**: Bot syncs deals bidirectionally with external CRM (HubSpot/Pipedrive)
+- **CRM-02**: CRM status changes reflected in bot deal data automatically
+- **CRM-03**: Bot can create tasks/activities in external CRM
 
 ### Trace Visualization (TMA)
 
-- **VIZ-01**: Trace timeline/Gantt view showing parallel and sequential spans visually in the Telegram Mini App
-- **VIZ-02**: Flamegraph view for identifying time distribution across pipeline steps
-- **VIZ-03**: Full agent I/O viewer — expand any span to see complete prompt and response text
+- **VIZ-01**: Trace timeline view in Telegram Mini App
+- **VIZ-02**: Full agent I/O viewer — expand any span to see complete prompt and response
+- **VIZ-03**: Bottleneck analysis dashboard
 
-### Analytics (TMA)
+### Team Features
 
-- **ANAL-01**: Bottleneck analysis dashboard — aggregate timing data across traces to identify systemic slow steps
-- **ANAL-02**: Historical cost trends — token usage and estimated cost over time, per pipeline type
-- **ANAL-03**: Per-user cost breakdown — which users consume the most LLM resources
+- **TEAM-01**: Deals shared between team members with permissions
+- **TEAM-02**: Team performance dashboard for managers
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Distributed tracing (OpenTelemetry/Jaeger) | Single-process bot, overkill complexity |
-| Real-time alerting (PagerDuty/Slack) | Manual /admin checks sufficient at current scale |
-| Web dashboard | Deferred to TMA, not a standalone web app |
-| Automated/scheduled test runs | LLM cost control — manual trigger only |
-| Load testing | Not needed at current user count |
-| Log aggregation service (ELK/Loki) | stdout logging sufficient, InsForge for structured traces |
+| External CRM sync (HubSpot, Pipedrive) | Planned for future milestone — bot is the CRM for now |
+| TMA changes | This milestone is purely Telegram chat |
+| Autonomous email sending | Trust/legal risk — bot drafts text, user sends manually |
+| Calendar/scheduling integration | Complex APIs, not core value |
+| Multi-user team features | Requires permissions model — future milestone |
+| Win probability as hard percentage | LLM confidence scores unreliable without calibration data |
+| Distributed tracing (OpenTelemetry) | Overkill for single-process bot |
+| Automated/scheduled synthetic tests | LLM cost control |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRACE-01 | Phase 1 | Complete |
-| TRACE-02 | Phase 1 | Complete |
-| TRACE-03 | Phase 1 | Complete |
-| TRACE-04 | Phase 1 | Complete |
-| TRACE-05 | Phase 1 | Complete |
-| TRACE-06 | Phase 1 | Complete |
-| ADMIN-01 | Phase 2 | Pending |
-| ADMIN-02 | Phase 2 | Pending |
-| ADMIN-03 | Phase 2 | Pending |
-| ADMIN-04 | Phase 2 | Pending |
-| ADMIN-05 | Phase 2 | Pending |
-| ERR-01 | Phase 2 | Pending |
-| ERR-02 | Phase 2 | Pending |
-| ERR-03 | Phase 2 | Pending |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
-| TEST-04 | Phase 2 | Pending |
-| TEST-05 | Phase 2 | Pending |
-| REC-01 | Phase 2 | Pending |
-| REC-02 | Phase 2 | Pending |
-| REC-03 | Phase 2 | Pending |
-| COST-01 | Phase 2 | Pending |
-| COST-02 | Phase 2 | Pending |
+| TRACE-01 | Phase 1 (v1.0) | Complete |
+| TRACE-02 | Phase 1 (v1.0) | Complete |
+| TRACE-03 | Phase 1 (v1.0) | Complete |
+| TRACE-04 | Phase 1 (v1.0) | Complete |
+| TRACE-05 | Phase 1 (v1.0) | Complete |
+| TRACE-06 | Phase 1 (v1.0) | Complete |
+| NLR-01 | TBD | Pending |
+| NLR-02 | TBD | Pending |
+| NLR-03 | TBD | Pending |
+| NLR-04 | TBD | Pending |
+| NLR-05 | TBD | Pending |
+| DEAL-01 | TBD | Pending |
+| DEAL-02 | TBD | Pending |
+| DEAL-03 | TBD | Pending |
+| DEAL-04 | TBD | Pending |
+| DEAL-05 | TBD | Pending |
+| DEAL-06 | TBD | Pending |
+| DEAL-07 | TBD | Pending |
+| COACH-01 | TBD | Pending |
+| COACH-02 | TBD | Pending |
+| COACH-03 | TBD | Pending |
+| COACH-04 | TBD | Pending |
+| STRAT-01 | TBD | Pending |
+| STRAT-02 | TBD | Pending |
+| STRAT-03 | TBD | Pending |
+| STRAT-04 | TBD | Pending |
+| STRAT-05 | TBD | Pending |
+| MEM-01 | TBD | Pending |
+| MEM-02 | TBD | Pending |
+| MEM-03 | TBD | Pending |
+| MEM-04 | TBD | Pending |
+| PRO-01 | TBD | Pending |
+| PRO-02 | TBD | Pending |
+| PRO-03 | TBD | Pending |
+| PRO-04 | TBD | Pending |
+| ADM-01 | TBD | Pending |
+| ADM-02 | TBD | Pending |
+| ADM-03 | TBD | Pending |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24
-- Unmapped: 0
+- v2 requirements: 28 total
+- Mapped to phases: 0 (awaiting roadmap)
+- Unmapped: 28
 
 ---
-*Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 1 completion*
+*Requirements defined: 2026-02-24*
+*Last updated: 2026-02-24 after v2.0 milestone initialization*
