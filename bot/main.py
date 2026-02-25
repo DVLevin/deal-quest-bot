@@ -11,11 +11,13 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from bot.agents.config import load_agents_config
 from bot.agents.memory import MemoryAgent
 from bot.agents.registry import AgentRegistry
 from bot.agents.strategist import StrategistAgent
 from bot.agents.trainer import TrainerAgent
 from bot.config import load_settings
+from bot.services.conversation_history import ConversationHistoryService
 from bot.handlers import admin, leads, learn, progress, settings, start, stats, support, train
 from bot.middleware import AuthorizationMiddleware
 from bot.pipeline.config_loader import load_all_pipelines
@@ -31,6 +33,7 @@ from bot.storage.insforge_client import InsForgeClient
 from bot.storage.repositories import (
     AttemptRepo,
     CasebookRepo,
+    ConversationHistoryRepo,
     GeneratedScenarioRepo,
     LeadActivityRepo,
     LeadRegistryRepo,
@@ -76,6 +79,7 @@ async def main() -> None:
     activity_repo = LeadActivityRepo(insforge)
     generated_scenario_repo = GeneratedScenarioRepo(insforge)
     trace_repo = TraceRepo(insforge)
+    conversation_history_repo = ConversationHistoryRepo(insforge)
 
     # Initialize services
     crypto = CryptoService(cfg.encryption_key)
@@ -108,10 +112,20 @@ async def main() -> None:
     pipelines = load_all_pipelines()
     logger.info("Loaded %d pipelines: %s", len(pipelines), list(pipelines.keys()))
 
+    # Load agent configs from YAML
+    agents_config = load_agents_config()
+    logger.info("Loaded %d agent configs: %s", len(agents_config.agents), list(agents_config.agents.keys()))
+
+    # Initialize conversation history service
+    history_service = ConversationHistoryService(conversation_history_repo)
+
     # Initialize tracing collector
     trace_collector = init_collector(trace_repo)
     await trace_collector.start()
     logger.info("Trace collector started")
+
+    await history_service.start()
+    logger.info("Conversation history service started")
 
     # Initialize bot and dispatcher
     bot = Bot(
@@ -154,6 +168,8 @@ async def main() -> None:
             "engagement_service": engagement_service,
             "analytics_service": analytics_service,
             "admin_usernames": cfg.admin_list,
+            "agents_config": agents_config,
+            "history_service": history_service,
         }
     )
 
@@ -194,6 +210,8 @@ async def main() -> None:
     try:
         await dp.start_polling(bot)
     finally:
+        await history_service.stop()
+        logger.info("Conversation history service stopped")
         collector = get_collector()
         if collector:
             await collector.stop()
