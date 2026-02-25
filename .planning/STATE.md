@@ -10,24 +10,24 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 3 of 9 (Agent Infrastructure)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-25 — Completed 03-01 (agent framework: agents.yaml, config.py, complete_with_tools, ToolUseAgent)
+Plan: 2 of 2 in current phase (phase complete)
+Status: Phase 3 complete — ready for Phase 4
+Last activity: 2026-02-25 — Completed 03-02 (conversation history: SQL migration, ConversationHistoryService, main.py wiring)
 
-Progress: [█░░░░░░░░░] 10% (v2.0 plans: 1/TBD)
+Progress: [██░░░░░░░░] 20% (v2.0 plans: 2/TBD)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4 (3 from v1.0, 1 from v2.0)
-- v2.0 plans completed: 1
+- Total plans completed: 5 (3 from v1.0, 2 from v2.0)
+- v2.0 plans completed: 2
 
 **By Milestone:**
 
 | Milestone | Phases | Plans | Status |
 |-----------|--------|-------|--------|
 | v1.0 Observability | 1 shipped | 3/3 | Complete |
-| v2.0 AI Sales Partner | 7 planned (3-9) | 1/TBD | In progress |
+| v2.0 AI Sales Partner | 7 planned (3-9) | 2/TBD | In progress |
 
 *Updated after each plan completion*
 
@@ -48,13 +48,16 @@ Key decisions for v2.0:
 - [03-01] ClaudeProvider.complete_with_tools() raises NotImplementedError — tool support deferred to future phase
 - [03-01] Tool schemas built dynamically from AgentConfig.tools at loop entry — config-driven tool sets
 - [03-01] Agent defaults merged at load time (not runtime) — single validated AgentConfig per agent
+- [03-02] ConversationTurn (in-memory) is separate from ConversationTurnModel (DB) — explicit conversion layer keeps service layer decoupled from storage
+- [03-02] Delete-then-insert flush strategy — avoids complex diffing; window is small (max 20 turns)
+- [03-02] history_service.stop() must precede insforge.close() in finally block — flush needs HTTP client open
 
 ### Pending Todos
 
 - Verify PostgREST operator support (gte, lt, date arithmetic) against live InsForge instance before Phase 4 deal query tools
 - Decide pipeline stage enum values before Phase 4 deals table migration (7 values suggested: lead/qualified/proposal/negotiation/won/lost/stalled)
 - Decide orchestrator model selection — cheap/fast model for routing classification vs openai/gpt-oss-120b default
-- Assess Railway restart frequency — if high, conversation history needs InsForge persistence (Phase 3 scope expansion)
+- Assess Railway restart frequency — conversation history now persists to InsForge (resolved in 03-02)
 - Decide /support backward compat path — route through orchestrator as shortcut vs keep parallel StrategistAgent path
 
 ### Blockers/Concerns
@@ -64,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03-01-PLAN.md — agent framework (agents.yaml, config.py, complete_with_tools, ToolUseAgent)
+Stopped at: Completed 03-02-PLAN.md — conversation history (SQL migration, ConversationHistoryService, main.py wiring). Phase 3 complete.
 Resume file: None

@@ -20,7 +20,7 @@
 
 - [ ] **NLR-01**: User can send any text message and the orchestrator routes it to the correct specialist agent
 - [ ] **NLR-02**: User can send voice messages that get transcribed and routed through the orchestrator
-- [ ] **NLR-03**: Conversation history persists across messages within a session (sliding window per user)
+- [x] **NLR-03**: Conversation history persists across messages within a session (sliding window per user)
 - [ ] **NLR-04**: Existing /learn, /train, /support commands continue to work as shortcuts alongside natural language
 - [ ] **NLR-05**: Orchestrator gracefully falls back to direct response when specialist fails or times out
 
@@ -113,7 +113,7 @@
 | TRACE-06 | Phase 1 (v1.0) | Complete |
 | NLR-01 | Phase 5 | Pending |
 | NLR-02 | Phase 5 | Pending |
-| NLR-03 | Phase 3 | Complete (03-01) |
+| NLR-03 | Phase 3 | Complete (03-02) |
 | NLR-04 | Phase 5 | Pending |
 | NLR-05 | Phase 5 | Pending |
 | DEAL-01 | Phase 4 | Pending |
