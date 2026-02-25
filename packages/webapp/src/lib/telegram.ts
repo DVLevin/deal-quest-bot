@@ -17,31 +17,37 @@ import {
  * for theme and viewport safe areas.
  */
 export function initTelegramSDK(): void {
-  // 1. Initialize the SDK (MUST be first)
-  init();
+  try {
+    // 1. Initialize the SDK (MUST be first)
+    init();
 
-  // 2. Mount each component we plan to use
-  backButton.mount();
-  mainButton.mount();
-  themeParams.mount();
-  miniApp.mount();
+    // 2. Mount each component we plan to use
+    if (backButton.mount.isAvailable()) backButton.mount();
+    if (mainButton.mount.isAvailable()) mainButton.mount();
+    if (themeParams.mount.isAvailable()) themeParams.mount();
+    if (miniApp.mount.isAvailable()) miniApp.mount();
 
-  // 3. Viewport requires async binding
-  viewport.mount().then(() => {
-    viewport.bindCssVars();
-  });
+    // 3. Viewport requires async binding
+    if (viewport.mount.isAvailable()) {
+      viewport.mount().then(() => {
+        if (viewport.bindCssVars.isAvailable()) viewport.bindCssVars();
+      }).catch(console.warn);
+    }
 
-  // 4. Bind theme CSS vars for Telegram color adaptation
-  themeParams.bindCssVars();
+    // 4. Bind theme CSS vars for Telegram color adaptation
+    if (themeParams.bindCssVars.isAvailable()) themeParams.bindCssVars();
 
-  // 5. Configure behaviors
-  if (swipeBehavior.mount.isAvailable()) {
-    swipeBehavior.mount();
-    swipeBehavior.disableVertical();
+    // 5. Configure behaviors
+    if (swipeBehavior.mount.isAvailable()) {
+      swipeBehavior.mount();
+      if (swipeBehavior.disableVertical.isAvailable()) swipeBehavior.disableVertical();
+    }
+
+    // 6. Signal that the app is ready
+    if (miniApp.ready.isAvailable()) miniApp.ready();
+  } catch (err) {
+    console.warn('[Telegram SDK] Init failed, running in degraded mode:', err);
   }
-
-  // 6. Signal that the app is ready
-  miniApp.ready();
 }
 
 /**

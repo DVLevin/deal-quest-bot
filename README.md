@@ -125,14 +125,16 @@ Telegram User
 |  InsForge DB       |     |  Tracing Layer   |
 |  (PostgreSQL)      |     |                  |
 |                    |     |  TraceContext     |
-|  9 tables:         |     |  traced_span     |
+|  10 tables:        |     |  traced_span     |
 |  users, attempts,  |     |  TraceCollector  |
 |  user_memory,      |     |  (async batch    |
 |  scenarios_seen,   |     |   flush to DB)   |
 |  support_sessions, |     |                  |
 |  track_progress,   |     |  pipeline_traces |
 |  casebook,         |     |  pipeline_spans  |
-|  pipeline_traces,  |     +------------------+
+|  conversation_     |     +------------------+
+|    history,        |
+|  pipeline_traces,  |
 |  pipeline_spans    |
 +--------------------+
 ```
@@ -143,11 +145,13 @@ Telegram User
 |----------|--------|-----------|
 | Bot framework | aiogram 3.x | Modern async Python, FSM built-in, Router pattern |
 | Database | InsForge (PostgreSQL) | Managed BaaS, no infra to maintain |
-| Agent system | Custom BaseAgent + Registry | Framework-agnostic, YAML-configurable, no heavy deps |
+| Agent system (v1.0) | Custom BaseAgent + Registry | Framework-agnostic, YAML-configurable, no heavy deps |
+| Agent system (v2.0) | ToolUseAgent + agents.yaml | Config-driven tool-use loops with max_iterations |
 | Pipeline config | YAML files | Change agent flows without code changes |
 | LLM integration | User-provided keys (encrypted) | Cost on users, supports free models |
 | Knowledge approach | Context stuffing (~70K tokens) | No chunking, no vector DB, instant retrieval |
 | Background processing | asyncio.create_task | No Celery/Redis needed |
+| Conversation history | Hybrid in-memory deque + InsForge | Sliding window per-user, background flush |
 | Tracing | stdlib contextvars + perf_counter | Zero external deps, async-safe propagation |
 | TMA frontend | React + Vite + InsForge SDK | Same DB, Telegram-native auth |
 
@@ -177,7 +181,9 @@ deal-quest-bot/
 │   ├── states.py               # FSM state definitions
 │   ├── utils.py                # Telegram formatting helpers
 │   ├── agents/
-│   │   ├── base.py             # BaseAgent ABC + typed I/O
+│   │   ├── base.py             # BaseAgent ABC + typed I/O (v1.0)
+│   │   ├── config.py           # AgentConfig + agents.yaml loader (v2.0)
+│   │   ├── tool_use_agent.py   # ToolUseAgent — tool-use loop base class (v2.0)
 │   │   ├── registry.py         # Agent name -> instance lookup
 │   │   ├── strategist.py       # /support analysis & strategy
 │   │   ├── trainer.py          # /learn + /train scoring
@@ -197,7 +203,8 @@ deal-quest-bot/
 │   │   ├── admin.py            # Admin panel (restricted)
 │   │   └── progress.py         # Progress utilities
 │   ├── services/
-│   │   ├── llm_router.py       # LLM provider abstraction
+│   │   ├── llm_router.py       # LLM provider + complete_with_tools()
+│   │   ├── conversation_history.py # Per-user sliding window + DB flush
 │   │   ├── knowledge.py        # Playbook + company KB loader
 │   │   ├── casebook.py         # Reusable response retrieval
 │   │   ├── scoring.py          # XP calculation
@@ -215,7 +222,7 @@ deal-quest-bot/
 │   │   └── models.py           # Trace/Span Pydantic models
 │   └── storage/
 │       ├── insforge_client.py  # Async HTTP client for InsForge
-│       ├── repositories.py     # 11 repository classes
+│       ├── repositories.py     # 12 repository classes
 │       └── models.py           # Pydantic data models
 ├── packages/
 │   ├── webapp/                 # Telegram Mini App (React)
@@ -224,6 +231,7 @@ deal-quest-bot/
 │   └── shared/                 # Shared TypeScript types
 ├── functions/                  # InsForge serverless functions
 ├── data/
+│   ├── agents.yaml             # Agent config: defaults + specialist agents
 │   ├── playbook.md             # Your sales playbook (gitignored)
 │   ├── company_knowledge.md    # Company info (gitignored)
 │   ├── scenarios.json          # Training scenarios (gitignored)
@@ -294,6 +302,7 @@ The example files document the expected format. The bot loads these into every L
 
 Create the required tables in your InsForge project:
 - **Core tables** (7): `users`, `user_memory`, `scenarios_seen`, `attempts`, `support_sessions`, `track_progress`, `casebook` — see `migrations/`
+- **Conversation history** (1): `conversation_history` — see `migrations/002_conversation_history.sql`
 - **Observability tables** (2): `pipeline_traces`, `pipeline_spans` — see `insforge/migrations/001_pipeline_traces.sql`
 
 ### 5. Run

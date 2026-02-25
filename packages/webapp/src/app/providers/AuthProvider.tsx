@@ -39,15 +39,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   if (error) {
+    // In development or when Edge Function isn't deployed yet,
+    // show the app shell anyway so navigation can be tested.
+    // The error banner stays visible as a reminder.
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-2 px-4">
-        <div className="text-red-500 text-sm font-medium">
-          Authentication Error
+      <>
+        <div className="bg-red-500/10 text-red-500 text-xs text-center px-4 py-2">
+          Auth: {error}
         </div>
-        <div className="text-text-hint text-xs text-center max-w-sm">
-          {error}
-        </div>
-      </div>
+        {children}
+      </>
     );
   }
 

@@ -45,9 +45,11 @@ deal-quest-bot/
 │   ├── middleware.py               # Username-based authorization
 │   ├── states.py                   # FSM state definitions
 │   ├── utils.py                    # Telegram formatting helpers
-│   ├── agents/                     # AI agents for pipelines
-│   │   ├── base.py                 # BaseAgent ABC + typed I/O (AgentInput/AgentOutput)
+│   ├── agents/                     # AI agents
+│   │   ├── base.py                 # BaseAgent ABC + typed I/O (v1.0 pipeline agents)
 │   │   ├── registry.py             # Agent name -> instance lookup
+│   │   ├── config.py               # AgentConfig, ToolParam, AgentsConfig, load_agents_config() (Phase 3)
+│   │   ├── tool_use_agent.py       # ToolUseAgent base class — tool-use loop with max_iterations (Phase 3)
 │   │   ├── strategist.py           # /support analysis & strategy (@traced_span)
 │   │   ├── trainer.py              # /learn + /train scoring (@traced_span)
 │   │   └── memory.py               # Background memory updates (@traced_span)
@@ -66,7 +68,8 @@ deal-quest-bot/
 │   │   ├── admin.py                # Admin panel (restricted)
 │   │   └── progress.py             # Progress utilities
 │   ├── services/                   # Business logic services
-│   │   ├── llm_router.py           # LLM provider abstraction (OpenRouter/Claude) (@traced_span)
+│   │   ├── llm_router.py           # LLM provider abstraction + complete_with_tools() (Phase 3)
+│   │   ├── conversation_history.py # Per-user sliding window + background flush to InsForge (Phase 3)
 │   │   ├── knowledge.py            # Playbook + company KB loader
 │   │   ├── casebook.py             # Reusable response retrieval
 │   │   ├── scoring.py              # XP calculation
@@ -84,8 +87,8 @@ deal-quest-bot/
 │   │   └── models.py               # TraceModel, SpanModel (Pydantic)
 │   └── storage/                    # Data persistence (InsForge)
 │       ├── insforge_client.py      # Async HTTP client for InsForge PostgREST
-│       ├── repositories.py         # 11 repository classes (User, Memory, Attempts, Traces, etc.)
-│       └── models.py               # Pydantic data models (including PipelineTraceModel, PipelineSpanModel)
+│       ├── repositories.py         # 12 repository classes (User, Memory, Attempts, Traces, ConversationHistory, etc.)
+│       └── models.py               # Pydantic data models (including PipelineTraceModel, PipelineSpanModel, ConversationTurnModel)
 ├── packages/                       # Frontend (TMA)
 │   ├── webapp/                     # React + TypeScript Telegram Mini App
 │   │   ├── src/
@@ -99,6 +102,7 @@ deal-quest-bot/
 │   ├── db-proxy.js                 # Database proxy function
 │   └── verify-telegram/            # Telegram auth verification
 ├── data/                           # Knowledge base & pipeline configs
+│   ├── agents.yaml                 # Agent config: defaults + 4 agents (Phase 3)
 │   ├── playbook.md                 # Sales playbook (gitignored)
 │   ├── company_knowledge.md        # Company info (gitignored)
 │   ├── scenarios.json              # Training scenarios (gitignored)
@@ -108,7 +112,7 @@ deal-quest-bot/
 │       └── train.yaml
 ├── prompts/                        # Agent system prompts
 ├── docs/                           # Original design documentation
-├── migrations/                     # Database migrations (original tables)
+├── migrations/                     # Database migrations (original tables + conversation_history)
 ├── insforge/migrations/            # Observability migrations (pipeline_traces, pipeline_spans)
 ├── .planning/                      # GSD project tracking (observability initiative)
 ├── .env.example                    # Environment template
@@ -138,18 +142,21 @@ deal-quest-bot/
 
 ## Key Patterns
 
-- **Pipeline system**: YAML-defined agent flows executed by PipelineRunner (sequential/parallel/background steps)
+- **Pipeline system (v1.0)**: YAML-defined agent flows executed by PipelineRunner (sequential/parallel/background steps)
+- **Tool-use agents (v2.0)**: ToolUseAgent base class with config-driven tool-use loops, agents.yaml definitions (Phase 3)
+- **Conversation history**: Per-user sliding window (default 20 turns) with hybrid in-memory deque + background flush to InsForge
 - **Context stuffing**: Full playbook + company knowledge loaded into every LLM prompt (~70K tokens)
 - **ProgressUpdater**: Real-time Telegram message updates during pipeline execution
 - **TraceContext**: Async context manager wrapping pipeline calls for observability (outside ProgressUpdater)
-- **traced_span**: Decorator for step-level timing on agent .run() and LLM .complete() methods
+- **traced_span**: Decorator for step-level timing on agent .run(), LLM .complete(), and tool-use loops
 - **Repository pattern**: Each InsForge table has a Repo class in storage/repositories.py
 
 ## Database Tables (InsForge)
 
-9 tables total:
+10 tables total:
 - `users`, `user_memory`, `scenarios_seen`, `attempts`, `support_sessions`, `track_progress`, `casebook` — core bot data
 - `pipeline_traces`, `pipeline_spans` — observability data (Phase 1)
+- `conversation_history` — per-user conversation persistence (Phase 3)
 
 ## Dependencies
 

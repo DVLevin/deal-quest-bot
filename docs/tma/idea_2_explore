@@ -1,0 +1,747 @@
+# 🚀 Deal Quest v5: Telegram Mini App Expansion
+
+**Exploration Document — January 2026**
+
+---
+
+## 🎯 The Vision
+
+```
+CURRENT STATE (Bot Only)
+┌─────────────────────────────────────────┐
+│            Telegram Chat                │
+│  ┌───────────────────────────────────┐  │
+│  │  /support → Text response         │  │
+│  │  /learn   → Text + buttons        │  │
+│  │  /train   → Text + scoring        │  │
+│  │  /stats   → Text summary          │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Limitation: Rich UI impossible         │
+│  (no charts, no badges, no dashboard)   │
+└─────────────────────────────────────────┘
+
+FUTURE STATE (Bot + Mini App)
+┌─────────────────────────────────────────┐
+│            Telegram Chat                │
+│  ┌───────────────────────────────────┐  │
+│  │  /support → Opens Mini App        │──┼──► Rich strategy builder
+│  │  /learn   → Opens Mini App        │──┼──► Interactive lessons
+│  │  /train   → Opens Mini App        │──┼──► Case interview UI
+│  │  /stats   → Opens Mini App        │──┼──► Dashboard with charts
+│  │  /admin   → Opens Mini App        │──┼──► Company dashboard
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Bot = Entry point + quick actions      │
+│  Mini App = Rich experiences            │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Why Telegram Mini App?
+
+| Feature | Bot Only | Bot + Mini App |
+|---------|----------|----------------|
+| Progress charts | ❌ Text only | ✅ Interactive charts |
+| Badge display | ❌ Emoji at best | ✅ Visual badge wall |
+| Leaderboards | ❌ Text list | ✅ Animated rankings |
+| Scenario practice | ⚠️ Text input | ✅ Rich scenario cards |
+| Casebook browse | ❌ Limited | ✅ Searchable gallery |
+| Company dashboard | ❌ Impossible | ✅ Full admin panel |
+| Team stats | ❌ No visuals | ✅ Charts, comparisons |
+| Onboarding | ⚠️ Multi-step chat | ✅ Smooth wizard |
+
+---
+
+## 🏗️ Architecture: Monorepo Structure
+
+```
+deal-quest/
+├── packages/
+│   ├── bot/                    # Telegram Bot (Python/aiogram)
+│   │   ├── handlers/
+│   │   ├── agents/
+│   │   └── ...
+│   │
+│   ├── webapp/                 # Telegram Mini App (React + Vite)
+│   │   ├── src/
+│   │   │   ├── pages/
+│   │   │   │   ├── Dashboard.tsx
+│   │   │   │   ├── Learn.tsx
+│   │   │   │   ├── Train.tsx
+│   │   │   │   ├── Support.tsx
+│   │   │   │   ├── Casebook.tsx
+│   │   │   │   ├── Profile.tsx
+│   │   │   │   └── Admin/
+│   │   │   │       ├── TeamDashboard.tsx
+│   │   │   │       ├── Analytics.tsx
+│   │   │   │       └── ContentManager.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── ui/         # TelegramUI components
+│   │   │   │   ├── charts/     # Recharts wrappers
+│   │   │   │   ├── badges/     # Badge components
+│   │   │   │   └── scenarios/  # Scenario cards
+│   │   │   ├── hooks/
+│   │   │   │   ├── useTelegram.ts
+│   │   │   │   ├── useInsForge.ts
+│   │   │   │   └── useUser.ts
+│   │   │   └── lib/
+│   │   │       └── insforge.ts # InsForge SDK
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   │
+│   └── shared/                 # Shared types & utilities
+│       ├── types/
+│       │   ├── user.ts
+│       │   ├── scenario.ts
+│       │   └── casebook.ts
+│       └── constants/
+│
+├── data/                       # Knowledge base (shared)
+│   ├── playbook.md
+│   ├── company_knowledge.md
+│   └── scenarios.json
+│
+├── prompts/                    # Agent prompts (shared)
+│   ├── strategist_agent.md
+│   ├── trainer_agent.md
+│   └── memory_agent.md
+│
+├── docs/                       # Documentation
+│
+├── .env.example
+├── package.json               # Monorepo root (pnpm workspaces)
+├── pnpm-workspace.yaml
+└── README.md
+```
+
+---
+
+## 🔌 Backend: InsForge Integration
+
+Since you're using InsForge, we get these for FREE:
+
+### InsForge Provides:
+
+| Feature | How It Helps Deal Quest |
+|---------|------------------------|
+| **PostgreSQL** | Users, attempts, casebook, teams |
+| **Authentication** | Telegram auth flow, JWT sessions |
+| **Realtime** | Live leaderboard updates |
+| **Storage** | Badge images, case attachments |
+| **Functions** | LLM orchestration, scoring |
+| **AI Integration** | Built-in Claude/OpenAI support |
+
+### Database Schema (InsForge Tables)
+
+```sql
+-- Users (synced from Telegram)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    telegram_id BIGINT UNIQUE NOT NULL,
+    username TEXT,
+    first_name TEXT,
+    avatar_url TEXT,
+    
+    -- Progress
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    current_track INTEGER DEFAULT 1,
+    
+    -- Team
+    team_id UUID REFERENCES teams(id),
+    role TEXT DEFAULT 'member',  -- 'member', 'manager', 'admin'
+    
+    -- Settings
+    llm_provider TEXT DEFAULT 'openrouter',
+    preferences JSONB DEFAULT '{}',
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Teams (Company/Group)
+CREATE TABLE teams (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    company TEXT,
+    logo_url TEXT,
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Badges
+CREATE TABLE badges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    icon_url TEXT,
+    criteria JSONB,  -- {"type": "xp", "threshold": 1000}
+    rarity TEXT DEFAULT 'common'  -- 'common', 'rare', 'epic', 'legendary'
+);
+
+-- User Badges (earned)
+CREATE TABLE user_badges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    badge_id UUID REFERENCES badges(id),
+    earned_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, badge_id)
+);
+
+-- Scenario Attempts
+CREATE TABLE attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    scenario_id TEXT NOT NULL,
+    mode TEXT NOT NULL,  -- 'learn', 'train'
+    user_response TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    feedback JSONB,
+    xp_earned INTEGER NOT NULL,
+    time_taken_seconds INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Casebook (reusable responses)
+CREATE TABLE casebook (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    persona_type TEXT NOT NULL,
+    scenario_type TEXT NOT NULL,
+    industry TEXT,
+    seniority TEXT,
+    prospect_analysis TEXT,
+    closing_strategy TEXT,
+    engagement_tactics TEXT,
+    draft_response TEXT,
+    quality_score REAL DEFAULT 0.5,
+    times_used INTEGER DEFAULT 0,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Support Sessions
+CREATE TABLE support_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    input_type TEXT,  -- 'text', 'image', 'voice'
+    context_text TEXT,
+    prospect_analysis JSONB,
+    closing_strategy JSONB,
+    draft_response TEXT,
+    feedback TEXT,  -- 'positive', 'negative', 'neutral'
+    casebook_added BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Leaderboard (materialized view, refreshed hourly)
+CREATE MATERIALIZED VIEW leaderboard AS
+SELECT 
+    u.id,
+    u.telegram_id,
+    u.username,
+    u.first_name,
+    u.avatar_url,
+    u.xp,
+    u.team_id,
+    t.name as team_name,
+    RANK() OVER (ORDER BY u.xp DESC) as global_rank,
+    RANK() OVER (PARTITION BY u.team_id ORDER BY u.xp DESC) as team_rank
+FROM users u
+LEFT JOIN teams t ON u.team_id = t.id
+WHERE u.xp > 0;
+```
+
+---
+
+## 📱 Mini App Pages
+
+### 1. Dashboard (Home)
+
+```
+┌─────────────────────────────────────────┐
+│  👤 Alex Thompson        Level 12       │
+│  ████████████░░░░░░░  847 / 1000 XP     │
+├─────────────────────────────────────────┤
+│                                         │
+│  📊 YOUR PROGRESS                       │
+│  ┌─────────────────────────────────┐   │
+│  │  [Weekly Activity Chart]         │   │
+│  │  ▁▃▅▇▅▃▁                        │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  🏆 RECENT BADGES                       │
+│  [🎯] [💬] [🔥] [⭐]                    │
+│  Quick   First  3-Day  Perfect          │
+│  Draw    Win    Streak Score           │
+│                                         │
+│  📈 LEADERBOARD                         │
+│  1. 🥇 Sarah M.     1,247 XP           │
+│  2. 🥈 You          847 XP    ← You    │
+│  3. 🥉 Mike T.      823 XP             │
+│                                         │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │ 📚      │ │ 🎯      │ │ 💼      │   │
+│  │ Learn   │ │ Train   │ │ Support │   │
+│  └─────────┘ └─────────┘ └─────────┘   │
+└─────────────────────────────────────────┘
+```
+
+### 2. Learn Mode
+
+```
+┌─────────────────────────────────────────┐
+│  ← Back         LEARN MODE              │
+├─────────────────────────────────────────┤
+│                                         │
+│  TRACK 1: FOUNDATIONS                   │
+│  ██████████░░░░░░░░░░  3/4 Complete     │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │ ✅ 1.1 What is GetDeal.ai?      │   │
+│  │    Score: 85/100 ⭐              │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ ✅ 1.2 Platform Positioning     │   │
+│  │    Score: 72/100                │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ ✅ 1.3 The Buyer Universe       │   │
+│  │    Score: 91/100 ⭐⭐            │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ 🔓 1.4 The Seller Universe      │   │
+│  │    [Start Level →]              │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  🔒 TRACK 2: ADVANCED (Unlock at L5)    │
+└─────────────────────────────────────────┘
+```
+
+### 3. Train Mode (Scenario Card)
+
+```
+┌─────────────────────────────────────────┐
+│  ← Back         RANDOM SCENARIO         │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │  👤 Sarah Mitchell              │   │
+│  │  VP of Corporate Strategy       │   │
+│  │  @ Oracle                       │   │
+│  │                                 │   │
+│  │  ⚡ Difficulty: HARD            │   │
+│  │  🏷️ Category: Corporate Objection │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  💬 SCENARIO                            │
+│  ─────────────────────────────────────  │
+│  "We looked at platforms like yours     │
+│   before. The problem is the companies  │
+│   are usually not enterprise-ready.     │
+│   We need $5M+ ARR minimum and SOC2    │
+│   compliance. Do you actually have      │
+│   assets at that level?"                │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │  Type your response...          │   │
+│  │                                 │   │
+│  │                                 │   │
+│  │                                 │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  ⏱️ 1:30 remaining                      │
+│                                         │
+│  [        Submit Response        ]      │
+└─────────────────────────────────────────┘
+```
+
+### 4. Support Mode (Strategy Builder)
+
+```
+┌─────────────────────────────────────────┐
+│  ← Back         DEAL SUPPORT            │
+├─────────────────────────────────────────┤
+│                                         │
+│  📝 PROSPECT CONTEXT                    │
+│  ┌─────────────────────────────────┐   │
+│  │ LinkedIn message from VP at     │   │
+│  │ Stripe asking about fees...     │   │
+│  └─────────────────────────────────┘   │
+│  [📷 Add Screenshot] [🎤 Voice]        │
+│                                         │
+│  [     Generate Strategy     ]          │
+│                                         │
+├─────────────────────────────────────────┤
+│                                         │
+│  📊 ANALYSIS                            │
+│  Type: Corporate VP (Strategic Buyer)   │
+│  Stage: Early Interest                  │
+│  Signal: 🟢 High                        │
+│                                         │
+│  🎯 CLOSING STRATEGY                    │
+│  1. Frame as peer (Goldman background)  │
+│  2. Lead with time savings             │
+│  3. Success-fee removes objection       │
+│                                         │
+│  💡 ENGAGEMENT                          │
+│  • Like her AI strategy post            │
+│  • Comment: "Strong point about..."     │
+│                                         │
+│  📝 DRAFT                               │
+│  ┌─────────────────────────────────┐   │
+│  │ "Hi Sarah — with your Goldman   │   │
+│  │  background, you'll appreciate  │   │
+│  │  the model: success-fee only..."│   │
+│  └─────────────────────────────────┘   │
+│  [📋 Copy] [🔄 Regenerate] [💾 Save]   │
+│                                         │
+│  📚 From: Corporate Value Prop (§3)     │
+└─────────────────────────────────────────┘
+```
+
+### 5. Casebook Browser
+
+```
+┌─────────────────────────────────────────┐
+│  ← Back         CASEBOOK                │
+├─────────────────────────────────────────┤
+│  🔍 Search casebook...                  │
+│                                         │
+│  Filter: [All ▼] [Corporate ▼] [VP ▼]   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │ 📋 VP Strategy @ Stripe         │   │
+│  │ Type: Corporate | Cold Outreach  │   │
+│  │ Quality: ████████░░ 89%         │   │
+│  │ Used: 12 times                   │   │
+│  │ [View] [Copy] [Use as Template]  │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ 📋 Principal @ Vista Equity     │   │
+│  │ Type: PE | Follow-up            │   │
+│  │ Quality: ███████░░░ 76%         │   │
+│  │ Used: 8 times                    │   │
+│  │ [View] [Copy] [Use as Template]  │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  + Add from recent support session      │
+└─────────────────────────────────────────┘
+```
+
+### 6. Admin Dashboard (Company)
+
+```
+┌─────────────────────────────────────────┐
+│  ← Back         TEAM DASHBOARD          │
+├─────────────────────────────────────────┤
+│                                         │
+│  GetDeal.ai Partnership Team            │
+│  5 members | 847 scenarios completed    │
+│                                         │
+│  📊 TEAM PERFORMANCE                    │
+│  ┌─────────────────────────────────┐   │
+│  │  [Weekly Score Trend Chart]      │   │
+│  │  Team avg: 74 → 81 (+9%)        │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  👥 MEMBERS                             │
+│  ┌─────────────────────────────────┐   │
+│  │ 1. Sarah M.   1,247 XP  Avg: 84 │   │
+│  │ 2. Alex T.    847 XP    Avg: 78 │   │
+│  │ 3. Mike K.    823 XP    Avg: 76 │   │
+│  │ 4. Lisa C.    612 XP    Avg: 71 │   │
+│  │ 5. John D.    445 XP    Avg: 68 │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  📈 WEAK AREAS (Team-wide)             │
+│  • PE Objection Handling (avg: 62)      │
+│  • Technical Credibility (avg: 65)      │
+│                                         │
+│  [📊 Full Analytics] [⚙️ Settings]      │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend (Mini App)
+
+| Tool | Purpose | Why |
+|------|---------|-----|
+| **React 18** | UI Framework | Most Mini App examples use React |
+| **Vite** | Build tool | Fast, modern, great DX |
+| **TypeScript** | Type safety | Catch errors early |
+| **TelegramUI** | Component library | Native Telegram look |
+| **tma.js/sdk** | Telegram SDK | Official, well-maintained |
+| **Recharts** | Charts | Lightweight, React-native |
+| **Zustand** | State management | Simple, fast |
+| **React Query** | Server state | Caching, realtime |
+
+### Backend (InsForge)
+
+| Feature | InsForge Capability |
+|---------|-------------------|
+| Database | PostgreSQL with auto-API |
+| Auth | Telegram WebApp auth verification |
+| Realtime | WebSocket for leaderboards |
+| Storage | S3-compatible for badges/images |
+| Functions | Edge functions for LLM calls |
+| AI | Built-in Claude/OpenAI integration |
+
+### Bot (Python)
+
+| Tool | Purpose |
+|------|---------|
+| aiogram 3.x | Telegram bot framework |
+| httpx | API calls to InsForge |
+
+---
+
+## 🔄 Bot ↔ Mini App Integration
+
+### Flow: Bot Opens Mini App
+
+```python
+# Bot handler (Python)
+@router.message(Command("stats"))
+async def stats_command(message: Message):
+    webapp_url = f"https://dealquest.app/dashboard?user={message.from_user.id}"
+    
+    await message.answer(
+        "📊 View your full dashboard:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(
+                text="Open Dashboard",
+                web_app=WebAppInfo(url=webapp_url)
+            )
+        ]])
+    )
+```
+
+### Flow: Mini App Sends Data to Bot
+
+```typescript
+// Mini App (React)
+import { useTelegram } from '@/hooks/useTelegram';
+
+function ScenarioComplete({ score, xp }: Props) {
+  const { sendData } = useTelegram();
+  
+  const handleComplete = () => {
+    // Send data back to bot
+    sendData(JSON.stringify({
+      action: 'scenario_complete',
+      score,
+      xp,
+      scenario_id: currentScenario.id
+    }));
+  };
+  
+  return (
+    <MainButton 
+      text="Complete & Return to Chat" 
+      onClick={handleComplete} 
+    />
+  );
+}
+```
+
+### Auth Flow
+
+```
+1. User opens Mini App from bot
+2. Telegram passes initData (signed)
+3. Mini App sends initData to InsForge
+4. InsForge verifies signature
+5. InsForge returns JWT
+6. Mini App uses JWT for all API calls
+```
+
+---
+
+## 🎮 Gamification Features
+
+### Badge System
+
+| Badge | Criteria | Rarity |
+|-------|----------|--------|
+| 🎯 Quick Draw | Complete scenario in <30 seconds | Common |
+| 💬 First Win | Complete first scenario | Common |
+| 🔥 On Fire | 3-day streak | Common |
+| ⭐ Perfect | Score 100/100 | Rare |
+| 🏆 Track Master | Complete entire track | Rare |
+| 🎓 Scholar | Complete all learn tracks | Epic |
+| 👑 Elite | Top 10 leaderboard | Epic |
+| 💎 Legend | 10,000 XP total | Legendary |
+
+### Level System
+
+| Level | XP Required | Title |
+|-------|-------------|-------|
+| 1 | 0 | Recruit |
+| 2 | 100 | Associate |
+| 3 | 250 | Specialist |
+| 4 | 500 | Senior |
+| 5 | 1,000 | Expert |
+| 6 | 2,000 | Master |
+| 7 | 3,500 | Director |
+| 8 | 5,500 | VP |
+| 9 | 8,000 | Partner |
+| 10 | 12,000 | Legend |
+
+### Streaks
+
+- Daily login = +10 XP
+- 3-day streak = +50 XP bonus
+- 7-day streak = +150 XP bonus
+- 30-day streak = +500 XP bonus + badge
+
+---
+
+## 📦 Deployment
+
+### Mini App
+
+```yaml
+# vercel.json
+{
+  "buildCommand": "pnpm --filter webapp build",
+  "outputDirectory": "packages/webapp/dist",
+  "framework": "vite"
+}
+```
+
+### Bot
+
+```yaml
+# railway.toml
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python -m packages.bot.main"
+```
+
+### InsForge
+
+- Managed by InsForge (no deployment needed)
+- Just configure via MCP or dashboard
+
+---
+
+## 🗓️ Build Phases
+
+### Phase 1: Foundation (4-6 hours)
+- [ ] Monorepo setup (pnpm workspaces)
+- [ ] InsForge project + schema
+- [ ] Mini App scaffold (Vite + React)
+- [ ] Telegram SDK integration
+- [ ] Basic auth flow
+
+### Phase 2: Dashboard (4-6 hours)
+- [ ] Dashboard page with stats
+- [ ] Progress charts (Recharts)
+- [ ] Basic leaderboard
+- [ ] Profile page
+
+### Phase 3: Training Flow (6-8 hours)
+- [ ] Learn mode pages
+- [ ] Train mode with scenario cards
+- [ ] Scoring display
+- [ ] XP animations
+
+### Phase 4: Support Mode (4-6 hours)
+- [ ] Strategy builder UI
+- [ ] Image/screenshot input
+- [ ] Casebook browser
+- [ ] Save to casebook flow
+
+### Phase 5: Gamification (4-6 hours)
+- [ ] Badge system
+- [ ] Badge display wall
+- [ ] Level-up animations
+- [ ] Streak tracking
+
+### Phase 6: Admin Dashboard (6-8 hours)
+- [ ] Team management
+- [ ] Team analytics
+- [ ] Weak areas identification
+- [ ] Content management
+
+### Phase 7: Polish (4-6 hours)
+- [ ] Animations
+- [ ] Loading states
+- [ ] Error handling
+- [ ] Performance optimization
+
+**Total: ~35-45 hours** (vs 10-12 for bot-only)
+
+---
+
+## 🤔 Decision Points
+
+### Q1: Keep Bot Commands OR Fully Mini App?
+
+**Option A: Hybrid (Recommended)**
+- Bot for quick actions: `/support quick`, `/train quick`
+- Mini App for rich experiences: Dashboard, detailed scenarios
+
+**Option B: Mini App Only**
+- Bot just opens Mini App
+- All features in Mini App
+
+### Q2: Same Repo OR Separate?
+
+**Option A: Monorepo (Recommended)**
+- Shared types, constants, prompts
+- Single deployment pipeline
+- Easier coordination
+
+**Option B: Separate Repos**
+- Independent deployment
+- Team separation
+- More complex coordination
+
+### Q3: Build Order?
+
+**Option A: Bot First, Then Mini App**
+- Validate core features quickly
+- Mini App as enhancement
+
+**Option B: Mini App First**
+- Rich experience from start
+- Bot as entry point only
+
+---
+
+## 🎯 Next Steps
+
+1. **Confirm InsForge setup** — Create project, get API keys
+2. **Choose monorepo structure** — pnpm workspaces recommended
+3. **Create Mini App scaffold** — From Telegram template
+4. **Define MVP Mini App** — Dashboard + 1 mode
+5. **Plan sprint** — Which phase first?
+
+---
+
+## 📚 Resources
+
+### Telegram Mini Apps
+- [Official Docs](https://core.telegram.org/bots/webapps)
+- [tma.js SDK](https://github.com/Telegram-Mini-Apps/tma.js)
+- [TelegramUI Components](https://github.com/telegram-mini-apps-dev/TelegramUI)
+- [React Template](https://github.com/Telegram-Mini-Apps/reactjs-template)
+
+### InsForge
+- [InsForge Docs](https://docs.insforge.dev)
+- [InsForge GitHub](https://github.com/InsForge/InsForge)
+
+### Inspiration
+- [Awesome Telegram Mini Apps](https://github.com/telegram-mini-apps-dev/awesome-telegram-mini-apps)
+
+---
+
+*Exploration Document v1.0 | January 2026*
