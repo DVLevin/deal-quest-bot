@@ -70,11 +70,11 @@ Merged into v2.0 as Phase 9 (Admin & Observability). Admin tooling is more valua
   3. The LLM provider's complete_with_tools() method sends function definitions to OpenRouter and returns either a text response or a tool call for the caller to execute
   4. All agent infrastructure components have tracing wired in so every tool-use loop generates observable spans
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — Agent framework: agents.yaml config system, complete_with_tools() on OpenRouterProvider, ToolUseAgent base class
+- [ ] 03-02-PLAN.md — Conversation history: InsForge table + hybrid service + main.py wiring for all Phase 3 components
 
 ### Phase 4: Deal Storage + Deal Agent
 
