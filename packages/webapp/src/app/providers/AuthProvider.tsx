@@ -22,7 +22,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     authenticateWithTelegram()
       .then(({ jwt, user }) => {
-        setAuth(jwt, user.telegram_id, user.id);
+        setAuth(jwt, user.telegram_id, user.id, user.photo_url);
       })
       .catch((err: Error) => {
         console.error('[AuthProvider] Authentication failed:', err);

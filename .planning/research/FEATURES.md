@@ -1,419 +1,292 @@
-# Feature Landscape: AI Sales Partner Bot (v2.0)
+# Feature Research
 
-**Domain:** AI Sales Partner / Conversational CRM / Sales Coaching Bot
-**Project:** Deal Quest Bot v2.0 — multi-agent natural language sales partner
-**Researched:** 2026-02-24
-**Overall Confidence:** HIGH
+**Domain:** Telegram Mini App -- Gamified Sales Training Platform (Deal Quest TMA)
+**Researched:** 2026-02-01
+**Confidence:** MEDIUM-HIGH
 
----
-
-## Context: What This Milestone Is
-
-This is a SUBSEQUENT MILESTONE research file. v1.0 already shipped:
-- `/learn` — structured training with learning tracks
-- `/train` — random scenario practice with scoring
-- `/support` — deal analysis flow (text/voice/image)
-- `/leads` — basic lead management
-- `/stats` — progress display
-- `/settings` — provider management
-- `/admin` — admin panel with analytics
-- Voice transcription, XP scoring, pipeline tracing
-
-v2.0 transforms this into a **conversation-driven AI sales partner** with:
-- Natural language routing (Orchestrator → specialist agents)
-- Deal management (lightweight CRM inside the bot)
-- Proactive coaching and daily briefings
-- Persistent memory that learns the salesperson's patterns
-
-**Reference architecture analyzed:** ClickUp MCP bot (`/Users/dmytrolevin/Desktop/clickup mcp/`) — production TypeScript/grammY implementation of the exact multi-agent pattern planned here (Orchestrator + BaseAgent tool-use loops + confirmation-first writes + graph memory). Patterns documented below transfer directly.
+> The TMA is a visual/interactive layer. The bot backend already handles AI logic, data persistence, and all core features (support, learn, train, stats, leads, casebook, admin). This research focuses on what TMA-specific features and UX patterns to build on the frontend.
 
 ---
 
-## Table Stakes
+## Feature Landscape
 
-Features the target users (individual salespeople) will expect. Missing any of these
-makes the bot feel unfinished relative to existing AI sales tools (Gong, Highspot, Pipedrive AI).
+### Table Stakes (Users Expect These)
 
-| Feature | Why Expected | Complexity | Depends On |
-|---------|--------------|------------|------------|
-| Natural language message routing | The whole premise: "just talk to it" | High | Orchestrator agent |
-| Conversational deal creation | "I just got off a call with Acme, 50K deal, Q2 close" | Medium | Deal Agent + InsForge deals table |
-| Deal status queries | "What's the status of my Acme deal?" | Low | Deal Agent read tools |
-| Deal stage updates | "Move Acme to negotiation" + confirmation inline keyboard | Medium | Deal Agent write tools + confirmation flow |
-| Note logging on deals | "Log that Acme wants a discount" | Low | Deal Agent write tools |
-| Stale deal detection & nudge | Proactive alert when deal hasn't moved in N days | Medium | Background scheduler + Deal Agent |
-| Daily morning briefing | Combined deal status + coaching nudge + alerts | Medium | Background scheduler + all agents |
-| Objection handling practice | "Practice the pricing objection" | Low | Wraps existing /train Coach Agent |
-| Call preparation briefing | "Prep me for my Acme call in 30 min" | Medium | Strategy Agent + deal context |
-| Backward compat: /learn, /train, /support | Power users keep fast paths | Low | Existing handlers as shortcuts |
-| Conversation history (sliding window) | Context carries across messages | Medium | ConversationHistory store per user |
-| Confirmation before CRM writes | "Create deal: Acme $50K Q2 — Confirm?" + keyboard | Medium | Inline keyboard + write tools |
-| Voice message routing | Send voice note, gets routed to right agent | Low | Existing AssemblyAI → transcribe → orchestrator |
+Features users assume exist. Missing these = product feels incomplete or broken inside Telegram.
 
-**Sources:**
-- [13 AI Sales Assistant Tools 2026](https://www.outdoo.ai/blog/ai-sales-assistants) — "AI sales assistants aren't just nice-to-haves anymore" + CRM automation as table stakes
-- [AI Deal Intelligence](https://www.salesloft.com/resources/guides/how-ai-reshapes-deal-management) — stale deal detection and next-best-action as expected features
-- [AI Sales Coaching 2026](https://www.highspot.com/blog/ai-sales-coaching/) — call prep, objection practice, real-time guidance as minimum expectations
-- ClickUp MCP bot (`bot/src/agents/orchestrator.ts`) — confirmation-first write pattern in production
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| **Theme-adaptive UI** | TMA users expect the app to match their Telegram color scheme (light/dark). Mismatched themes feel broken. | LOW | Use CSS variables from `ThemeParams` (`var(--tg-theme-bg-color)`, etc.). 18+ theme tokens available. Zero design cost if built from the start. |
+| **Back button navigation** | Users expect native-feeling navigation. Without `BackButton`, they get trapped in sub-screens. | LOW | Wire `Telegram.WebApp.BackButton` to your router. Show/hide based on navigation depth. |
+| **MainButton (BottomButton) for primary actions** | The bottom action button is the TMA equivalent of a mobile app's primary CTA. Users look for it. | LOW | Renamed to `BottomButton` in recent API. Supports text, color, loading spinner, shine effect. Use for "Start Training", "Submit Answer", "Save", etc. |
+| **Fast initial load (<2s)** | "White screens kill conversion." TMA sessions are short -- users bail immediately on slow loads. | MEDIUM | Skeleton screens, code splitting, lightweight bundle. Telegram WebView is resource-constrained. |
+| **Session interruption resilience** | Mobile users switch chats constantly. TMA must survive backgrounding/foregrounding dozens of times per session. | MEDIUM | Save state progressively to backend. Never rely solely on in-memory state. Use `activated`/`deactivated` events (Bot API 8.0+) to detect focus changes. |
+| **One-tap auth (zero-friction onboarding)** | TMA auth is automatic via `initData`. Any login wall feels alien. | LOW | Validate `initData` hash server-side. User identity is free. Never ask for username/password. |
+| **Haptic feedback on interactions** | Native apps vibrate on taps and selections. TMAs that don't feel "dead." | LOW | `HapticFeedback.impactOccurred("light")` on button taps, `notificationOccurred("success")` on completions, `selectionChanged()` on option picks. Chainable API. |
+| **Dashboard with key metrics** | Users need an at-a-glance summary: progress, streak, rank. Without it, they don't know where they stand. | MEDIUM | 3-5 key metrics max. Use micro-visualizations (sparklines, progress rings) not full charts. Mobile viewport is small. |
+| **Progress tracking visualization** | Users in learning/training apps expect to see how far they've come. Missing = no motivation loop. | MEDIUM | Progress bars per learning track, completion percentages, streak counters. Keep lightweight -- no heavy charting libraries. |
+| **Responsive mobile-first layout** | TMAs run in WebView. Desktop is secondary. Non-responsive layouts break on phones. | MEDIUM | Design for 360px-width minimum. Respect `safeAreaInset` and `contentSafeAreaInset` (Bot API 8.0+). Test across iOS/Android WebViews. |
+| **Closing confirmation on unsaved state** | Users accidentally swipe away TMAs. Losing in-progress quiz answers is infuriating. | LOW | `Telegram.WebApp.enableClosingConfirmation()` when user has unsaved work. Disable when safe. |
 
----
+### Differentiators (Competitive Advantage)
 
-## Differentiators
+Features that set Deal Quest apart. Not expected in generic TMAs, but high-value for a gamified training platform.
 
-Features that set this bot apart from generic AI assistants and existing v1.0.
-Not expected by default, but create clear "wow" moments.
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| **SecondaryButton for scenario branching** | Two bottom buttons = "Option A" / "Option B" for sales scenario choices. No other training TMA does this natively. | LOW | `SecondaryButton` (Bot API 7.10+) with `position: "top"` places it above MainButton. Perfect for binary scenario decisions with timer. |
+| **Badge wall with collection mechanics** | Visual badge grid showing earned/locked badges. Collecting badges triggers completionist psychology. Creates "share-worthy" moments. | MEDIUM | Locked badges shown as silhouettes. Haptic `notificationOccurred("success")` on badge earn. Consider `shareToStory()` (Bot API 7.8+) to let users share badge achievements to Telegram Stories. |
+| **Animated leaderboard with friend filter** | Leaderboard isn't just global -- filter by "friends" (users who share the same Telegram group). Creates social pressure in team contexts. | MEDIUM | Rankings with position-change animations. Multiple views: global, team/group, weekly. Real-time updates from backend via polling or SSE. |
+| **Timed scenario cards with pressure UX** | Sales scenarios with countdown timer, swipeable cards, and immediate feedback. Creates "flow state" engagement. | HIGH | Card stack UI with swipe gestures. Timer creates urgency. Haptic feedback on correct/incorrect. Requires smooth 60fps animations in WebView. |
+| **Learning track map visualization** | Visual "path" showing lesson nodes, current position, locked/unlocked status. Borrowed from Duolingo's proven UX pattern. | HIGH | SVG or canvas-based path. Nodes represent lessons. Current node highlighted. Locked nodes dimmed. Scroll position saves to DeviceStorage for instant resume. |
+| **Cloud-synced progress across devices** | User starts training on phone, reviews stats on desktop. Progress follows them. | MEDIUM | Use `CloudStorage` (1024 keys, 4096 chars/value) for critical user state (current lesson, badge inventory, settings). Use backend as source of truth; CloudStorage as fast-read cache. |
+| **Native popup for quiz feedback** | Use Telegram's native `showPopup()` for correct/incorrect feedback instead of custom modals. Feels integrated, not web-app-ish. | LOW | `showPopup({title, message, buttons})` with up to 3 buttons. Supports "default", "ok", "destructive" button types. Faster than rendering custom modal. |
+| **QR code scanner for team activities** | In-person sales training: scan QR to join a session, pair with a partner, or check into an event. | LOW | `showScanQrPopup()` (Bot API 6.4+). Returns scanned text via callback. Close with `closeScanQrPopup()`. Useful for blended learning (online + offline). |
+| **Strategy builder with drag-and-drop** | Support mode: users build sales strategies by arranging blocks/cards. Interactive and tactile. | HIGH | Drag-and-drop in WebView is possible but tricky. Must disable `verticalSwipes` to prevent Telegram intercepting gestures. Use `disableVerticalSwipes()` (Bot API 7.7+). |
+| **Casebook browser with search and filters** | Browsable library of sales case studies with category filters, search, and bookmarks. | MEDIUM | List virtualization for performance. Filter chips UI. Bookmark state in CloudStorage for cross-device access. |
+| **DeviceStorage for offline-capable UX** | Cache lesson content, last dashboard state, and user preferences locally. App feels instant on re-open. | LOW | `DeviceStorage` (Bot API 9.0+, 5MB per user per bot). Store serialized lesson content, theme preference, last-viewed screen. Falls back to backend fetch if cache miss. |
+| **Custom branded bottom bar color** | Match the bottom bar to Deal Quest brand colors instead of default Telegram chrome. | LOW | `setBottomBarColor(color)` (Bot API 7.10+). Also `setHeaderColor()` and `setBackgroundColor()` for full brand immersion. |
+| **Add to Home Screen prompt** | Users who add the TMA to their home screen have 3-4x higher retention. | LOW | `addToHomeScreen()` (Bot API 8.0+). Check status with `checkHomeScreenStatus()`. Prompt after first successful training session, not on first visit. |
+| **Full-screen mode for immersive training** | Remove Telegram chrome during active scenario training for maximum focus. | LOW | `requestFullscreen()` (Bot API 8.0+). Combine with `lockOrientation()` for consistent experience. Exit on scenario completion. |
+| **Settings button for preferences** | Clean access point for notification preferences, difficulty level, language. | LOW | `SettingsButton` (Bot API 7.0+). Opens a settings screen within the TMA. Better than cluttering the main UI with a gear icon. |
 
-| Feature | Value Proposition | Complexity | Depends On |
-|---------|-------------------|------------|------------|
-| Memory Agent — learns rep's patterns | Knows preferred close tactics, top objections, historical deal context | High | Memory Agent + structured InsForge memory table |
-| Deal win probability scoring | LLM-assessed probability based on deal age, stage, engagement | Medium | Deal Agent + Strategy Agent analysis |
-| Competitive intel retrieval | "What do we say when they compare us to Competitor X?" | Medium | Strategy Agent + company_knowledge.md |
-| Re-engagement drafting | "Draft a follow-up email for the Acme deal that went cold" | Medium | Strategy Agent |
-| Context-triggered nudges | "Your Acme deal has been silent 5 days — want to draft a follow-up?" | High | Background scheduler + Memory Agent + Deal Agent |
-| Deal pattern recognition | "You tend to lose deals when pricing is raised before value is established" | High | Memory Agent + long-term data |
-| Multi-deal portfolio briefing | "Show me all deals at risk this week" | Medium | Deal Agent multi-query tools |
-| Admin traces/health tools | `/admin traces`, `/admin agents` for debugging new agent system | Low | Extends existing admin handler |
-| Orchestrator fallback to direct answer | If specialist fails/times out, orchestrator answers from context | Medium | Circuit breaker + fallback in orchestrator |
+### Anti-Features (Deliberately NOT Building)
 
-**Sources:**
-- [Inside the AI Sales Agent](https://www.vivun.com/blog/inside-the-ai-sales-agent-memory-reasoning-real-work) — knowledge graphs tracking objections, stakeholders, deal events as differentiator
-- [AI Sales Coaching Benchmarks 2026](https://www.hyperbound.ai/blog/sales-coaching-benchmarks-2026) — personalized coaching based on rep-specific patterns
-- [Agentic CRM 2026](https://aimultiple.com/agentic-crm) — predictive churn prevention, proactive intervention as differentiators
-- ClickUp MCP (`bot/src/agents/orchestrator.ts` L200-230) — timeout + fallback pattern in production
+Features that seem good but create problems. Common mistakes in this domain.
 
----
-
-## Anti-Features
-
-Features to explicitly NOT build in this milestone. Common traps in this domain.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| External CRM sync (HubSpot, Pipedrive) | API complexity, OAuth dance, mapping mismatch — full scope bloat | Bot is the CRM for now; sync is its own future milestone |
-| Autonomous deal mutations without confirmation | Users lose trust instantly if bot changes their data without asking | Always confirm writes via inline keyboard (ClickUp pattern proven) |
-| Win probability as hard number ("73% chance") | LLM confidence scores are noise without calibration data; users will rely on them wrong | Qualitative risk flags ("at risk: no activity 7 days") instead |
-| Full pipeline funnel analytics dashboard | Admin complexity overkill for a Telegram bot at this scale | Simple portfolio summary: "5 active deals, 2 at risk" |
-| Replacing /learn, /train, /support commands | Breaks existing power user workflows; FSM handlers are fast and reliable | Keep them as shortcuts; Coach Agent wraps them for NL routing |
-| Auto-sending follow-up emails | Autonomous external communication is a trust/legal risk before product-market fit | Draft email text for rep to send manually |
-| Multi-user team features | Sharing deals between reps requires permissions model — high scope | Single-user bot for now; team features are future milestone |
-| LLM-only memory (no persistence) | Conversation window memory = amnesia between sessions | InsForge-backed structured memory: user_memory table, deals table |
-| Building a scheduling/calendar agent | Calendar APIs (Google, Outlook) are complex integrations that add scope without core value | "Prep for my call in 30 min" = deal context brief, not calendar booking |
-| Over-engineering agent routing (12 specialist agents) | Too many agents = routing errors + latency + complexity | 4 specialists max (Deal, Coach, Strategy, Memory) — ClickUp uses 3 successfully |
-
-**Sources:**
-- [2026 AI Pilots Failure Analysis](https://theaihat.com/the-2026-sales-reckoning-why-95-of-ai-pilots-fail-and-how-to-join-the-5-who-win/) — autonomous agent failures from lack of human-in-the-loop
-- [Agentic AI Failure Patterns](https://www.concentrix.com/insights/blog/12-failure-patterns-of-agentic-ai-systems/) — escalation/handoff problems, bot detection, over-automation
-- [AI Oversell Reality](https://www.isaca.org/resources/news-and-trends/industry-news/2025/the-reality-of-ai-oversold-and-underdelivered) — validation failures from building without customer discovery
-- PROJECT.md `Out of Scope` section — these are explicitly deferred by design
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| **Real-time multiplayer scenarios** | "Head-to-head sales battles would be exciting" | WebSocket connections in WebView are fragile. Session interruptions kill active games. Sync complexity is massive for a TMA. Over 35% of users ditch overly-gamified apps. | Asynchronous competition via leaderboards. Users complete scenarios independently, compete on scores. Same motivation, fraction of the complexity. |
+| **Frontend business logic** | "Faster to run scoring/AI logic client-side" | Bot already handles all AI/backend logic. Duplicating logic in frontend creates drift, security holes, and increases bundle size. A gaming TMA that stored state in frontend localStorage had to spend $40K on rework when users lost progress across devices. | TMA is purely visual layer. All scoring, AI, and state lives on the backend. TMA renders what the backend sends. |
+| **Heavy charting library (Chart.js/D3)** | "We need beautiful analytics dashboards" | Adds 200-500KB to bundle. Kills load time in WebView. Overkill for the 3-5 metrics users actually need. Dashboards with 3-5 essential charts are far more effective than those crammed with twenty. | Micro-visualizations: CSS-only progress bars, SVG sparklines, HTML/CSS progress rings. Lightweight custom components that render in <100ms. |
+| **Persistent WebSocket connection** | "Real-time updates for leaderboard and notifications" | WebView backgrounding kills connections. Reconnection logic adds complexity. Battery drain on mobile. TMAs are short sessions. | Poll on focus (`activated` event). Push critical updates via Telegram bot notifications (free, native, reliable). |
+| **Custom authentication system** | "We need user accounts with email/password" | TMA provides `initData` with verified user identity for free. Adding a login wall is the #1 conversion killer for TMAs. Users expect zero-friction access. | Use `initData` validation exclusively. Augment with `requestContact()` (Bot API 6.9+) only when phone number is genuinely needed. |
+| **Multi-page website architecture** | "Each feature should be a separate page with its own URL" | TMA is not a website. Full page reloads in WebView are slow and break state. Deep linking is limited. Multi-page creates "white flash" transitions. | Single-Page Application (SPA) with client-side routing. Smooth transitions. State preserved in memory and DeviceStorage. |
+| **Crypto/TON wallet integration** | "Everyone's doing Web3 in TMAs" | Deal Quest is a sales training tool, not a crypto app. Wallet connection adds friction, regulatory burden, and confuses the value proposition. TON policy requires exclusive TON blockchain use if any crypto is involved. | If monetization needed, use Telegram Stars for digital goods (required by policy anyway). Skip crypto entirely. |
+| **Complex drag-and-drop everywhere** | "Make everything draggable for engagement" | Touch gesture conflicts with Telegram's swipe-to-dismiss. Even with `disableVerticalSwipes()`, gesture libraries add 50-100KB and are unreliable in WebView. | Reserve drag-and-drop for the one feature that truly needs it (strategy builder). Use tap-to-select or swipe-cards for everything else. |
+| **Offline-first architecture** | "Users should be able to train without internet" | CloudStorage and DeviceStorage have tiny limits (4MB and 5MB). Service Workers in WebView have inconsistent support. The bot backend is the source of truth. | Cache-enhanced online-first: DeviceStorage caches last session for instant re-open. Gracefully degrade with "reconnecting..." state. Don't promise offline. |
+| **Video lessons embedded in TMA** | "Video tutorials would be rich content" | Video in WebView is resource-heavy, inconsistent across platforms, eats mobile data. Users are in Telegram for quick interactions, not YouTube. | Short text + illustration lessons. If video is essential, use `openLink()` to open in native browser, or send video via bot message (Telegram handles video natively and efficiently). |
 
 ---
 
 ## Feature Dependencies
 
-What must exist before what else can be built. Build order follows the dependency graph.
-
 ```
-FOUNDATION — Build first, everything depends on this
-├── Orchestrator Agent
-│   ├── Natural language routing
-│   ├── Conversation history (sliding window)
-│   ├── Context building (workspace + memory context)
-│   └── Fallback to direct answer on specialist timeout
-│
-├── InsForge deals table (new schema)
-│   ├── Deal creation
-│   ├── Deal stage tracking
-│   └── Deal notes/activity log
-│
-└── Catch-all message handler (replaces FSM for non-command messages)
+[Theme-Adaptive UI]
+    (no dependencies -- build first, everything inherits)
 
-SPECIALIST AGENTS — Require Foundation
-├── Deal Agent (requires: Orchestrator + deals table)
-│   ├── create_deal tool
-│   ├── update_deal tool (confirmation-first)
-│   ├── log_note tool
-│   ├── list_deals tool
-│   └── get_deal_details tool
-│
-├── Coach Agent (requires: Orchestrator + existing /learn, /train pipelines)
-│   ├── objection_practice tool (wraps existing train pipeline)
-│   ├── skill_assessment tool (wraps existing learn pipeline)
-│   └── get_coaching_tip tool
-│
-├── Strategy Agent (requires: Orchestrator + deals table + playbook)
-│   ├── deal_analysis tool (extends existing /support pipeline)
-│   ├── call_prep tool (uses deal context + playbook)
-│   ├── competitive_intel tool (uses company_knowledge.md)
-│   └── draft_followup tool
-│
-└── Memory Agent (requires: Orchestrator + user_memory table)
-    ├── update_memory tool (background, no confirmation needed)
-    ├── get_memory_context tool (read-only)
-    └── pattern_recognition (long-term, accumulative)
+[BackButton Navigation] ──requires──> [SPA Router]
+[MainButton Actions] ──requires──> [SPA Router]
+[SecondaryButton Branching] ──requires──> [MainButton Actions]
 
-PROACTIVE FEATURES — Require Specialist Agents
-├── Daily Briefing (requires: Deal Agent + Coach Agent + background scheduler)
-│   ├── Morning deal portfolio summary
-│   ├── Coaching tip of the day
-│   └── Stale deal alerts
-│
-├── Context-Triggered Nudges (requires: Deal Agent + Memory Agent + scheduler)
-│   ├── Stale deal detection (deal inactive > N days)
-│   ├── Practice streak break alert
-│   └── Re-engagement prompt
-│
-└── Admin Tools (requires: Orchestrator + all agents)
-    ├── /admin agents — agent health status
-    └── /admin traces — trace viewer for new agent system
+[Dashboard]
+    ├──requires──> [Theme-Adaptive UI]
+    ├──requires──> [Backend API Integration]
+    └──enhances──> [Progress Tracking]
+
+[Progress Tracking]
+    ├──requires──> [Backend API Integration]
+    └──enhances──> [Dashboard]
+
+[Badge Wall]
+    ├──requires──> [Backend API Integration]
+    ├──enhances──> [Dashboard] (badge count widget)
+    └──enhances──> [Leaderboard] (badge icons on rankings)
+
+[Leaderboard]
+    ├──requires──> [Backend API Integration]
+    └──enhances──> [Dashboard] (rank widget)
+
+[Timed Scenario Cards (Train)]
+    ├──requires──> [MainButton Actions]
+    ├──requires──> [SecondaryButton Branching]
+    ├──requires──> [Haptic Feedback]
+    └──requires──> [Backend API Integration]
+
+[Learning Track Map (Learn)]
+    ├──requires──> [Progress Tracking]
+    ├──requires──> [Backend API Integration]
+    └──enhances──> [Dashboard] (current lesson widget)
+
+[Casebook Browser]
+    ├──requires──> [Backend API Integration]
+    └──independent of other features
+
+[Strategy Builder (Support)]
+    ├──requires──> [Backend API Integration]
+    ├──requires──> [disableVerticalSwipes]
+    └──independent of other features
+
+[Admin Dashboard]
+    ├──requires──> [Backend API Integration]
+    ├──requires──> [Role-based Access Control]
+    └──independent of user-facing features
+
+[CloudStorage Caching] ──enhances──> [All features] (faster re-open)
+[DeviceStorage Caching] ──enhances──> [All features] (instant resume)
+[Add to Home Screen] ──enhances──> [Retention] (prompt after first success)
 ```
 
-**Critical path for working MVP:**
-Orchestrator → deals table → Deal Agent → Confirmation flow → Conversation history
+### Dependency Notes
 
-Everything else builds on top of that sequence.
-
----
-
-## ClickUp MCP Patterns That Transfer Directly
-
-The ClickUp bot is a production reference for the exact architecture being built.
-These patterns transfer to the sales domain with adaptation notes.
-
-### Pattern 1: BaseAgent Tool-Use Loop
-**What (ClickUp):** `BaseAgent.run()` — while loop calling LLM, executing tools, accumulating
-messages until no tool calls returned. Max iterations cap prevents runaway loops.
-
-**Transfer to Sales:** Identical pattern. Each sales specialist (Deal, Coach, Strategy, Memory)
-extends the same loop. Config-driven via agents.yaml (model, tools list, max_iterations, prompt_file).
-
-**Python adaptation:** Replace TypeScript class with Python async class. `while iterations < max_iterations:`
-loop with `await llm_router.complete()` + tool dispatch dict.
-
-**Source:** `bot/src/agents/base-agent.ts` L205-471
+- **Theme-Adaptive UI is foundational:** Every component inherits theme tokens. Must be the first thing built. Retrofitting is painful.
+- **SPA Router is infrastructure:** BackButton, MainButton, and all screen transitions depend on client-side routing. Choose router before building any screens.
+- **Backend API Integration is ubiquitous:** Every data-displaying feature depends on it. Define API contract early.
+- **SecondaryButton requires MainButton:** The two-button layout only works when MainButton is already wired. SecondaryButton positions relative to MainButton.
+- **Badge Wall enhances multiple features:** Badges appear on Dashboard and Leaderboard. Build Badge Wall after those, but design the badge data model early.
+- **Admin Dashboard is independent:** Can be built in parallel with user-facing features. Shares backend API but has separate UI.
+- **Strategy Builder is the riskiest feature:** Depends on drag-and-drop in WebView, which is the most fragile interaction pattern. Build last, after all stable features ship.
 
 ---
 
-### Pattern 2: Confirmation-First Writes
-**What (ClickUp):** Write tools return `{confirmation_needed: true, action, details}` JSON instead
-of executing. Orchestrator short-circuits, calls `buildConfirmationMessage()`, returns inline keyboard.
-On user "Confirm" tap, handler executes the actual write.
+## MVP Definition
 
-**Transfer to Sales:** All Deal Agent write tools (create_deal, update_deal, log_note) use this
-pattern. "Create deal: Acme $50K Q2 close — Confirm?" before any InsForge mutation.
+### Launch With (v1)
 
-**Python adaptation:** `InlineKeyboardBuilder` in aiogram 3, callback_query handler executes
-pending action stored in user session or in a `pending_confirmations` InsForge table keyed by user_id.
+Minimum viable TMA -- what validates that a visual layer adds value over the bot-only experience.
 
-**Source:** `bot/src/tools/write-tools.ts` (all write tools), `bot/src/agents/confirmation-message.ts`,
-`bot/src/agents/orchestrator.ts` L757-775 (short-circuit on confirmation payload)
+- [ ] **Theme-adaptive UI shell** -- branded but respects Telegram themes; instant credibility
+- [ ] **SPA router with BackButton/MainButton** -- native-feeling navigation; without this, the app feels broken
+- [ ] **Dashboard screen** -- 3-5 key metrics (streak, rank, badges earned, lessons completed); micro-visualizations only
+- [ ] **Learn mode: lesson card viewer** -- display lesson content from backend; simple card stack, no map yet
+- [ ] **Train mode: scenario cards with timer** -- the core differentiator; timed scenarios with MainButton/SecondaryButton for choices
+- [ ] **Haptic feedback on all interactions** -- tiny effort, massive feel improvement
+- [ ] **Closing confirmation during active training** -- prevent accidental loss of in-progress scenarios
+- [ ] **Session state persistence** -- save current screen and in-progress answers to backend on every interaction
 
----
+### Add After Validation (v1.x)
 
-### Pattern 3: Orchestrator Summary Injection
-**What (ClickUp):** Orchestrator builds `orchestratorSummary` string, injects it into specialist
-agent system prompt via `{{orchestrator_context}}` placeholder. Specialist gets routing context
-("user wants to update a task in the Engineering list") without re-reading full conversation.
+Features to add once the core loop (dashboard -> learn -> train) is validated with real users.
 
-**Transfer to Sales:** Orchestrator summarizes intent before invoking Deal/Coach/Strategy agents.
-"User wants to log a note on their Acme deal — they mentioned competitor pricing came up."
+- [ ] **Badge wall** -- trigger: users ask "where are my badges?" or engagement metrics show badge-earning doesn't increase retention (because users can't see them)
+- [ ] **Leaderboard with friend filter** -- trigger: team/group usage grows beyond individual users
+- [ ] **Learning track map** -- trigger: users have >10 lessons and navigation by list becomes unwieldy
+- [ ] **Casebook browser** -- trigger: casebook content library reaches critical mass (>20 cases)
+- [ ] **CloudStorage + DeviceStorage caching** -- trigger: load times measured >2s or users report "slow app"
+- [ ] **Add to Home Screen prompt** -- trigger: Day-7 retention data available to measure if prompt timing matters
+- [ ] **Full-screen mode for training** -- trigger: user feedback requests "less distraction during scenarios"
+- [ ] **SettingsButton** -- trigger: preferences exist that users need to change (notification frequency, difficulty)
 
-**Source:** `bot/src/agents/base-agent.ts` L252-254 (prompt template substitution)
+### Future Consideration (v2+)
 
----
+Features to defer until product-market fit is established and user base is meaningful.
 
-### Pattern 4: Specialist Timeout + Fallback
-**What (ClickUp):** Each specialist invocation has a 30s timeout. On timeout or error,
-orchestrator receives `{error: "Specialist timed out — handle directly"}` and LLM answers from
-its workspace context knowledge without the specialist.
-
-**Transfer to Sales:** Same pattern. If Deal Agent times out during "What are my active deals?",
-orchestrator answers from memory context. Prevents user-facing errors on LLM provider flakiness.
-
-**Source:** `bot/src/agents/orchestrator.ts` L191-229 (`invokeSpecialistTool` with `Promise.race`)
-
----
-
-### Pattern 5: Graph Memory + Short-Term Activity Digest
-**What (ClickUp):** Two memory layers injected into every prompt:
-1. `graphContext` — PostgreSQL knowledge graph (persons, projects, decisions, blockers) queried
-   by keyword analysis on current message
-2. `recentActivityDigest` — last 24h sessions summary (what was worked on recently)
-
-**Transfer to Sales:** Translate directly:
-1. `dealContext` — deals table + user_memory table (patterns, preferences, top objections)
-2. `recentActivityDigest` — last session summary (what deals were discussed, what was practiced)
-
-Keyword routing for graph queries is a proven shortcut to avoid LLM for memory retrieval.
-
-**Source:** `bot/src/graph/memory.ts` L36-80, `bot/src/agents/orchestrator.ts` L289-306
+- [ ] **Strategy builder (Support mode)** -- drag-and-drop is high-risk in WebView; defer until core engagement proven
+- [ ] **Admin dashboard in TMA** -- admin can use bot commands initially; TMA admin panel is a polish feature
+- [ ] **QR scanner for team events** -- requires in-person training use case to be validated first
+- [ ] **Share to Telegram Stories** -- requires badge wall to exist and users to value sharing
+- [ ] **Custom branded animations** -- Lottie or GSAP animations for badge earn, level up, scenario completion; polish layer
+- [ ] **Biometric auth for admin actions** -- `BiometricManager` (Bot API 7.2+) for sensitive admin operations; low priority until admin TMA exists
 
 ---
 
-### Pattern 6: Agents.yaml Config-Driven Architecture
-**What (ClickUp):** `agents.yaml` defines each agent: `model`, `prompt_file`, `tools: [list]`,
-`max_iterations`. `config-loader.ts` reads this at startup. Adding a new agent = new YAML entry.
+## Feature Prioritization Matrix
 
-**Transfer to Sales:** Same structure. `bot/data/agents.yaml` (or alongside existing pipelines).
-Each agent definition says which model, which prompt file, which tools it can call.
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Theme-adaptive UI | HIGH | LOW | **P1** |
+| SPA router + BackButton/MainButton | HIGH | LOW | **P1** |
+| Dashboard (micro-viz) | HIGH | MEDIUM | **P1** |
+| Train mode (scenario cards + timer) | HIGH | HIGH | **P1** |
+| Learn mode (lesson cards) | HIGH | MEDIUM | **P1** |
+| Haptic feedback | MEDIUM | LOW | **P1** |
+| Closing confirmation | MEDIUM | LOW | **P1** |
+| Session state persistence | HIGH | MEDIUM | **P1** |
+| Badge wall | HIGH | MEDIUM | **P2** |
+| Leaderboard | HIGH | MEDIUM | **P2** |
+| Learning track map | MEDIUM | HIGH | **P2** |
+| Casebook browser | MEDIUM | MEDIUM | **P2** |
+| Cloud/Device caching | MEDIUM | LOW | **P2** |
+| Add to Home Screen | MEDIUM | LOW | **P2** |
+| Full-screen training | LOW | LOW | **P2** |
+| SettingsButton | LOW | LOW | **P2** |
+| SecondaryButton (scenario branching) | HIGH | LOW | **P1** |
+| Strategy builder (drag-and-drop) | MEDIUM | HIGH | **P3** |
+| Admin dashboard (TMA) | LOW | HIGH | **P3** |
+| QR scanner (team events) | LOW | LOW | **P3** |
+| Share to Stories | LOW | LOW | **P3** |
+| Custom animations | LOW | MEDIUM | **P3** |
 
-**Source:** `bot/src/agents/config-loader.ts`, ClickUp `agent/config/` directory
-
----
-
-## MVP Recommendation
-
-### Phase 1: Core Infrastructure (Build first — everything depends on this)
-
-**Must Have:**
-1. Orchestrator Agent — routes natural language to specialists
-2. Catch-all message handler — intercepts non-command messages, sends to orchestrator
-3. Conversation history — sliding window (last 10 turns) per user in memory
-4. InsForge deals table — schema for deals, stages, notes
-5. Basic Deal Agent — read tools only (list deals, get deal details)
-6. Agents.yaml config — Python adaptation of ClickUp config pattern
-
-**Why this order:** Can demo "tell me about my deals" without write tools yet. Validates
-routing before adding CRM mutations.
-
-**Existing features preserved as:** Commands stay as shortcuts. `/support` still works. NL
-"help me with my Acme deal" → Strategy Agent → wraps existing support pipeline.
-
----
-
-### Phase 2: CRM Writes + Coaching Integration (Add value)
-
-**Must Have:**
-7. Deal Agent write tools (create_deal, update_deal, log_note) + confirmation flow
-8. Coach Agent — wraps /learn and /train for NL routing ("practice the pricing objection")
-9. Strategy Agent — wraps /support + adds call prep + competitive intel tools
-10. Memory Agent — background memory updates after each conversation
-
-**Why this order:** Confirmation flow is highest-risk implementation (inline keyboards, pending
-state management) — get it right before adding more write operations.
+**Priority key:**
+- **P1:** Must have for launch -- the core training loop
+- **P2:** Should have, add when validated -- engagement and retention layer
+- **P3:** Nice to have, future consideration -- polish and expansion
 
 ---
 
-### Phase 3: Proactive Features (The differentiators)
+## Competitor Feature Analysis
 
-**Must Have:**
-11. Daily briefing — morning combined message (deal summary + coaching nudge)
-12. Stale deal nudges — background scheduler checks deals inactive > 5 days
-
-**Defer until proven need:**
-- Win probability scoring (requires enough deal history to be meaningful)
-- Deal pattern recognition (requires weeks of data)
-- Context-triggered nudges beyond stale deals (complex signal detection)
-- Admin agent traces tools (can extend existing admin handler ad hoc)
-
----
-
-## Complexity Assessment
-
-| Feature | Dev Time | Risk | Value | Phase |
-|---------|----------|------|-------|-------|
-| Orchestrator Agent | 3-4 days | High (LLM routing quality) | Critical | 1 |
-| Catch-all handler + routing | 1 day | Low | Critical | 1 |
-| Conversation history | 1 day | Low | High | 1 |
-| Deals InsForge table | 1-2 days | Low | Critical | 1 |
-| Deal Agent read tools | 2 days | Low | High | 1 |
-| Agents.yaml config system | 1 day | Low | High | 1 |
-| Deal Agent write tools + confirmation | 2-3 days | Medium | High | 2 |
-| Coach Agent (wraps existing) | 1-2 days | Low | High | 2 |
-| Strategy Agent (wraps existing) | 2 days | Low | High | 2 |
-| Memory Agent | 2-3 days | Medium | Medium | 2 |
-| Daily briefing scheduler | 1-2 days | Low | High | 3 |
-| Stale deal nudges | 1 day | Low | High | 3 |
-| Admin agent health tools | 1 day | Low | Medium | 3 |
-
-**Total Phase 1:** ~8-10 days (2 weeks)
-**Total Phase 2:** ~7-10 days (2 weeks)
-**Total Phase 3:** ~3-4 days (1 week)
-
-**Total v2.0:** 5-6 weeks
+| Feature | Crazy Llama English (TMA) | BullBeary (TMA) | TON Blockchain Course (TMA) | Duolingo (native app) | Deal Quest Approach |
+|---------|--------------------------|-----------------|---------------------------|----------------------|---------------------|
+| Daily quizzes | Yes, AI-powered | No | Yes, module-based | Yes, streak-based | Yes -- timed scenario cards with sales context |
+| Points/badges | Points + levels | Rewards + airdrops | Completion badges | XP + crowns + gems | Badges for milestones, no points inflation |
+| Leaderboard | Global + streak | Global | Per-quiz | Global + friends + leagues | Global + team filter (Telegram group-based) |
+| Progress tracking | Streak counter | Basic | Module completion % | Skill tree + hearts | Learning track map (v1.x) + dashboard metrics (v1) |
+| Haptic feedback | Unknown | Unknown | Unknown | Yes, extensive | Yes -- every interaction, three feedback types |
+| Scenario simulation | No | No | No | No | **Core differentiator** -- branching sales scenarios with timer |
+| Offline mode | No | No | No | Yes (paid) | No -- cache-enhanced online-first |
+| Native TMA integration | Basic | Basic | Basic | N/A (native app) | **Deep** -- MainButton, SecondaryButton, BackButton, popups, haptics, CloudStorage, fullscreen |
+| Share achievements | No | No | No | Yes (social) | Share to Stories (v2+) |
+| Admin panel | Unknown | Unknown | Unknown | Yes (web) | Bot-first, TMA admin in v2+ |
 
 ---
 
-## Feature-to-Existing-Code Dependencies
+## TMA API Capabilities Reference (for implementation)
 
-Existing v1.0 code that v2.0 builds on (do not break):
+For the downstream requirements team, here is the complete set of TMA-specific APIs relevant to Deal Quest, with version requirements:
 
-| Existing Feature | How v2.0 Uses It |
-|-----------------|-----------------|
-| `bot/agents/strategist.py` | Strategy Agent wraps this — `/support` pipeline still fires, just routed via NL |
-| `bot/agents/trainer.py` | Coach Agent wraps this — `/learn` + `/train` pipelines reused |
-| `bot/agents/memory.py` | Memory Agent extends this — background memory updates continue |
-| `bot/services/llm_router.py` | All new agents use this for LLM calls — no new HTTP client needed |
-| `bot/pipeline/runner.py` | Existing pipelines still run through PipelineRunner for /learn /train /support |
-| `bot/tracing/` | `@traced_span` decorators apply to new agents unchanged |
-| `bot/storage/repositories.py` | New repositories extend same pattern (DealRepo, ConversationRepo) |
-| `bot/handlers/admin.py` | New admin commands (traces, agents) extend existing admin handler |
-| `followup_scheduler.py` | Daily briefing and stale deal nudges extend existing scheduler pattern |
-
-**Critical constraint:** New orchestrator catch-all handler must NOT intercept messages
-intended for existing FSM-based flows (/learn, /train wizard steps). Solution from ClickUp:
-orchestrator only handles messages NOT in active FSM state. Check `state is None` before routing.
-
----
-
-## Confidence Assessment
-
-| Area | Confidence | Rationale |
-|------|------------|-----------|
-| Table stakes features | HIGH | Multiple 2026 sources agree; ClickUp production reference confirms patterns |
-| Differentiator features | HIGH | Vivun, Highspot, aimultiple sources confirm; ClickUp graph memory is working production code |
-| Anti-features | HIGH | 2026 failure analysis + PROJECT.md explicit out-of-scope decisions |
-| ClickUp pattern transfer | HIGH | Source code analyzed directly; same language patterns (LLM tool-use, confirmation, memory) |
-| Complexity estimates | MEDIUM | Estimates based on ClickUp implementation scale + existing bot codebase familiarity |
-| Phase ordering | HIGH | Dependency graph is clear; confirmed by working ClickUp implementation order |
-
----
-
-## Open Questions
-
-1. **Deals table schema:** What pipeline stages match this product's domain? (e.g., Prospecting → Qualifying → Proposal → Negotiation → Closed Won/Lost) — define before building Deal Agent write tools.
-
-2. **Conversation history storage:** ClickUp uses in-memory `ConversationHistory` singleton (lost on restart). Should v2.0 persist to InsForge for durability? For a single-process aiogram bot, in-memory is fine; flag if restart frequency is a concern.
-
-3. **Orchestrator model selection:** ClickUp uses OpenRouter with a capable model for orchestrator (routing quality matters most here). Current default `z-ai/glm-5` may not be strong enough for reliable routing — consider using `openai/gpt-oss-120b` (already the new default from recent commit) specifically for orchestrator.
-
-4. **Memory Agent trigger:** When does Memory Agent run — after every message (costly), or only on conversation end signal? ClickUp runs background memory updates. Recommend: background task after each agent response, same pattern as existing `bot/agents/memory.py`.
-
-5. **Stale deal threshold:** What is "stale" — 3 days? 7 days? Should be configurable per user or per deal stage. Define sensible defaults in config.
+| API | Min Bot API Version | Relevance to Deal Quest |
+|-----|---------------------|------------------------|
+| `ThemeParams` (18+ color tokens) | 6.0 | Theme-adaptive UI |
+| `BackButton` | 6.0 | Navigation |
+| `MainButton` / `BottomButton` | 6.0 (renamed 7.10) | Primary CTAs |
+| `SecondaryButton` | 7.10 | Scenario branching |
+| `HapticFeedback` (3 methods) | 6.1 | Tactile feedback |
+| `setHeaderColor` / `setBackgroundColor` | 6.1 | Branding |
+| `showPopup` / `showAlert` / `showConfirm` | 6.2 | Native feedback dialogs |
+| `enableClosingConfirmation` | 6.2 | Prevent accidental close |
+| `showScanQrPopup` | 6.4 | QR for team events |
+| `readTextFromClipboard` | 6.4 | Copy/paste support |
+| `switchInlineQuery` | 6.7 | Share bot inline |
+| `CloudStorage` (1024 items, 4096 chars each) | 6.9 | Cross-device state cache |
+| `requestWriteAccess` | 6.9 | Bot messaging permission |
+| `requestContact` | 6.9 | Phone number (if needed) |
+| `SettingsButton` | 7.0 | Settings access point |
+| `BiometricManager` | 7.2 | Admin auth (v2+) |
+| `disableVerticalSwipes` | 7.7 | Strategy builder gestures |
+| `shareToStory` | 7.8 | Badge sharing |
+| `setBottomBarColor` | 7.10 | Brand color bottom bar |
+| `requestFullscreen` / `exitFullscreen` | 8.0 | Immersive training |
+| `lockOrientation` | 8.0 | Consistent training UX |
+| `addToHomeScreen` | 8.0 | Retention boost |
+| `safeAreaInset` / `contentSafeAreaInset` | 8.0 | Proper layout |
+| `activated` / `deactivated` events | 8.0 | Session interruption handling |
+| `downloadFile` | 8.0 | Export certificates/reports |
+| `DeviceStorage` (5MB per user) | 9.0 | Local cache |
+| `SecureStorage` (10 items, encrypted) | 9.0 | Sensitive tokens |
+| `hideKeyboard` | 9.1 | Clean UX after input |
 
 ---
 
 ## Sources
 
-### AI Sales Assistant Feature Landscape (2026)
-- [13 AI Sales Assistant Tools 2026 — Outdoo AI](https://www.outdoo.ai/blog/ai-sales-assistants) — table stakes vs differentiators
-- [Top 11 AI Sales Assistants 2026 — Sintra AI](https://sintra.ai/blog/top-11-ai-sales-assistants-in-2025) — feature comparison
-- [Best AI Sales Tools 2026 — Sybill](https://www.sybill.ai/blogs/ai-sales-tools) — deal management features
-- [15 Best AI Sales Tools 2026 — SPOTIO](https://spotio.com/blog/ai-sales-tools/) — coaching and pipeline features
+- [Telegram Mini Apps Official Documentation](https://core.telegram.org/bots/webapps) -- HIGH confidence, primary source for all API details
+- [Telegram Mini Apps Community Docs (tma.js)](https://docs.telegram-mini-apps.com/platform/methods) -- HIGH confidence, verified against official docs
+- [Mini App UX in Telegram: First On-Chain Action in 60 Seconds (FreeBlock)](https://freeblock.medium.com/longread-3-7-mini-app-ux-in-telegram-how-to-get-users-to-a-first-on-chain-action-in-60-seconds-355236d97df5) -- MEDIUM confidence, UX patterns from practitioner
+- [Telegram Mini App Ecosystem Explained (Nadcab)](https://www.nadcab.com/blog/telegram-mini-apps-ecosystem-explained) -- MEDIUM confidence, architecture patterns and anti-patterns
+- [Viral Telegram Games: Mechanics & Strategies (PixelPlex)](https://pixelplex.io/blog/viral-mechanics-on-telegram-apps/) -- MEDIUM confidence, gamification patterns
+- [Gamified Telegram Mini Apps (Monetag)](https://monetag.com/blog/gamified-telegram-mini-apps/) -- MEDIUM confidence, gamification mechanics
+- [Educational Mini Apps on Telegram (Monetag)](https://monetag.com/blog/learning-through-telegram-mini-apps/) -- MEDIUM confidence, education-specific patterns
+- [1000+ Users Engaged: TMA for Education (TechHub Asia)](https://techhub.asia/portfolio/telegram-mini-apps/) -- MEDIUM confidence, case study with metrics
+- [TMA Development Case Study (CodeRower)](https://coderower.com/case-studies/telegram-mini-apps-development) -- MEDIUM confidence, implementation patterns
+- [Telegram Mini Apps UI Kit (Figma)](https://www.figma.com/community/file/1348989725141777736/telegram-mini-apps-ui-kit) -- HIGH confidence, official community design resource
+- [Dashboard Design Principles 2025 (UXPin)](https://www.uxpin.com/studio/blog/dashboard-design-principles/) -- MEDIUM confidence, general dashboard UX
+- [Gamification in UX Design 2025 (Arounda)](https://arounda.agency/blog/gamification-in-product-design-in-2024-ui-ux) -- MEDIUM confidence, gamification patterns
+- [Gamification in eLearning Examples (Elucidat)](https://www.elucidat.com/blog/gamification-in-elearning-examples/) -- MEDIUM confidence, training-specific gamification
+- [Best Telegram Mini Apps 2026 (PropellerAds)](https://propellerads.com/blog/adv-best-telegram-mini-apps/) -- MEDIUM confidence, ecosystem overview
+- [Admin Panel for Telegram Bots (Graspil)](https://graspil.com/post/admin_panel_for_telegram_bor_and_mini_app/) -- LOW confidence, single source for admin patterns
+- [TMA SecondaryButton Documentation](https://docs.telegram-mini-apps.com/packages/telegram-apps-sdk/2-x/components/secondary-button) -- HIGH confidence, SDK documentation
 
-### AI Sales Coaching
-- [AI Sales Coaching — Highspot](https://www.highspot.com/blog/ai-sales-coaching/) — must-have features, 36% win rate improvement
-- [AI Sales Coaching Platforms 2026 — Cirrus Insight](https://www.cirrusinsight.com/blog/ai-sales-coaching) — proactive coaching trend
-- [Sales Coaching Benchmarks 2026 — Hyperbound](https://www.hyperbound.ai/blog/sales-coaching-benchmarks-2026) — objection practice, roleplay
-
-### Agentic CRM / Deal Management
-- [Agentic CRM Platforms 2026 — aimultiple](https://aimultiple.com/agentic-crm) — agentic vs traditional CRM
-- [Agentic AI CRM 2026 — SaasPodium](https://www.saaspodium.com/crm-software/agentic-ai-crm-agentic-ai-sales-automation-2026) — explainable AI, human-in-loop as table stakes
-- [AI Deal Intelligence — Salesloft](https://www.salesloft.com/resources/guides/how-ai-reshapes-deal-management) — stale deal detection, next-best-action
-
-### AI Sales Agent Memory & Architecture
-- [Inside the AI Sales Agent — Vivun](https://www.vivun.com/blog/inside-the-ai-sales-agent-memory-reasoning-real-work) — persistent memory, knowledge graphs, proactive action
-- [AI Agent Memory — IBM](https://www.ibm.com/think/topics/ai-agent-memory) — LTM vs STM patterns
-- [Context Personalization — OpenAI Cookbook](https://cookbook.openai.com/examples/agents_sdk/context_personalization) — state management with long-term memory
-
-### Multi-Agent Architecture Reference
-- ClickUp MCP Bot source: `/Users/dmytrolevin/Desktop/clickup mcp/bot/src/agents/` — production implementation
-  - `base-agent.ts` — tool-use loop pattern
-  - `orchestrator.ts` — routing, timeout/fallback, confirmation short-circuit
-  - `confirmation-message.ts` — confirmation message builder
-  - `graph/memory.ts` — dual-memory (graph + session) pattern
-  - `memory/store.ts` — SQLite-backed memory index (adapt to InsForge)
-
-### Failure Analysis (Anti-Features)
-- [2026 AI Pilot Failure — The AI Hat](https://theaihat.com/the-2026-sales-reckoning-why-95-of-ai-pilots-fail-and-how-to-join-the-5-who-win/)
-- [Agentic AI Failure Patterns — Concentrix](https://www.concentrix.com/insights/blog/12-failure-patterns-of-agentic-ai-systems/)
-- [AI Oversell Reality 2025 — ISACA](https://www.isaca.org/resources/news-and-trends/industry-news/2025/the-reality-of-ai-oversold-and-underdelivered)
+---
+*Feature research for: Deal Quest TMA -- Gamified Sales Training Platform*
+*Researched: 2026-02-01*

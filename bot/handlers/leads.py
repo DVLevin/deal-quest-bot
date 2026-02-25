@@ -17,10 +17,12 @@ from aiogram.types import (
 )
 
 from bot.services.engagement import EngagementService
+from bot.services.llm_router import web_research_call
 from bot.states import LeadEngagementState
 from bot.storage.models import LeadActivityModel
-from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, UserRepo
+from bot.storage.repositories import LeadActivityRepo, LeadRegistryRepo, ScheduledReminderRepo, UserRepo
 from bot.utils import _sanitize, truncate_message
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,10 @@ STATUS_ORDER = list(STATUS_LABELS.keys())
 
 def _lead_display_name(lead) -> str:
     """Consistent display name for a lead."""
+    if lead.prospect_first_name and lead.prospect_last_name:
+        return f"{lead.prospect_first_name} {lead.prospect_last_name}"
+    if lead.prospect_first_name:
+        return lead.prospect_first_name
     return lead.prospect_name or f"Prospect #{lead.id}"
 
 
@@ -89,10 +95,25 @@ def _leads_list_keyboard(leads: list, page: int = 0, page_size: int = 5) -> Inli
 
 
 def _lead_detail_keyboard(
-    lead_id: int, current_status: str, has_plan: bool = False, has_draft: bool = False,
+    lead_id: int,
+    current_status: str,
+    has_plan: bool = False,
+    has_draft: bool = False,
+    has_research: bool = False,
+    research_version_count: int = 0,
+    has_pending_reanalysis: bool = False,
 ) -> InlineKeyboardMarkup:
     """Build expanded lead detail keyboard with engagement actions."""
     buttons = []
+
+    # Pending re-analysis row (if applicable) - show prominently at top
+    if has_pending_reanalysis:
+        buttons.append([
+            InlineKeyboardButton(
+                text="🔄 Re-analyze Strategy (Pending)",
+                callback_data=f"reanalyze:start:{lead_id}",
+            ),
+        ])
 
     # Refresh + Plan row
     top_row = [
@@ -108,10 +129,21 @@ def _lead_detail_keyboard(
         ))
     buttons.append(top_row)
 
-    # Engagement actions
+    # Research row: Re-research button + View Versions if multiple
+    research_row = [
+        InlineKeyboardButton(text="🔬 Re-research", callback_data=f"lead:reresearch:{lead_id}"),
+    ]
+    if research_version_count > 1:
+        research_row.append(InlineKeyboardButton(
+            text=f"📚 Versions ({research_version_count})",
+            callback_data=f"lead:versions:{lead_id}",
+        ))
+    buttons.append(research_row)
+
+    # Engagement actions (context:add routes to new multimodal context_input handler)
     buttons.append([
         InlineKeyboardButton(
-            text="📝 Add Update", callback_data=f"lead:context:{lead_id}"
+            text="📝 Add Context", callback_data=f"context:add:{lead_id}"
         ),
         InlineKeyboardButton(
             text="🧠 Get Advice", callback_data=f"lead:advice:{lead_id}"
@@ -158,6 +190,7 @@ def _format_lead_detail(lead) -> str:
     name = _lead_display_name(lead)
     title = lead.prospect_title or ""
     company = lead.prospect_company or ""
+    geography = lead.prospect_geography or ""
     status_label = STATUS_LABELS.get(lead.status, lead.status)
     photo_line = "📸 Photo saved\n" if lead.photo_url else ""
     date = (lead.created_at or "")[:10]
@@ -167,6 +200,8 @@ def _format_lead_detail(lead) -> str:
         text += f"{_sanitize(title)}\n"
     if company:
         text += f"🏢 {_sanitize(company)}\n"
+    if geography:
+        text += f"🌍 {_sanitize(geography)}\n"
     text += (
         f"Status: {status_label}\n"
         f"Date: {date}\n"
@@ -291,7 +326,7 @@ def _format_lead_detail(lead) -> str:
 
 
 @router.message(Command("leads"))
-async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegistryRepo) -> None:
+async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegistryRepo, tma_url: str = "") -> None:
     """Show the user's lead registry."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
 
@@ -303,12 +338,14 @@ async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegist
     leads = await lead_repo.get_for_user(tg_id, limit=50)
 
     if not leads:
+        keyboard = add_open_in_app_row(None, tma_url, "leads")
         await message.answer(
             "📋 *Lead Registry*\n\n"
             "No leads yet. Use /support to analyze a prospect — "
             "every analysis is automatically saved here.\n\n"
             "Send a photo or text description of a prospect to get started.",
             parse_mode="Markdown",
+            reply_markup=keyboard,
         )
         return
 
@@ -331,13 +368,15 @@ async def cmd_leads(message: Message, user_repo: UserRepo, lead_repo: LeadRegist
 
     summary = "\n".join(summary_lines) if summary_lines else "  No leads yet"
 
+    kb = _leads_list_keyboard(leads)
+    kb = add_open_in_app_row(kb, tma_url, "leads")
     await message.answer(
         f"📋 *Lead Registry*\n\n"
         f"Total: {len(leads)} leads ({photo_count} with photos, {enriched_count} with plans)\n\n"
         f"{summary}\n\n"
         f"Tap a lead to view details, manage plan, or get AI advice:",
         parse_mode="Markdown",
-        reply_markup=_leads_list_keyboard(leads),
+        reply_markup=kb,
     )
 
 
@@ -375,11 +414,24 @@ async def on_lead_view(
         lead.draft_response
         and lead.draft_response.strip() not in ("", "{}", "null")
     )
+    has_research = bool(lead.web_research)
+    research_version_count = len(
+        (lead.web_research_versions or {}).get("versions", [])
+    )
+    has_pending_reanalysis = bool(lead.notes and "[Pending re-analysis]" in lead.notes)
 
     await callback.message.edit_text(  # type: ignore[union-attr]
         truncate_message(text),
         parse_mode="Markdown",
-        reply_markup=_lead_detail_keyboard(lead_id, lead.status, has_plan, has_draft),
+        reply_markup=_lead_detail_keyboard(
+            lead_id,
+            lead.status,
+            has_plan,
+            has_draft,
+            has_research,
+            research_version_count,
+            has_pending_reanalysis,
+        ),
         disable_web_page_preview=True,
     )
     await callback.answer()
@@ -387,17 +439,44 @@ async def on_lead_view(
 
 @router.callback_query(F.data.startswith("lead:status:"))
 async def on_lead_status_update(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    user_repo: UserRepo,
+    activity_repo: LeadActivityRepo,
 ) -> None:
-    """Update a lead's status."""
+    """Update a lead's status and award XP on closed_won."""
     parts = callback.data.split(":")  # type: ignore[union-attr]
     lead_id = int(parts[2])
     new_status = parts[3]
+    tg_id = callback.from_user.id
 
     await lead_repo.update_status(lead_id, new_status)
 
-    status_label = STATUS_LABELS.get(new_status, new_status)
-    await callback.answer(f"Updated to {status_label}")
+    # Award XP on deal closure with double-fire guard
+    if new_status == "closed_won":
+        # Check if XP was already awarded for this lead (prevents double-fire from TMA + bot)
+        existing_activities = await activity_repo.get_for_lead(lead_id, limit=50)
+        already_awarded = any(a.activity_type == "xp_award" for a in existing_activities)
+
+        if not already_awarded:
+            await user_repo.update_xp(tg_id, 500)
+            # Insert xp_award guard marker so TMA side won't double-award
+            await activity_repo.create(
+                LeadActivityModel(
+                    lead_id=lead_id,
+                    telegram_id=tg_id,
+                    activity_type="xp_award",
+                    content="Deal closure XP: +500",
+                    metadata={"xp_amount": 500, "source": "bot"},
+                )
+            )
+            await callback.answer("Deal Won! +500 XP")
+        else:
+            status_label = STATUS_LABELS.get(new_status, new_status)
+            await callback.answer(f"Updated to {status_label} (XP already awarded)")
+    else:
+        status_label = STATUS_LABELS.get(new_status, new_status)
+        await callback.answer(f"Updated to {status_label}")
 
     # Refresh the lead detail view
     lead = await lead_repo.get_by_id(lead_id)
@@ -408,11 +487,24 @@ async def on_lead_status_update(
             lead.draft_response
             and lead.draft_response.strip() not in ("", "{}", "null")
         )
+        has_research = bool(lead.web_research)
+        research_version_count = len(
+            (lead.web_research_versions or {}).get("versions", [])
+        )
+        has_pending_reanalysis = bool(lead.notes and "[Pending re-analysis]" in lead.notes)
 
         await callback.message.edit_text(  # type: ignore[union-attr]
             truncate_message(text),
             parse_mode="Markdown",
-            reply_markup=_lead_detail_keyboard(lead_id, new_status, has_plan, has_draft),
+            reply_markup=_lead_detail_keyboard(
+                lead_id,
+                new_status,
+                has_plan,
+                has_draft,
+                has_research,
+                research_version_count,
+                has_pending_reanalysis,
+            ),
             disable_web_page_preview=True,
         )
 
@@ -483,7 +575,9 @@ async def on_lead_plan(
 
 @router.callback_query(F.data.startswith("lead:step:"))
 async def on_lead_step_toggle(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Toggle a plan step between pending and done."""
     parts = callback.data.split(":")  # type: ignore[union-attr]
@@ -507,6 +601,17 @@ async def on_lead_step_toggle(
         updated_plan.append(step)
 
     await lead_repo.update_lead(lead_id, engagement_plan=updated_plan)
+
+    # Sync scheduled_reminders row
+    if reminder_repo:
+        try:
+            sr = await reminder_repo.get_by_lead_and_step(lead_id, step_id)
+            if sr and sr.id:
+                new_sr_status = "completed" if toggled_status == "done" else "pending"
+                await reminder_repo.update_status(sr.id, new_sr_status)
+        except Exception as e:
+            logger.error("Failed to sync reminder for lead %s step %s: %s", lead_id, step_id, e)
+
     await callback.answer(f"Step {step_id}: {toggled_status}")
 
     # Refresh plan view by re-triggering the plan display
@@ -889,7 +994,9 @@ async def on_lead_delete_confirm(
 
 @router.callback_query(F.data.startswith("lead:confirm_delete:"))
 async def on_lead_delete_execute(
-    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+    callback: CallbackQuery,
+    lead_repo: LeadRegistryRepo,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Permanently delete a lead."""
     lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
@@ -900,6 +1007,13 @@ async def on_lead_delete_execute(
         return
 
     name = _lead_display_name(lead)
+
+    # Delete associated reminders (no FK cascade, so explicit)
+    if reminder_repo:
+        try:
+            await reminder_repo.delete_for_lead(lead_id)
+        except Exception as e:
+            logger.error("Failed to delete reminders for lead %s: %s", lead_id, e)
 
     try:
         await lead_repo.delete_lead(lead_id)
@@ -939,20 +1053,27 @@ async def on_lead_edit_start(
     await state.set_state(LeadEngagementState.editing_lead)
     await state.update_data(active_lead_id=lead_id)
 
+    current_first = lead.prospect_first_name or "(not set)"
+    current_last = lead.prospect_last_name or "(not set)"
     current_name = lead.prospect_name or "(not set)"
     current_company = lead.prospect_company or "(not set)"
     current_title = lead.prospect_title or "(not set)"
+    current_geo = lead.prospect_geography or "(not set)"
 
     await callback.message.edit_text(  # type: ignore[union-attr]
         f"✏️ *Edit Lead Info*\n\n"
         f"Current:\n"
-        f"  Name: {_sanitize(current_name)}\n"
+        f"  First Name: {_sanitize(current_first)}\n"
+        f"  Last Name: {_sanitize(current_last)}\n"
         f"  Company: {_sanitize(current_company)}\n"
-        f"  Title: {_sanitize(current_title)}\n\n"
+        f"  Title: {_sanitize(current_title)}\n"
+        f"  Geography: {_sanitize(current_geo)}\n\n"
         f"Send updates in this format (one or more lines):\n"
-        f"`Name: John Smith`\n"
+        f"`First Name: John`\n"
+        f"`Last Name: Smith`\n"
         f"`Company: Acme Corp`\n"
-        f"`Title: VP of Sales`\n\n"
+        f"`Title: VP of Sales`\n"
+        f"`Geography: London, UK`\n\n"
         f"_Send /cancel to go back._",
         parse_mode="Markdown",
     )
@@ -997,22 +1118,41 @@ async def on_lead_edit_text(
         if not value:
             continue
 
-        if key == "name":
+        if key in ("first name", "firstname", "first"):
+            updates["prospect_first_name"] = value
+        elif key in ("last name", "lastname", "last", "family name", "surname"):
+            updates["prospect_last_name"] = value
+        elif key == "name":
             updates["prospect_name"] = value
         elif key == "company":
             updates["prospect_company"] = value
         elif key == "title":
             updates["prospect_title"] = value
+        elif key in ("geography", "geo", "location", "region", "country", "city"):
+            updates["prospect_geography"] = value
 
     if not updates:
         await message.answer(
             "No valid fields found. Use format:\n"
-            "`Name: John Smith`\n"
+            "`First Name: John`\n"
+            "`Last Name: Smith`\n"
             "`Company: Acme Corp`\n"
-            "`Title: VP of Sales`",
+            "`Title: VP of Sales`\n"
+            "`Geography: London, UK`",
             parse_mode="Markdown",
         )
         return
+
+    # Recalculate composite prospect_name if structured name fields were updated
+    if "prospect_first_name" in updates or "prospect_last_name" in updates:
+        lead = await lead_repo.get_by_id(lead_id)
+        if lead:
+            fn = updates.get("prospect_first_name", lead.prospect_first_name or "")
+            ln = updates.get("prospect_last_name", lead.prospect_last_name or "")
+            if fn and ln:
+                updates["prospect_name"] = f"{fn} {ln}"
+            elif fn:
+                updates["prospect_name"] = fn
 
     await lead_repo.update_lead(lead_id, **updates)
 
@@ -1066,3 +1206,266 @@ async def on_lead_back(
         reply_markup=_leads_list_keyboard(leads),
     )
     await callback.answer()
+
+
+# ─── Web Research Re-run ───────────────────────────────────────────
+
+@router.callback_query(F.data.startswith("lead:reresearch:"))
+async def on_lead_reresearch_start(
+    callback: CallbackQuery, state: FSMContext, lead_repo: LeadRegistryRepo
+) -> None:
+    """Enter re-research mode for a lead."""
+    lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await callback.answer("Lead not found.")
+        return
+
+    await state.set_state(LeadEngagementState.reresearch_input)
+    await state.update_data(active_lead_id=lead_id)
+
+    name = _sanitize(_lead_display_name(lead))
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        f"🔬 *Re-research: {name}*\n\n"
+        "Running web research again for this lead.\n\n"
+        "Optionally, provide a URL (LinkedIn profile, company page) "
+        "for more accurate results.\n\n"
+        "Or send `go` to re-run with existing info.\n\n"
+        "_Send /cancel to go back._",
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+@router.message(LeadEngagementState.reresearch_input, F.text)
+async def on_lead_reresearch_input(
+    message: Message,
+    state: FSMContext,
+    lead_repo: LeadRegistryRepo,
+    user_repo: UserRepo,
+    openrouter_api_key: str = "",
+) -> None:
+    """Process re-research input (URL or 'go')."""
+    text = message.text or ""
+
+    if text.strip().lower() == "/cancel":
+        await state.clear()
+        await message.answer("Cancelled. Use /leads to go back.")
+        return
+
+    data = await state.get_data()
+    lead_id = data.get("active_lead_id")
+    if not lead_id:
+        await state.clear()
+        await message.answer("No active lead. Use /leads to select one.")
+        return
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await state.clear()
+        await message.answer("Lead not found. Use /leads to select one.")
+        return
+
+    # Parse input: "go" means no URL, otherwise extract URL
+    url: str | None = None
+    if text.strip().lower() != "go":
+        # Check for URL patterns
+        url_match = None
+        for pattern in [r"https?://\S+", r"linkedin\.com/\S+"]:
+            import re
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                url_match = match.group(0)
+                break
+        if url_match:
+            url = url_match if url_match.startswith("http") else f"https://{url_match}"
+        else:
+            # Treat the whole text as potential URL hint
+            url = text.strip()
+
+    status_msg = await message.answer("🔬 Generating web research...")
+
+    # Build query from lead info
+    name = _lead_display_name(lead)
+    query_parts = [name]
+    if lead.prospect_title:
+        query_parts.append(lead.prospect_title)
+    if lead.prospect_company:
+        query_parts.append(f"at {lead.prospect_company}")
+    if lead.prospect_geography:
+        query_parts.append(f"in {lead.prospect_geography}")
+    query = " ".join(query_parts)
+
+    if url:
+        query += f"\n\nFocus on this profile/URL: {url}"
+
+    # Get API key - prefer shared openrouter key
+    api_key = openrouter_api_key
+    if not api_key:
+        tg_id = message.from_user.id  # type: ignore[union-attr]
+        user = await user_repo.get_by_telegram_id(tg_id)
+        if user and user.encrypted_api_key and user.provider == "openrouter":
+            from bot.services.crypto import decrypt_api_key
+            api_key = decrypt_api_key(user.encrypted_api_key)
+
+    if not api_key:
+        await status_msg.edit_text(
+            "❌ Web research requires an OpenRouter API key.\n"
+            "Please configure one in /settings."
+        )
+        await state.clear()
+        return
+
+    try:
+        research_content = await web_research_call(api_key, query)
+    except Exception as e:
+        logger.error("Web research failed for lead %s: %s", lead_id, e)
+        await status_msg.edit_text(f"❌ Web research failed: {str(e)[:100]}")
+        await state.clear()
+        return
+
+    # Save new version
+    await lead_repo.add_research_version(lead_id, query, url, research_content)
+
+    await status_msg.edit_text(
+        f"✅ *Web research updated for {_sanitize(name)}*\n\n"
+        f"New research version saved.\n\n"
+        f"{_sanitize(research_content[:500])}...",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📋 View Lead", callback_data=f"lead:view:{lead_id}")],
+        ]),
+    )
+    await state.clear()
+
+
+# ─── Research Versions View ────────────────────────────────────────
+
+@router.callback_query(F.data.startswith("lead:versions:"))
+async def on_lead_versions(
+    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+) -> None:
+    """Show list of web research versions."""
+    lead_id = int(callback.data.split(":")[2])  # type: ignore[union-attr]
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await callback.answer("Lead not found.")
+        return
+
+    versions_data = lead.web_research_versions or {}
+    versions = versions_data.get("versions", [])
+    current_version_id = versions_data.get("current_version_id", 0)
+
+    if not versions:
+        await callback.answer("No research versions available.")
+        return
+
+    name = _sanitize(_lead_display_name(lead))
+    text = f"📚 *Research Versions — {name}*\n\n"
+
+    # Sort by version_id descending (newest first)
+    sorted_versions = sorted(versions, key=lambda v: v.get("version_id", 0), reverse=True)
+
+    buttons = []
+    for v in sorted_versions:
+        vid = v.get("version_id", 0)
+        created = v.get("created_at", "")[:10] or "Unknown date"
+        url_hint = " (with URL)" if v.get("url_provided") else ""
+        is_current = "★ " if vid == current_version_id else ""
+
+        text += f"{is_current}*Version {vid}* — {created}{url_hint}\n"
+
+        # Preview first 100 chars of content
+        content = v.get("content", "")[:100]
+        if content:
+            text += f"  _{_sanitize(content)}..._\n\n"
+
+        # Add delete button for each version
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🗑 Delete v{vid}",
+                callback_data=f"lead:delversion:{lead_id}:{vid}",
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(text="◀️ Back to Lead", callback_data=f"lead:view:{lead_id}")
+    ])
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        truncate_message(text),
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("lead:delversion:"))
+async def on_lead_delete_version(
+    callback: CallbackQuery, lead_repo: LeadRegistryRepo
+) -> None:
+    """Delete a specific research version."""
+    parts = callback.data.split(":")  # type: ignore[union-attr]
+    lead_id = int(parts[2])
+    version_id = int(parts[3])
+
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        await callback.answer("Lead not found.")
+        return
+
+    versions_data = lead.web_research_versions or {}
+    versions = versions_data.get("versions", [])
+
+    if len(versions) <= 1:
+        await callback.answer("Cannot delete the only version.")
+        return
+
+    await lead_repo.delete_research_version(lead_id, version_id)
+    await callback.answer(f"Version {version_id} deleted.")
+
+    # Refresh versions view
+    lead = await lead_repo.get_by_id(lead_id)
+    if not lead:
+        return
+
+    versions_data = lead.web_research_versions or {}
+    versions = versions_data.get("versions", [])
+    current_version_id = versions_data.get("current_version_id", 0)
+
+    name = _sanitize(_lead_display_name(lead))
+    text = f"📚 *Research Versions — {name}*\n\n"
+
+    sorted_versions = sorted(versions, key=lambda v: v.get("version_id", 0), reverse=True)
+
+    buttons = []
+    for v in sorted_versions:
+        vid = v.get("version_id", 0)
+        created = v.get("created_at", "")[:10] or "Unknown date"
+        url_hint = " (with URL)" if v.get("url_provided") else ""
+        is_current = "★ " if vid == current_version_id else ""
+
+        text += f"{is_current}*Version {vid}* — {created}{url_hint}\n"
+
+        content = v.get("content", "")[:100]
+        if content:
+            text += f"  _{_sanitize(content)}..._\n\n"
+
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🗑 Delete v{vid}",
+                callback_data=f"lead:delversion:{lead_id}:{vid}",
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(text="◀️ Back to Lead", callback_data=f"lead:view:{lead_id}")
+    ])
+
+    await callback.message.edit_text(  # type: ignore[union-attr]
+        truncate_message(text),
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+    )

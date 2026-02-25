@@ -16,6 +16,7 @@ interface AuthResult {
     telegram_id: number;
     username: string | null;
     first_name: string | null;
+    photo_url: string | null;
   };
 }
 
@@ -32,7 +33,21 @@ interface AuthResult {
  * @throws Error if not running inside Telegram or auth fails
  */
 export async function authenticateWithTelegram(): Promise<AuthResult> {
-  const { initDataRaw } = retrieveLaunchParams();
+  const launchParams = retrieveLaunchParams();
+  console.log('[AUTH] Launch params:', JSON.stringify(launchParams, null, 2));
+  console.log('[AUTH] initDataRaw:', launchParams.initDataRaw);
+  console.log('[AUTH] All keys:', Object.keys(launchParams));
+
+  // Try SDK first, fall back to manual URL extraction
+  let initDataRaw = launchParams.initDataRaw;
+
+  if (!initDataRaw) {
+    // Fallback: extract tgWebAppData from URL hash directly
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    initDataRaw = params.get('tgWebAppData') ?? undefined;
+    console.log('[AUTH] Fallback initDataRaw from URL:', initDataRaw);
+  }
 
   if (!initDataRaw) {
     throw new Error('No initData available. Are you running inside Telegram?');
@@ -56,8 +71,8 @@ export async function authenticateWithTelegram(): Promise<AuthResult> {
   // Uses setAuthToken() on HttpClient -- NOT the "JWT-as-anonKey" pattern.
   const authClient = createAuthenticatedClient(data.jwt);
 
-  // Validation query: confirm the authenticated client can query the database.
-  // This verifies that the JWT is accepted by InsForge's PostgREST layer.
+  // Validation query: confirm the client can reach the database.
+  // Uses anon key (not the Edge Function JWT) so this should always succeed.
   try {
     const { data: testData, error: testError } = await authClient.database
       .from('users')
@@ -66,26 +81,12 @@ export async function authenticateWithTelegram(): Promise<AuthResult> {
       .limit(1);
 
     if (testError) {
-      console.error('[AUTH] Validation query failed:', testError);
-      throw new Error(
-        `Auth validation failed: ${typeof testError === 'object' ? JSON.stringify(testError) : testError}`
-      );
+      console.warn('[AUTH] Validation query failed:', testError);
+    } else {
+      console.info('[AUTH] Authenticated. User row:', testData);
     }
-
-    console.info(
-      '[AUTH] Authenticated successfully. Validation query returned:',
-      testData
-    );
   } catch (validationErr) {
-    // If the validation query fails, the JWT may not be accepted by PostgREST.
-    // Log the error for debugging but don't block auth -- the Edge Function
-    // itself succeeded and the JWT is valid. RLS validation will happen
-    // on actual data queries.
-    console.warn(
-      '[AUTH] Validation query threw:',
-      validationErr,
-      '-- proceeding with auth anyway (Edge Function succeeded)'
-    );
+    console.warn('[AUTH] Validation query threw:', validationErr);
   }
 
   return {

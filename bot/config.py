@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # Voice transcription (AssemblyAI)
     assemblyai_api_key: str = ""
 
+    # Telegram Mini App
+    tma_url: str = ""
+
+    # Langfuse observability (optional — disabled when keys empty)
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = "https://cloud.langfuse.com"
+
     # Configuration
     log_level: str = "INFO"
     default_openrouter_model: str = "openai/gpt-oss-120b"

@@ -1,0 +1,18 @@
+# Re-analysis Pipeline
+# Triggered when user adds context to a lead and requests strategy re-analysis
+
+name: reanalysis
+description: Re-analyze a lead's strategy with new context
+
+steps:
+  - name: reanalysis_strategist
+    agent: reanalysis_strategist
+    mode: sequential
+    input_mapping:
+      user_message: "Re-analyze this lead with the new context"
+
+  - name: memory
+    agent: memory
+    mode: background
+    input_mapping:
+      pipeline_result: "@reanalysis_strategist"

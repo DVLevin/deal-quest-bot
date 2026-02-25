@@ -1,262 +1,435 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-06
 
 ## Directory Layout
 
 ```
-deal-quest-bot/
-├── .planning/                          # GSD planning documents
-│   └── codebase/
-├── bot/                               # Python Telegram bot backend
-│   ├── agents/                        # AI agent implementations
-│   ├── handlers/                      # Telegram command & event handlers
-│   ├── pipeline/                      # Agent orchestration & YAML config
-│   ├── services/                      # Domain logic & infrastructure
-│   ├── storage/                       # Database repositories & models
-│   ├── config.py                      # Settings/environment loading
-│   ├── main.py                        # Entry point & DI wiring
-│   ├── middleware.py                  # Authorization middleware
-│   ├── states.py                      # FSM state definitions
-│   ├── utils.py                       # Shared utilities
-│   └── __init__.py
-├── packages/                          # Monorepo packages
-│   ├── shared/                        # Shared TypeScript types & constants
-│   │   └── src/
-│   │       ├── tables.ts              # Database schema interfaces
-│   │       ├── constants.ts           # Shared constants
-│   │       ├── enums.ts               # Enum definitions
-│   │       └── index.ts               # Barrel export
-│   └── webapp/                        # React Telegram Mini App frontend
-│       ├── src/
-│       │   ├── app/                   # App root & layout
-│       │   ├── features/              # Feature-specific logic
-│       │   ├── lib/                   # Utilities & integrations
-│       │   ├── pages/                 # Page components
-│       │   ├── shared/                # Reusable components & hooks
-│       │   └── main.tsx               # Entry point
-│       ├── dist/                      # Built output (generated)
-│       ├── public/                    # Static assets
-│       ├── vite.config.ts             # Build config
-│       └── package.json
-├── data/                              # Content & configuration data
-│   ├── pipelines/                     # YAML pipeline definitions
-│   │   ├── train.yaml
-│   │   ├── learn.yaml
-│   │   └── support.yaml
-│   ├── scenarios.json                 # Training scenario pool
-│   ├── playbook.md                    # Sales playbook
-│   ├── company_knowledge.md           # Company context
-│   └── user_memory/                   # User-specific memory dumps (not committed)
-├── docs/                              # Documentation
-│   ├── tma/                           # Telegram Mini App docs
-│   └── ux/                            # UX/design docs
-├── functions/                         # Cloud functions (Firebase-compatible)
-│   └── verify-telegram/               # Telegram signature verification function
-├── migrations/                        # Database migrations (if any)
-├── prompts/                           # AI prompts (reference material)
-├── .env                               # Environment config (not committed)
-├── .env.example                       # Example env template
-├── package.json                       # Root workspace manifest
-├── pnpm-workspace.yaml                # pnpm monorepo config
-├── pnpm-lock.yaml                     # Lock file
-├── requirements.txt                   # Python dependencies
-├── CLAUDE.md                          # Project instructions
-└── README.md                          # Project overview
+GD_playground/
+├── bot/                              # Python Telegram bot (aiogram 3)
+│   ├── agents/                       # AI agent implementations
+│   │   ├── base.py                   # BaseAgent ABC + AgentInput/AgentOutput
+│   │   ├── strategist.py             # StrategistAgent (deal analysis)
+│   │   ├── trainer.py                # TrainerAgent (scenario scoring)
+│   │   ├── memory.py                 # MemoryAgent (background updates)
+│   │   ├── extraction.py             # ExtractionAgent (focused OCR extraction)
+│   │   ├── reanalysis_strategist.py  # ReanalysisStrategistAgent (strategy re-analysis)
+│   │   └── registry.py               # AgentRegistry (name → instance lookup)
+│   ├── handlers/                     # Command handlers (support, learn, leads, etc.)
+│   │   ├── start.py                  # /start onboarding + API key setup
+│   │   ├── support.py                # /support deal analysis flow
+│   │   ├── learn.py                  # /learn structured training
+│   │   ├── train.py                  # /train random scenario practice
+│   │   ├── leads.py                  # /leads lead management
+│   │   ├── stats.py                  # /stats progress display
+│   │   ├── settings.py               # /settings provider management
+│   │   ├── admin.py                  # /admin team analytics (restricted)
+│   │   ├── progress.py               # Progress utilities
+│   │   ├── context_input.py          # Multimodal context collection for re-analysis
+│   │   ├── comment.py                # Standalone comment flow
+│   │   └── reminders.py              # Reminder callback handlers (Done/Snooze/Skip/Draft)
+│   ├── pipeline/                     # YAML-driven pipeline orchestration
+│   │   ├── runner.py                 # PipelineRunner (sequential/parallel/background)
+│   │   ├── context.py                # PipelineContext (shared state)
+│   │   └── config_loader.py          # YAML config loader
+│   ├── services/                     # Business logic services
+│   │   ├── llm_router.py             # LLMProvider ABC (Claude/OpenRouter)
+│   │   ├── knowledge.py              # Playbook + company KB loader
+│   │   ├── casebook.py               # Reusable response retrieval
+│   │   ├── crypto.py                 # Fernet encryption for API keys
+│   │   ├── transcription.py          # AssemblyAI voice transcription
+│   │   ├── progress.py               # ProgressUpdater (real-time status)
+│   │   ├── analytics.py              # Team analytics service
+│   │   ├── engagement.py             # Engagement tracking
+│   │   ├── followup_scheduler.py     # Follow-up scheduling
+│   │   ├── scenario_generator.py     # Dynamic scenario generation
+│   │   ├── scoring.py                # XP calculation
+│   │   ├── plan_scheduler.py         # Plan step reminder scheduler with timing parser
+│   │   ├── diff_utils.py             # JSON diff computation
+│   │   └── image_utils.py            # Image pre-resize utility
+│   ├── storage/                      # InsForge client + repositories
+│   │   ├── insforge_client.py        # Async HTTP client for PostgREST
+│   │   ├── repositories.py           # 12 repo classes (User, Lead, Reminder, etc.)
+│   │   └── models.py                 # Pydantic data models
+│   ├── tracing/                      # Observability (Phase 1)
+│   │   ├── __init__.py               # Exports (TraceContext, traced_span, collectors)
+│   │   ├── context.py                # TraceContext + traced_span decorator
+│   │   ├── collector.py              # TraceCollector (batched background flush)
+│   │   └── models.py                 # TraceModel, SpanModel
+│   ├── main.py                       # Entry point, DI wiring, polling
+│   ├── config.py                     # Pydantic settings from .env
+│   ├── middleware.py                 # Username authorization
+│   ├── states.py                     # FSM state definitions
+│   ├── utils.py                      # Telegram formatting helpers
+│   ├── utils_tma.py                  # TMA menu button setup
+│   ├── utils_validation.py           # Shared input validation
+│   └── task_utils.py                 # Background task protection
+├── packages/
+│   ├── webapp/                       # React TMA (Vite + React Router 7)
+│   │   ├── src/
+│   │   │   ├── app/                  # App shell, Router, providers
+│   │   │   │   ├── App.tsx           # Root component with provider hierarchy
+│   │   │   │   ├── Router.tsx        # Lazy-loaded routes + BackButton
+│   │   │   │   └── providers/        # AuthProvider, QueryProvider
+│   │   │   ├── features/             # Feature modules (one per domain)
+│   │   │   │   ├── auth/             # Telegram auth (useAuth, store)
+│   │   │   │   ├── casebook/         # Casebook browser
+│   │   │   │   ├── dashboard/        # Dashboard widgets (Progress, Badges, Leaderboard, WeakAreas)
+│   │   │   │   ├── leads/            # Lead management (hooks, components)
+│   │   │   │   ├── learn/            # Structured learning (tracks, lessons)
+│   │   │   │   ├── profile/          # User profile (stats, badges, history)
+│   │   │   │   ├── scoring/          # Scoring display components
+│   │   │   │   ├── settings/         # Settings panel
+│   │   │   │   ├── support/          # Support session display
+│   │   │   │   ├── train/            # Training scenarios (difficulty, variety)
+│   │   │   │   ├── gamification/     # XP, level-up, badges, confetti
+│   │   │   │   └── admin/            # Admin panel (team stats, leaderboard)
+│   │   │   ├── lib/                  # Shared utilities
+│   │   │   │   ├── insforge.ts       # InsForge client setup (anon + auth)
+│   │   │   │   ├── telegram.ts       # Telegram SDK initialization
+│   │   │   │   └── queries.ts        # TanStack Query key factory
+│   │   │   ├── pages/                # Top-level route pages
+│   │   │   │   ├── Dashboard.tsx     # Main landing page
+│   │   │   │   ├── Support.tsx       # Support session history
+│   │   │   │   ├── Learn.tsx         # Learning tracks
+│   │   │   │   ├── Train.tsx         # Training scenarios
+│   │   │   │   ├── Casebook.tsx      # Casebook browser
+│   │   │   │   ├── Leads.tsx         # Lead registry
+│   │   │   │   ├── Profile.tsx       # User profile
+│   │   │   │   └── Admin.tsx         # Admin panel
+│   │   │   ├── shared/               # Shared UI components, hooks, layouts
+│   │   │   │   ├── ui/               # UI components (Button, Card, Badge, ErrorBoundary, Toast, etc.)
+│   │   │   │   ├── hooks/            # useBackButton, useMainButton, useDeepLink, etc.
+│   │   │   │   ├── layouts/          # AppLayout (NavBar wrapper)
+│   │   │   │   ├── stores/           # Zustand stores (toastStore)
+│   │   │   │   └── data/             # Static data (badges)
+│   │   │   ├── types/                # TypeScript types (inlined from ../shared)
+│   │   │   │   ├── index.ts          # Database model interfaces
+│   │   │   │   ├── tables.ts         # Table row types
+│   │   │   │   ├── enums.ts          # Enum types
+│   │   │   │   └── constants.ts      # Constants
+│   │   │   └── main.tsx              # React root entry point
+│   │   ├── package.json
+│   │   └── railway.toml              # Railway deployment config
+│   └── shared/                       # Shared TypeScript types (source of truth)
+│       └── types/                    # Database model interfaces
+├── functions/                        # InsForge serverless functions (Deno)
+│   ├── verify-telegram/              # Telegram auth + JWT minting
+│   │   ├── index.ts
+│   │   └── deploy.js
+│   └── db-proxy.js                   # Database proxy
+├── data/                             # Knowledge base + pipeline configs
+│   ├── playbook.md                   # Sales playbook (gitignored)
+│   ├── company_knowledge.md          # Company info (gitignored)
+│   ├── scenarios.json                # Training scenarios (gitignored)
+│   └── pipelines/                    # YAML agent pipeline definitions
+│       ├── support.yaml              # Deal analysis pipeline (strategist + memory)
+│       ├── support_photo.yaml        # Photo-based deal analysis
+│       ├── reanalysis.yaml           # Re-analysis pipeline with diff computation
+│       ├── learn.yaml                # Structured learning pipeline
+│       └── train.yaml                # Training scenario pipeline
+├── prompts/                          # Agent system prompts
+├── migrations/                       # Original database migrations
+│   ├── 001_enable_rls_and_policies.sql
+│   └── 002_lead_person_company_fields.sql
+├── insforge/migrations/              # Observability migrations
+│   ├── 001_pipeline_traces.sql       # Pipeline traces table
+│   ├── 002_scheduled_reminders.sql   # Reminder scheduling table
+│   ├── 003_web_research_versions.sql # Web research versioning
+│   └── 004_lead_analysis_history.sql # Lead analysis history
+├── docs/                             # Original design documentation
+├── .planning/                        # GSD project tracking
+│   ├── PROJECT.md                    # Project definition
+│   ├── ROADMAP.md                    # Phase breakdown
+│   ├── STATE.md                      # Current position
+│   ├── REQUIREMENTS.md               # Requirement traceability
+│   ├── codebase/                     # Codebase analysis docs
+│   │   ├── ARCHITECTURE.md
+│   │   ├── STRUCTURE.md
+│   │   ├── STACK.md
+│   │   ├── INTEGRATIONS.md
+│   │   ├── CONVENTIONS.md
+│   │   ├── TESTING.md
+│   │   └── CONCERNS.md
+│   ├── phases/                       # Phase planning docs
+│   ├── quick/                        # Quick task tracking
+│   └── research/                     # Research notes
+├── .env.example                      # Environment template
+├── requirements.txt                  # Python dependencies
+├── package.json                      # pnpm workspace root
+├── pnpm-workspace.yaml               # Workspace definition
+├── railway.toml                      # Bot deployment config
+└── CLAUDE.md                         # Project instructions for Claude
 ```
 
 ## Directory Purposes
 
 **`bot/`:**
-- Purpose: Core Telegram bot application
-- Contains: Handlers, services, data access layer, pipeline orchestration
-- Key files: `main.py` (startup), `config.py` (env loading), `states.py` (FSM), `middleware.py` (auth)
+- Purpose: Python Telegram bot application (aiogram 3)
+- Contains: Entry point, handlers, agents, services, storage layer
+- Key files: `main.py` (DI + polling), `config.py` (env loading), `middleware.py` (auth)
 
 **`bot/agents/`:**
 - Purpose: AI agent implementations for pipeline execution
-- Contains: BaseAgent ABC, TrainerAgent, StrategistAgent, MemoryAgent, AgentRegistry
-- Key files: `base.py` (abstract interface), `trainer.py`, `strategist.py`, `memory.py`, `registry.py`
+- Contains: `base.py` (ABC), `strategist.py`, `trainer.py`, `memory.py`, `extraction.py`, `reanalysis_strategist.py`, `registry.py`
+- Key files: `base.py` (AgentInput/AgentOutput/BaseAgent), `registry.py` (name → instance lookup)
 
 **`bot/handlers/`:**
-- Purpose: Telegram command and event handlers
-- Contains: One module per command group (start.py, train.py, learn.py, support.py, leads.py, stats.py, settings.py, admin.py, progress.py)
-- Key files: `train.py` (145 lines, core training workflow), `leads.py` (lead engagement), `support.py` (Q&A)
+- Purpose: Telegram command handlers
+- Contains: `start.py`, `support.py`, `learn.py`, `train.py`, `stats.py`, `settings.py`, `leads.py`, `admin.py`, `progress.py`, `context_input.py`, `comment.py`, `reminders.py`
+- Key files: `support.py` (deal analysis with strategist), `leads.py` (lead management), `context_input.py` (multimodal re-analysis), `reminders.py` (reminder callbacks)
 
 **`bot/pipeline/`:**
-- Purpose: Pipeline execution engine and YAML configuration
-- Contains: Runner (orchestrates steps), context (shared state), config loader (parses YAML)
-- Key files: `runner.py` (executes agent steps sequentially/parallel/background), `context.py` (pipeline state), `config_loader.py` (YAML → PipelineConfig)
+- Purpose: Agent pipeline orchestration system
+- Contains: `runner.py`, `context.py`, `config_loader.py`
+- Key files: `runner.py` (sequential/parallel/background execution), `context.py` (shared state)
 
 **`bot/services/`:**
-- Purpose: Domain-specific business logic and external integrations
-- Contains: 12 service modules (crypto, knowledge, scoring, transcription, engagement, scenario generation, etc.)
-- Key files: `llm_router.py` (Anthropic/OpenRouter abstraction), `crypto.py` (Fernet encryption), `knowledge.py` (loads markdown), `scoring.py` (XP calculation)
+- Purpose: Reusable business logic services
+- Contains: `llm_router.py`, `knowledge.py`, `casebook.py`, `crypto.py`, `transcription.py`, `progress.py`, `analytics.py`, `engagement.py`, `followup_scheduler.py`, `scenario_generator.py`, `scoring.py`, `plan_scheduler.py`, `diff_utils.py`, `image_utils.py`
+- Key files: `llm_router.py` (LLMProvider ABC + Claude/OpenRouter), `progress.py` (ProgressUpdater), `plan_scheduler.py` (reminder scheduling)
 
 **`bot/storage/`:**
-- Purpose: Database abstraction and data models
-- Contains: Repositories (UserRepo, AttemptRepo, CasebookRepo, etc.), Pydantic models, InsForge client
-- Key files: `repositories.py` (11 repository classes), `models.py` (Pydantic models), `insforge_client.py` (async HTTP client)
+- Purpose: Database persistence layer
+- Contains: `insforge_client.py` (async HTTP), `repositories.py` (12 repo classes), `models.py` (Pydantic)
+- Key files: `insforge_client.py` (query/create/update/upsert/delete), `repositories.py` (UserRepo, LeadRegistryRepo, ScheduledReminderRepo, LeadAnalysisHistoryRepo, etc.)
 
-**`packages/shared/src/`:**
-- Purpose: Centralized TypeScript database schema definitions and shared constants
-- Contains: Database table interfaces (UserRow, AttemptRow, etc.), enums, constants
-- Key files: `tables.ts` (217 lines, all table interfaces), `enums.ts` (enum definitions), `constants.ts` (API URLs, pagination limits)
-
-**`packages/webapp/src/`:**
-- Purpose: React Telegram Mini App user interface
-- Contains: Page components, feature logic, shared UI components, providers, hooks
-- Key files: `main.tsx` (entry point with SDK init), `app/App.tsx` (root router), `pages/*.tsx` (Dashboard, Train, Learn, Support, Leads, Casebook, Profile, Admin)
+**`bot/tracing/`:**
+- Purpose: Pipeline observability system
+- Contains: `context.py` (TraceContext, traced_span), `collector.py` (background flush), `models.py` (Pydantic)
+- Key files: `context.py` (async context manager + decorator), `collector.py` (batched writes)
 
 **`packages/webapp/src/app/`:**
-- Purpose: Application root structure
-- Contains: App component (router), layout component, providers (Auth, Query)
-- Key files: `App.tsx` (router definition), `Router.tsx` (route declarations), `providers/` (AuthProvider, QueryProvider)
+- Purpose: React app shell and routing
+- Contains: `App.tsx`, `Router.tsx`, `providers/` (Auth, Query)
+- Key files: `App.tsx` (provider hierarchy), `Router.tsx` (lazy-loaded routes + BackButton)
 
 **`packages/webapp/src/features/`:**
-- Purpose: Feature-specific state and logic (separate from UI)
-- Contains: Auth feature (store.ts for Zustand, useAuth.ts hook)
-- Key files: `auth/store.ts` (Zustand auth store), `auth/useAuth.ts` (hook wrapper)
+- Purpose: Feature modules (one per domain)
+- Contains: `auth/`, `casebook/`, `dashboard/`, `leads/`, `learn/`, `profile/`, `scoring/`, `settings/`, `support/`, `train/`, `gamification/`, `admin/`
+- Key files: Each feature has `hooks/`, `components/`, sometimes `pages/`
+
+**`packages/webapp/src/features/dashboard/`:**
+- Purpose: Dashboard widgets
+- Contains: `components/` (ProgressCard, BadgePreview, LeaderboardWidget, WeakAreasCard), `hooks/`
+- Key files: `components/WeakAreasCard.tsx` (displays weak skill areas)
+
+**`packages/webapp/src/features/leads/`:**
+- Purpose: Lead management feature
+- Contains: `components/` (LeadCard, LeadDetail, LeadList, ActivityTimeline), `hooks/` (useLeads, useLead, useUpdatePlanStep, etc.), `types.ts`
+- Key files: `hooks/useUpdatePlanStep.ts` (mutation for plan step updates)
+
+**`packages/webapp/src/features/train/`:**
+- Purpose: Training scenario feature
+- Contains: `components/` (ScenarioCard, ScoreResults, DifficultyFilter, DifficultyRecommendation, ScenarioVariety), `hooks/`, `data/`
+- Key files: `components/DifficultyRecommendation.tsx`, `components/ScenarioVariety.tsx`
+
+**`packages/webapp/src/lib/`:**
+- Purpose: Shared utilities and client setup
+- Contains: `insforge.ts`, `telegram.ts`, `queries.ts`
+- Key files: `insforge.ts` (anon + auth client creation), `queries.ts` (query key factory)
 
 **`packages/webapp/src/pages/`:**
-- Purpose: Page components (one per route)
-- Contains: Dashboard, Train, Learn, Support, Casebook, Leads, Profile, Admin pages
-- Key files: Dashboard (overview), Train (training interface), Leads (lead management), Support (Q&A)
+- Purpose: Top-level route components
+- Contains: `Dashboard.tsx`, `Support.tsx`, `Learn.tsx`, `Train.tsx`, `Casebook.tsx`, `Leads.tsx`, `Profile.tsx`, `Admin.tsx`
+- Key files: All lazy-loaded by Router.tsx
 
 **`packages/webapp/src/shared/`:**
-- Purpose: Reusable components, hooks, and utilities
-- Contains: UI components (NavBar, Card, Button, Badge, Skeleton), hooks (useMainButton, useBackButton, useSessionResilience), utilities (cn classname helper)
-- Key files: `ui/` (Tailwind-based components), `hooks/` (TMA integration), `lib/` (utilities)
+- Purpose: Shared UI components, hooks, layouts
+- Contains: `ui/`, `hooks/`, `layouts/`, `stores/`, `data/`
+- Key files: `layouts/AppLayout.tsx`, `hooks/useBackButton.ts`, `ui/ErrorBoundary.tsx`, `ui/ErrorCard.tsx`, `ui/EmptyState.tsx`, `ui/Toast.tsx`
 
-**`data/`:**
-- Purpose: Content, configuration, and training data
-- Contains: YAML pipelines, scenario JSON, markdown knowledge bases
-- Key files: `pipelines/train.yaml` (agent orchestration config), `scenarios.json` (training scenarios), `playbook.md` (sales reference), `company_knowledge.md` (company context)
+**`packages/webapp/src/types/`:**
+- Purpose: TypeScript type definitions (inlined from ../shared)
+- Contains: Database model interfaces
+- Key files: `index.ts`, `tables.ts`, `enums.ts`, `constants.ts` (copied from `packages/shared/types/` due to Railway root_dir isolation)
 
-**`data/pipelines/`:**
-- Purpose: YAML pipeline definitions
-- Contains: One YAML per pipeline (train, learn, support)
-- Key files: `train.yaml` (trainer sequential → memory background), `support.yaml` (engagement agent), `learn.yaml` (learning pipeline)
+**`packages/shared/`:**
+- Purpose: Shared TypeScript types (source of truth)
+- Contains: `types/` (database models)
+- Key files: Source for webapp inlined types
 
 **`functions/`:**
-- Purpose: Standalone serverless functions
-- Contains: `verify-telegram/` function for signature verification
-- Usage: Deployed to cloud (Firebase Functions, Vercel, etc.) for webhook handlers
+- Purpose: InsForge serverless functions (Deno runtime)
+- Contains: `verify-telegram/` (auth), `db-proxy.js` (database operations)
+- Key files: `verify-telegram/index.ts` (HMAC validation + JWT), `db-proxy.js` (PostgREST proxy)
 
-**`docs/`:**
-- Purpose: Project documentation
-- Contains: UX specs, Telegram Mini App integration guide
-- Key files: Architecture diagrams, API docs, design specs
+**`data/`:**
+- Purpose: Knowledge base content and pipeline configs
+- Contains: `playbook.md`, `company_knowledge.md`, `scenarios.json`, `pipelines/`
+- Key files: `pipelines/*.yaml` (agent orchestration definitions including `reanalysis.yaml`, `support_photo.yaml`)
+
+**`prompts/`:**
+- Purpose: Agent system prompts
+- Contains: Markdown files with LLM system prompts
+- Key files: One per agent type
+
+**`migrations/`:**
+- Purpose: Original database schema migrations
+- Contains: SQL files for core tables
+- Key files: Initial schema setup
+
+**`insforge/migrations/`:**
+- Purpose: Observability and feature schema migrations
+- Contains: `001_pipeline_traces.sql`, `002_scheduled_reminders.sql`, `003_web_research_versions.sql`, `004_lead_analysis_history.sql`
+- Key files: Tracing table definitions, reminder scheduling, analysis history
+
+**`.planning/`:**
+- Purpose: GSD project tracking
+- Contains: `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `REQUIREMENTS.md`, `codebase/`, `phases/`, `quick/`, `research/`
+- Key files: `PROJECT.md` (project definition), `ROADMAP.md` (phase breakdown), `codebase/` (architecture docs)
 
 ## Key File Locations
 
 **Entry Points:**
-- `bot/main.py`: Start bot with `python -m bot.main`
-- `packages/webapp/src/main.tsx`: React app entry, initializes Telegram SDK
+- `bot/main.py`: Bot application entry (DI, polling, background schedulers)
+- `packages/webapp/src/main.tsx`: TMA entry (React render)
+- `functions/verify-telegram/index.ts`: Auth Edge Function
+- `functions/db-proxy.js`: Database proxy Edge Function
 
 **Configuration:**
-- `bot/config.py`: Pydantic settings loader, reads .env
-- `.env`: Runtime environment variables (secrets, API keys, URLs)
-- `packages/webapp/vite.config.ts`: Vite build configuration
+- `.env.example`: Environment variable template
+- `bot/config.py`: Pydantic settings loader
+- `packages/webapp/src/lib/insforge.ts`: InsForge client config
+- `railway.toml`: Bot deployment config
+- `packages/webapp/railway.toml`: TMA deployment config
+- `data/pipelines/*.yaml`: Agent pipeline definitions
 
 **Core Logic:**
-- `bot/handlers/train.py`: Training scenario execution (pick → score → feedback → XP)
-- `bot/handlers/leads.py`: Lead engagement (create → analyze → track → followup)
-- `bot/pipeline/runner.py`: Agent orchestration engine
-- `bot/services/engagement.py`: LLM-based engagement service
-- `packages/webapp/src/pages/Train.tsx`: Frontend training UI
+- `bot/pipeline/runner.py`: Agent pipeline orchestration
+- `bot/agents/*.py`: Agent implementations
+- `bot/services/llm_router.py`: LLM provider abstraction
+- `bot/storage/insforge_client.py`: Database client
+- `bot/tracing/context.py`: Observability instrumentation
+- `packages/webapp/src/app/Router.tsx`: TMA routing
 
-**Testing:** No test files present in codebase
-
-**Data Models:**
-- `bot/storage/models.py`: Pydantic models for database rows
-- `packages/shared/src/tables.ts`: TypeScript schema mirrors
-- `packages/shared/src/enums.ts`: Shared enum definitions
+**Testing:**
+- Not detected
 
 ## Naming Conventions
 
 **Files:**
-- Python modules: `snake_case.py` (e.g., `llm_router.py`, `insforge_client.py`)
-- TypeScript modules: `camelCase.ts` (e.g., `tables.ts`, `constants.ts`)
-- Component modules: `PascalCase.tsx` (e.g., `App.tsx`, `Train.tsx`, `NavBar.tsx`)
-- Page modules: `PascalCase.tsx` in `pages/` directory (e.g., `Dashboard.tsx`, `Leads.tsx`)
-- Handler modules: `snake_case.py` matching command (e.g., `train.py`, `leads.py`, `support.py`)
-- Service modules: `snake_case.py` (e.g., `crypto.py`, `scoring.py`, `transcription.py`)
+- Python: `snake_case.py` (e.g., `llm_router.py`, `insforge_client.py`, `context_input.py`)
+- TypeScript: `PascalCase.tsx` for components (e.g., `Dashboard.tsx`, `WeakAreasCard.tsx`), `camelCase.ts` for utilities (e.g., `insforge.ts`, `useUpdatePlanStep.ts`)
+- YAML: `lowercase.yaml` (e.g., `support.yaml`, `reanalysis.yaml`)
+- Markdown: `UPPERCASE.md` for project docs (e.g., `CLAUDE.md`), `lowercase.md` for data (e.g., `playbook.md`)
 
 **Directories:**
-- Feature folders: `snake_case/` (e.g., `bot/agents/`, `bot/handlers/`, `bot/services/`)
-- Page routes: `PascalCase/` or directly in `pages/` as `PascalCase.tsx`
-- Utility folders: `snake_case/` (e.g., `lib/`, `shared/`, `utils/`)
+- Python: `lowercase` (e.g., `agents/`, `services/`)
+- TypeScript: `lowercase` (e.g., `features/`, `shared/`)
 
-**Code Style:**
-- Python: Type hints on functions, docstrings on classes and modules, f-strings for formatting
-- TypeScript: Explicit types on interfaces, `export const`/`export function` for barrel exports, React.FC for components
+**Python Functions:**
+- Public: `snake_case` (e.g., `load_settings()`, `run_pipeline()`)
+- Private: `_snake_case` (e.g., `_run_step()`, `_safe_serialize()`)
+
+**Python Classes:**
+- `PascalCase` (e.g., `UserRepo`, `BaseAgent`, `TraceContext`, `ScheduledReminderRepo`)
+
+**TypeScript:**
+- Components: `PascalCase` (e.g., `AppRouter`, `Dashboard`, `WeakAreasCard`)
+- Functions: `camelCase` (e.g., `createAuthenticatedClient`, `getInsforge`)
+- Hooks: `use` prefix (e.g., `useBackButton`, `useAuth`, `useUpdatePlanStep`)
 
 ## Where to Add New Code
 
-**New Handler Command:**
-- Primary code: `bot/handlers/{command}.py` (e.g., `bot/handlers/fitness.py` for /fitness)
-- Pattern: Create Router(), register handlers with `@router.message(Command("command"))`, use FSM states from `bot/states.py` (add new StateGroup if needed)
-- Wire-up: Add to imports and `dp.include_router()` call in `bot/main.py`
-
-**New Service:**
-- Implementation: `bot/services/{service_name}.py` (e.g., `bot/services/email.py`)
-- Injection: Instantiate in `bot/main.py` main() function, add to workflow_data dict
-- Usage: Pass via handler signature or access from workflow_data in context
+**New Bot Command:**
+- Primary code: `bot/handlers/<command>.py` (router + handlers)
+- Register: `bot/main.py` (dp.include_router)
+- States: `bot/states.py` (if FSM needed)
 
 **New Agent:**
-- Implementation: `bot/agents/{agent_name}.py` (e.g., `bot/agents/email_sender.py`)
-- Pattern: Subclass BaseAgent, implement `async def run(input: AgentInput, ctx: PipelineContext) -> AgentOutput`
-- Registration: Instantiate in `bot/main.py` and call `agent_registry.register()`
-
-**New Page/Feature (Web App):**
-- Page implementation: `packages/webapp/src/pages/{FeatureName}.tsx`
-- Feature logic: `packages/webapp/src/features/{feature}/` (store.ts, hook.ts)
-- Shared components: `packages/webapp/src/shared/ui/` (if reusable across pages)
-- Route registration: Add to `packages/webapp/src/app/Router.tsx`
-
-**New Utility:**
-- Shared Python: `bot/utils.py` (or `bot/services/` if domain-specific)
-- Shared TypeScript: `packages/shared/src/` (constants.ts, enums.ts, tables.ts)
-- Web app utilities: `packages/webapp/src/lib/` (e.g., `lib/telegram.ts`, `lib/insforge.ts`)
-
-**Database Changes:**
-- Pydantic model: `bot/storage/models.py` (add class inheriting from BaseModel)
-- Repository: `bot/storage/repositories.py` (add class with InsForgeClient operations)
-- TypeScript schema: `packages/shared/src/tables.ts` (mirror as Row interface)
-- Insert/update/query logic: Add methods to repository class
+- Implementation: `bot/agents/<agent_name>.py` (inherit BaseAgent)
+- Register: `bot/main.py` (agent_registry.register)
+- System prompt: `prompts/<agent_name>.md`
 
 **New Pipeline:**
-- YAML definition: `data/pipelines/{name}.yaml` (specify agent steps, execution modes, input mappings)
-- Loading: Already auto-loaded by `load_all_pipelines()` in `bot/pipeline/config_loader.py`
-- Usage: Call from handler with `load_pipeline("{name}")` and `PipelineRunner.run()`
+- Configuration: `data/pipelines/<pipeline_name>.yaml`
+- Agents: Reference existing or create new in `bot/agents/`
+
+**New Service:**
+- Implementation: `bot/services/<service_name>.py`
+- DI wiring: `bot/main.py` (workflow_data.update)
+
+**New Repository:**
+- Model: Add to `bot/storage/models.py` (Pydantic)
+- Repo: Add class to `bot/storage/repositories.py`
+- DI wiring: `bot/main.py` (instantiate + add to workflow_data)
+
+**New TMA Page:**
+- Component: `packages/webapp/src/pages/<PageName>.tsx`
+- Route: Add to `packages/webapp/src/app/Router.tsx` (lazy import + <Route>)
+- Feature: Create `packages/webapp/src/features/<feature>/` if complex
+
+**New TMA Feature Module:**
+- Directory: `packages/webapp/src/features/<feature>/`
+- Structure: Create `hooks/`, `components/`, optionally `pages/`
+- Hooks: `packages/webapp/src/features/<feature>/hooks/use<Feature>.ts`
+- Components: `packages/webapp/src/features/<feature>/components/<Component>.tsx`
+
+**New TMA Hook:**
+- Feature-specific: `packages/webapp/src/features/<feature>/hooks/use<Hook>.ts`
+- Shared: `packages/webapp/src/shared/hooks/use<Hook>.ts`
+
+**New TMA UI Component:**
+- Shared: `packages/webapp/src/shared/ui/<Component>.tsx`
+- Feature-specific: `packages/webapp/src/features/<feature>/components/<Component>.tsx`
+- Export: Add to `packages/webapp/src/shared/ui/index.ts` if shared
+
+**New Edge Function:**
+- Implementation: `functions/<function_name>/index.ts`
+- Deploy: Via InsForge dashboard or MCP
+- Secrets: Set in InsForge environment
+
+**New Database Table:**
+- Migration: `migrations/<timestamp>_<table_name>.sql` (or `insforge/migrations/` for observability/feature-specific)
+- Model: `bot/storage/models.py` (Pydantic)
+- Repository: `bot/storage/repositories.py` (class with InsForgeClient)
+- TypeScript types: `packages/shared/types/` (then inline to webapp)
+
+**Utilities:**
+- Bot general: `bot/utils.py` (Telegram formatting)
+- Bot TMA: `bot/utils_tma.py` (TMA menu button setup)
+- Bot validation: `bot/utils_validation.py` (input validation)
+- Bot tasks: `bot/task_utils.py` (background task protection)
+- TMA: `packages/webapp/src/lib/cn.ts` or `packages/webapp/src/lib/<utility>.ts`
 
 ## Special Directories
 
-**`data/user_memory/`:**
-- Purpose: User-specific memory JSON files (not committed to git)
-- Generated: Yes (at runtime by memory services)
-- Committed: No
-
-**`packages/webapp/dist/`:**
-- Purpose: Built/bundled web app (JavaScript, CSS, HTML)
-- Generated: Yes (by `vite build`)
-- Committed: No (in .gitignore)
-
 **`node_modules/`:**
-- Purpose: npm/pnpm dependencies
-- Generated: Yes (by `pnpm install`)
-- Committed: No (in .gitignore)
+- Purpose: Node dependencies (webapp, workspace root)
+- Generated: Yes (pnpm install)
+- Committed: No (.gitignored)
 
 **`.venv/`:**
 - Purpose: Python virtual environment
-- Generated: Yes (by `python -m venv .venv`)
-- Committed: No (in .gitignore)
+- Generated: Yes (python3 -m venv)
+- Committed: No (.gitignored)
 
-**`migrations/`:**
-- Purpose: Database schema change scripts (if using a migration tool)
-- Current status: Empty; schema managed directly via InsForge UI
-- Committed: Yes (for future schema versions)
+**`packages/webapp/dist/`:**
+- Purpose: Vite build output (static bundle)
+- Generated: Yes (pnpm build)
+- Committed: No (.gitignored)
+
+**`data/`:**
+- Purpose: Knowledge base content (gitignored due to sensitive business data)
+- Generated: No (manually authored)
+- Committed: No (only .example files committed)
+
+**`.planning/`:**
+- Purpose: GSD project tracking
+- Generated: Yes (by /gsd:* commands)
+- Committed: Yes
+
+**`insforge/`:**
+- Purpose: InsForge self-hosted instance artifacts (not part of bot/TMA)
+- Generated: Yes (InsForge CLI)
+- Committed: Yes (migrations only)
+
+**`deal-quest-bot/`:**
+- Purpose: Legacy directory or archived snapshot
+- Generated: Unknown
+- Committed: Partially (appears in tree but not actively used)
 
 ---
 
-*Structure analysis: 2026-02-02*
+*Structure analysis: 2026-02-06*

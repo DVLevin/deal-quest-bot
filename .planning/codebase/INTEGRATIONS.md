@@ -1,202 +1,158 @@
 # External Integrations
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-04
 
 ## APIs & External Services
 
+**LLM Providers:**
+- OpenRouter - Free LLM tier (team-wide shared key)
+  - SDK/Client: `httpx.AsyncClient` (custom implementation)
+  - Auth: `OPENROUTER_API_KEY` (env var)
+  - Default model: `openai/gpt-oss-120b` (free tier)
+  - Endpoint: `https://openrouter.ai/api/v1/chat/completions`
+  - Implementation: `bot/services/llm_router.py` (OpenRouterProvider class)
+- Anthropic Claude - Premium LLM tier (user-provided keys)
+  - SDK/Client: `httpx.AsyncClient` (custom implementation)
+  - Auth: User's encrypted API key (stored in `users.encrypted_api_key`)
+  - Default model: `claude-sonnet-4-20250514`
+  - Endpoint: `https://api.anthropic.com/v1/messages`
+  - Implementation: `bot/services/llm_router.py` (ClaudeProvider class)
+
+**Voice Transcription:**
+- AssemblyAI - Speech-to-text transcription
+  - SDK/Client: `httpx.AsyncClient` (REST API)
+  - Auth: `ASSEMBLYAI_API_KEY` (env var)
+  - Endpoints: `https://api.assemblyai.com/v2/upload`, `https://api.assemblyai.com/v2/transcript`
+  - Implementation: `bot/services/transcription.py` (TranscriptionService class)
+
 **Telegram:**
-- Telegram Bot API - Primary communication channel for bot
+- Telegram Bot API - Bot message handling
   - SDK/Client: aiogram 3.4.0+
-  - Auth: `TELEGRAM_BOT_TOKEN` (required)
-  - Implementation: `bot/main.py` via aiogram dispatcher and polling
-
-**LLM Providers (dual-provider architecture):**
-- OpenRouter - Default shared LLM provider for team (MVP stage)
-  - Client: Custom httpx-based `OpenRouterProvider` in `bot/services/llm_router.py`
-  - Auth: `OPENROUTER_API_KEY` (required)
-  - Endpoint: https://openrouter.ai/api/v1/chat/completions
-  - Models: moonshotai/kimi-k2.5 (default), qwen/qwen3-coder, deepseek/deepseek-r1, google/gemini-flash
-  - Used by: Agents (trainer, strategist, memory), engagement service
-
-- Anthropic Claude API - Alternative provider for future per-user integration
-  - Client: Custom httpx-based `ClaudeProvider` in `bot/services/llm_router.py`
-  - Auth: `ANTHROPIC_API_KEY` (optional)
-  - Endpoint: https://api.anthropic.com/v1/messages
-  - Model: claude-sonnet-4-20250514
-  - Status: Code path exists but not actively used in MVP
-
-**Voice Processing:**
-- AssemblyAI - Speech-to-text transcription service
-  - Client: Custom httpx-based `TranscriptionService` in `bot/services/transcription.py`
-  - Auth: `ASSEMBLYAI_API_KEY` (required)
-  - Endpoint: https://api.assemblyai.com/v2 (upload, transcript endpoints)
-  - Process: Upload audio → Create transcription job → Poll until completion
-  - Used by: `/voice` handler in `bot/handlers/support.py`, `bot/handlers/train.py`
+  - Auth: `TELEGRAM_BOT_TOKEN` (env var, from @BotFather)
+  - Implementation: `bot/main.py`, all handlers in `bot/handlers/`
+- Telegram Mini App SDK - TMA frontend
+  - SDK/Client: @telegram-apps/sdk-react 3.3.9
+  - Auth: initData HMAC-SHA256 validation via `verify-telegram` edge function
+  - Implementation: `packages/webapp/src/shared/hooks/` (useMainButton, useBackButton, etc.)
 
 ## Data Storage
 
 **Databases:**
-- InsForge (PostgreSQL backend)
-  - Type: Multi-tenant PostgreSQL with PostgREST API
-  - Connection: HTTP/REST via PostgREST
-  - Base URL: `INSFORGE_BASE_URL` env var (e.g., https://wz7ymxxu.eu-central.insforge.app)
-  - Client (Backend): Custom `InsForgeClient` in `bot/storage/insforge_client.py` using httpx
-  - Client (Frontend): `@insforge/sdk` (npm package) imported in `packages/webapp/src/lib/insforge.ts`
-  - Authentication:
-    - Anonymous requests: `INSFORGE_ANON_KEY` (JWT)
-    - Authenticated requests: User JWT obtained via Edge Function (Telegram auth flow)
-  - API Style: PostgREST (PostgreSQL queryable via REST)
-  - Filter Operators: eq., neq., gt., gte., lt., lte., like., ilike., is., in., cs., cd., not., or., and.
-  - Tables accessed via repositories:
-    - `users` → `UserRepo`
-    - `leads` → `LeadRegistryRepo`
-    - `lead_activity` → `LeadActivityRepo`
-    - `casebooks` → `CasebookRepo`
-    - `support_sessions` → `SupportSessionRepo`
-    - `user_memory` → `UserMemoryRepo`
-    - `track_progress` → `TrackProgressRepo`
-    - `attempts` → `AttemptRepo`
-    - `generated_scenarios` → `GeneratedScenarioRepo`
-    - `scenarios_seen` → `ScenariosSeenRepo`
+- InsForge (PostgreSQL via PostgREST)
+  - Connection: `INSFORGE_BASE_URL` (env var)
+  - Client (Python): `bot/storage/insforge_client.py` (InsForgeClient, custom httpx wrapper)
+  - Client (TypeScript): @insforge/sdk (createClient)
+  - Auth: `INSFORGE_ANON_KEY` (anon role with full-access RLS policies)
+  - Tables: `users`, `user_memory`, `attempts`, `track_progress`, `support_sessions`, `scenarios_seen`, `lead_registry`, `lead_activity_log`, `casebook`, `pipeline_traces`, `pipeline_spans`
+  - Repositories: `bot/storage/repositories.py` (11 repository classes)
 
 **File Storage:**
-- Local filesystem - Prompt templates, pipelines, scenarios, playbook
-  - Location: `prompts/`, `data/` directories
-  - Usage: YAML-based pipeline configs, scenario definitions, knowledge base
+- Local filesystem only
+  - Knowledge base: `data/playbook.md`, `data/company_knowledge.md` (gitignored)
+  - Training scenarios: `data/scenarios.json` (gitignored)
+  - Pipeline configs: `data/pipelines/*.yaml` (committed)
+  - Agent prompts: `prompts/*.txt` (committed)
 
 **Caching:**
-- In-memory only via Python dict/Pydantic models
-- No external cache layer (Redis, Memcached) configured
+- None (in-memory only via Python/JS runtime)
 
 ## Authentication & Identity
 
-**Telegram Mini App (TMA):**
-- Provider: Telegram auth data passed via InitData
-- Implementation: `bot/middleware.py` validates Telegram auth
-  - Location: `bot/middleware.py` - `AuthorizationMiddleware`
-  - Validation: Telegram hash verification for user identity
-- Flow:
-  1. User opens Telegram Mini App
-  2. InitData includes Telegram user info + hash
-  3. TMA frontend: `/auth` Edge Function verifies hash, returns JWT
-  4. JWT stored in memory (not localStorage)
-  5. JWT used for all authenticated InsForge requests
+**Auth Provider:**
+- Custom Telegram-based authentication
+  - Implementation: HMAC-SHA256 signature validation (Telegram's standard)
+  - Bot: Username-based authorization via `bot/middleware.py` (AuthorizationMiddleware)
+  - TMA: initData validation via `functions/verify-telegram/index.ts` edge function
+  - JWT: Minted by verify-telegram function using HS256 with `JWT_SECRET`
+  - Session: JWT stored in Zustand (memory-only, re-minted on TMA open)
+  - User identity: `telegram_id` (bigint) as primary key across all tables
 
 **Authorization:**
-- Username-based whitelist access control
-  - `ALLOWED_USERNAMES` env var (comma-separated)
-  - `ADMIN_USERNAMES` env var (comma-separated)
-  - Checked in `bot/middleware.py` and handlers
-- Admin-only features: `/admin`, `/stats`
+- Bot access: `ALLOWED_USERNAMES` (comma-separated list, no @ prefix)
+- Admin access: `ADMIN_USERNAMES` (comma-separated list, no @ prefix)
+- TMA access: All authenticated Telegram users (RLS policies filter by telegram_id)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None detected (no Sentry, Rollbar, etc.)
-- Logging via Python logging module
+- None (Python logging only)
 
 **Logs:**
-- Python logging to stdout
-  - Config: `bot/main.py` - `setup_logging()`
-  - Format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-  - Level: Configurable via `LOG_LEVEL` env var (default INFO)
-  - Loggers by module: `bot.main`, `bot.storage.insforge_client`, `bot.services.*`, etc.
-
-**Metrics:**
-- None configured (no Prometheus, CloudWatch, etc.)
+- Python: Standard logging module (`bot/utils.py`, `bot/main.py`)
+- Log level: `LOG_LEVEL` env var (default: INFO)
+- Pipeline tracing: Custom tracing system (`bot/tracing/`) writing to `pipeline_traces` and `pipeline_spans` tables
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Not explicitly defined in codebase
-- Expected: Cloud VM or serverless (Telegram polling requires persistent connection)
+- Railway (bot and TMA)
+  - Bot: Long-running process (restart on failure, max 10 retries)
+  - TMA: Static SPA serving via `serve` package
+  - Auto-deploy: From remote git branch (currently `gsd/phase-01-foundation-and-auth` for TMA)
 
 **CI Pipeline:**
-- None detected (.github/workflows/, .gitlab-ci.yml absent)
-
-**Deployment Strategy:**
-- Manual (no automated pipeline)
-- Python bot: Run via `source .venv/bin/activate && python -m bot.main`
-- Frontend: Build with `pnpm build` → static files served as Telegram Mini App
+- None (manual deploy via Railway git integration)
 
 ## Environment Configuration
 
 **Required env vars:**
-- `TELEGRAM_BOT_TOKEN` - Telegram Bot API token
-- `ENCRYPTION_KEY` - Fernet encryption key (base64)
-- `INSFORGE_BASE_URL` - InsForge PostgREST endpoint
+- `TELEGRAM_BOT_TOKEN` - Bot auth token
+- `ENCRYPTION_KEY` - Fernet key for API key encryption
+- `INSFORGE_BASE_URL` - InsForge project URL
 - `INSFORGE_ANON_KEY` - InsForge anonymous JWT
-- `OPENROUTER_API_KEY` - OpenRouter LLM API key
-- `ASSEMBLYAI_API_KEY` - AssemblyAI API key
-
-**Recommended env vars:**
-- `ADMIN_USERNAMES` - Admin access control
-- `ALLOWED_USERNAMES` - User whitelist
-- `LOG_LEVEL` - Logging verbosity
-- `DEFAULT_OPENROUTER_MODEL` - Default LLM model for new users
-
-**Optional env vars:**
-- `ANTHROPIC_API_KEY` - Claude API key (for future per-user integration)
+- `OPENROUTER_API_KEY` - Shared team OpenRouter key
+- `VITE_INSFORGE_URL` - TMA frontend InsForge URL (build-time)
+- `VITE_INSFORGE_ANON_KEY` - TMA frontend anon key (build-time)
+- `VITE_BOT_USERNAME` - Bot username for TMA deep links (build-time)
 
 **Secrets location:**
-- `.env` file (root) - Contains actual secrets, not committed
-- `.env.example` - Template with placeholders for documentation
-
-**Vite frontend env vars (prefixed with VITE_):**
-- `VITE_INSFORGE_URL` - InsForge base URL for browser
-- `VITE_INSFORGE_ANON_KEY` - InsForge anon key for browser
-  - Exposed at build time via Vite's `import.meta.env`
+- Bot: `.env` file (local), Railway env vars (production)
+- TMA: Railway env vars (baked into bundle at build time)
+- Edge functions: InsForge dashboard environment secrets (`TELEGRAM_BOT_TOKEN`, `JWT_SECRET`)
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- Telegram updates: Polling mode (not webhooks)
-  - Handler: `bot/main.py` - `Dispatcher.start_polling()`
-  - No webhook URL or Telegram callback configuration
+- None (bot uses long polling, not webhooks)
 
 **Outgoing:**
-- Telegram message sends: Via Telegram Bot API
-  - Async requests from handlers/services
-  - No callback URLs configured
+- None
 
-**Internal Callbacks:**
-- Pipeline execution callbacks in `bot/pipeline/runner.py`
-- FSM state transitions via aiogram FSM
+## Database Access Patterns
 
-## Rate Limiting & Quotas
+**Bot → InsForge:**
+- Protocol: HTTP(S) REST via PostgREST `/api/database/records` endpoint
+- Auth: Bearer token (anon key)
+- Client: Custom `InsForgeClient` wrapping httpx.AsyncClient
+- Path: `bot/storage/insforge_client.py`
 
-**Telegram:**
-- Bot API rate limits (Telegram's default throttling)
-- No custom rate limiting layer in code
+**TMA → InsForge:**
+- Protocol: HTTP(S) REST via @insforge/sdk
+- Auth: Anon key (no JWT used for queries despite verify-telegram minting one)
+- Client: @insforge/sdk createClient
+- Path: `packages/webapp/src/lib/insforge.ts`
+- Note: Per-user isolation enforced at query level (filter by telegram_id from Zustand store)
 
-**OpenRouter:**
-- Shared key (team-wide) - MVP stage (planning per-user keys)
-- No local rate limiting or quota tracking
+**Edge Functions → InsForge:**
+- Protocol: Internal HTTP via `INSFORGE_INTERNAL_URL` (http://insforge:7130)
+- Auth: Anon key from `ANON_KEY` env var
+- Client: Deno-injected createClient (InsForge runtime)
+- Path: `functions/db-proxy.js`, `functions/verify-telegram/index.ts`
 
-**AssemblyAI:**
-- API rate limits per plan
-- No local rate limiting
+## Security Notes
 
-**InsForge:**
-- PostgREST query limits
-- No explicit pagination or cursor logic observed
+**Known Compromise:**
+- Bot uses anon key (not service role) for database access
+- Anon key has full-access RLS policies (`anon_full_*` policies in `migrations/001_*.sql`)
+- TMA frontend uses same anon key (exposed in JS bundle)
+- Migration path: Move bot to service role key, remove anon full-access policies (future phase)
+- Documented in: `functions/verify-telegram/index.ts` (TODO comment), `migrations/001_*.sql` (policy comments)
 
-## Error Handling & Retries
-
-**LLM Provider Retries:**
-- Max 3 retries with exponential backoff: [1s, 3s, 8s]
-  - Location: `bot/services/llm_router.py` - `MAX_RETRIES`, `RETRY_DELAYS`
-  - Retries on: 429, 500, 502, 503 status codes + generic exceptions
-
-**Transcription Retries:**
-- Polling with 1.5s interval, 60s max timeout
-  - Location: `bot/services/transcription.py` - `_POLL_INTERVAL`, `_MAX_POLL_TIME`
-
-**InsForge Client:**
-- httpx client timeout: 30 seconds (default)
-  - Location: `bot/storage/insforge_client.py`
-- No automatic retry logic (handled at service level)
+**Encryption:**
+- User API keys: Encrypted with Fernet (symmetric encryption) before storage
+- Key: `ENCRYPTION_KEY` env var (generated via `Fernet.generate_key()`)
+- Implementation: `bot/services/crypto.py` (CryptoService class)
 
 ---
 
-*Integration audit: 2026-02-02*
+*Integration audit: 2026-02-04*

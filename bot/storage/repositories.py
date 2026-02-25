@@ -8,16 +8,22 @@ from typing import Any
 
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import (
+    AgentModelConfigModel,
     AttemptModel,
     CasebookModel,
     ConversationTurnModel,
+    DraftRequestModel,
     GeneratedScenarioModel,
     LeadActivityModel,
+    LeadAnalysisHistoryModel,
     LeadRegistryModel,
     PipelineSpanModel,
     PipelineTraceModel,
+    PlanRequestModel,
     ScenarioSeenModel,
+    ScheduledReminderModel,
     SupportSessionModel,
+    TmaEventModel,
     TrackProgressModel,
     UserMemoryModel,
     UserModel,
@@ -476,6 +482,86 @@ class LeadRegistryRepo:
                 counts[s] = counts.get(s, 0) + 1
         return counts
 
+    async def add_research_version(
+        self, lead_id: int, query: str, url: str | None, content: str
+    ) -> None:
+        """Add a new web research version to a lead."""
+        lead = await self.get_by_id(lead_id)
+        if not lead:
+            return
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Initialize or get existing versions structure
+        versions_data = lead.web_research_versions or {"versions": [], "current_version_id": 0}
+        versions = versions_data.get("versions", [])
+
+        # Calculate new version_id
+        new_version_id = max((v.get("version_id", 0) for v in versions), default=0) + 1
+
+        # Create new version entry
+        new_version = {
+            "version_id": new_version_id,
+            "created_at": now,
+            "query_used": query,
+            "url_provided": url,
+            "content": content,
+        }
+
+        versions.append(new_version)
+        versions_data["versions"] = versions
+        versions_data["current_version_id"] = new_version_id
+
+        # Update both web_research_versions and legacy web_research field
+        await self.update_lead(
+            lead_id,
+            web_research_versions=versions_data,
+            web_research=content,
+        )
+
+    async def delete_research_version(self, lead_id: int, version_id: int) -> None:
+        """Delete a specific web research version from a lead."""
+        lead = await self.get_by_id(lead_id)
+        if not lead:
+            return
+
+        versions_data = lead.web_research_versions
+        if not versions_data:
+            return
+
+        versions = versions_data.get("versions", [])
+        current_version_id = versions_data.get("current_version_id", 0)
+
+        # Filter out the version to delete
+        remaining_versions = [v for v in versions if v.get("version_id") != version_id]
+
+        if len(remaining_versions) == len(versions):
+            # Version not found, nothing to delete
+            return
+
+        versions_data["versions"] = remaining_versions
+
+        # If deleted version was current, set current to most recent remaining (or None)
+        if current_version_id == version_id:
+            if remaining_versions:
+                # Set to the most recent version (highest version_id)
+                new_current = max(remaining_versions, key=lambda v: v.get("version_id", 0))
+                versions_data["current_version_id"] = new_current.get("version_id", 0)
+                current_content = new_current.get("content", "")
+            else:
+                versions_data["current_version_id"] = 0
+                current_content = ""
+
+            # Update legacy web_research to current version content
+            await self.update_lead(
+                lead_id,
+                web_research_versions=versions_data,
+                web_research=current_content if current_content else None,
+            )
+        else:
+            # Just update versions, keep current web_research
+            await self.update_lead(lead_id, web_research_versions=versions_data)
+
 
 class LeadActivityRepo:
     def __init__(self, client: InsForgeClient) -> None:
@@ -508,6 +594,254 @@ class LeadActivityRepo:
         if rows and isinstance(rows, list):
             return [LeadActivityModel(**r) for r in rows]
         return []
+
+
+class LeadAnalysisHistoryRepo:
+    """Repository for lead analysis version history."""
+
+    MAX_VERSIONS = 5  # Keep last 5 versions per lead
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "lead_analysis_history"
+
+    async def save_version(
+        self,
+        lead_id: int,
+        telegram_id: int,
+        analysis_snapshot: dict[str, Any],
+        changes_summary: str | None = None,
+        field_diff: dict[str, Any] | None = None,
+        triggered_by: str = "initial",
+        triggering_activity_id: int | None = None,
+    ) -> LeadAnalysisHistoryModel:
+        """Save a new analysis version. Auto-increments version_number."""
+        # Get current max version
+        rows = await self.client.query(
+            self.table,
+            select="version_number",
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+            limit=1,
+        )
+        next_version = 1
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            next_version = rows[0].get("version_number", 0) + 1
+
+        data = {
+            "lead_id": lead_id,
+            "telegram_id": telegram_id,
+            "version_number": next_version,
+            "analysis_snapshot": analysis_snapshot,
+            "changes_summary": changes_summary,
+            "field_diff": field_diff,
+            "triggered_by": triggered_by,
+            "triggering_activity_id": triggering_activity_id,
+        }
+        result = await self.client.create(self.table, data)
+
+        # Prune old versions beyond MAX_VERSIONS
+        await self._prune_old_versions(lead_id)
+
+        return LeadAnalysisHistoryModel(**result) if result else LeadAnalysisHistoryModel(**data)
+
+    async def get_versions(self, lead_id: int, limit: int = 5) -> list[LeadAnalysisHistoryModel]:
+        """Get analysis versions for a lead, newest first."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            return [LeadAnalysisHistoryModel(**r) for r in rows]
+        return []
+
+    async def get_latest(self, lead_id: int) -> LeadAnalysisHistoryModel | None:
+        """Get the most recent analysis version for a lead."""
+        versions = await self.get_versions(lead_id, limit=1)
+        return versions[0] if versions else None
+
+    async def _prune_old_versions(self, lead_id: int) -> None:
+        """Delete versions beyond MAX_VERSIONS (keep newest)."""
+        rows = await self.client.query(
+            self.table,
+            select="id,version_number",
+            filters={"lead_id": lead_id},
+            order="version_number.desc",
+        )
+        if not rows or not isinstance(rows, list):
+            return
+
+        # Keep MAX_VERSIONS, delete the rest
+        if len(rows) > self.MAX_VERSIONS:
+            to_delete = rows[self.MAX_VERSIONS:]
+            for row in to_delete:
+                row_id = row.get("id")
+                if row_id:
+                    await self.client.delete(self.table, {"id": row_id})
+
+
+class ScheduledReminderRepo:
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "scheduled_reminders"
+
+    async def create(self, reminder: ScheduledReminderModel) -> ScheduledReminderModel:
+        data = reminder.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        result = await self.client.create(self.table, data)
+        return ScheduledReminderModel(**result) if result else reminder
+
+    async def get_due_reminders(self, now_iso: str) -> list[ScheduledReminderModel]:
+        """Get reminders where due_at <= now and status is pending or sent."""
+        try:
+            rows = await self.client.query(
+                self.table,
+                filters={"due_at": f"lte.{now_iso}", "status": "in.(pending,sent)"},
+                order="due_at.asc",
+                limit=50,
+            )
+        except Exception:
+            # Fallback: fetch all active reminders and filter in Python
+            logger.warning("PostgREST lte filter failed, falling back to Python filtering")
+            rows = await self.client.query(
+                self.table,
+                filters={"status": "in.(pending,sent)"},
+                order="due_at.asc",
+                limit=200,
+            )
+
+        if not rows or not isinstance(rows, list):
+            return []
+
+        reminders = [ScheduledReminderModel(**r) for r in rows]
+
+        # Filter in Python: verify due_at is due
+        from datetime import datetime as _dt
+        try:
+            now_dt = _dt.fromisoformat(now_iso.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return []
+
+        due = []
+        for reminder in reminders:
+            if not reminder.due_at:
+                continue
+            try:
+                due_dt = _dt.fromisoformat(reminder.due_at.replace("Z", "+00:00"))
+                if due_dt <= now_dt:
+                    due.append(reminder)
+            except (ValueError, TypeError):
+                continue
+        return due
+
+    async def cancel_pending_for_lead(self, lead_id: int) -> None:
+        """Cancel all pending/sent reminders for a lead (for idempotent re-scheduling)."""
+        try:
+            rows = await self.client.query(
+                self.table,
+                filters={"lead_id": lead_id, "status": "in.(pending,sent)"},
+            )
+        except Exception:
+            # Fallback: fetch all for lead and filter in Python
+            rows = await self.client.query(
+                self.table,
+                filters={"lead_id": lead_id},
+            )
+            if rows and isinstance(rows, list):
+                rows = [r for r in rows if r.get("status") in ("pending", "sent")]
+
+        if not rows or not isinstance(rows, list):
+            return
+
+        now = datetime.now(timezone.utc).isoformat()
+        for row in rows:
+            reminder_id = row.get("id")
+            if reminder_id:
+                await self.client.update(
+                    self.table,
+                    {"id": reminder_id},
+                    {"status": "cancelled", "updated_at": now},
+                )
+
+    async def mark_reminded(self, reminder_id: int, now_iso: str) -> None:
+        """Mark a reminder as having been sent (increment reminder_count)."""
+        rows = await self.client.query(
+            self.table,
+            filters={"id": reminder_id},
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return
+
+        current_count = rows[0].get("reminder_count", 0)
+        await self.client.update(
+            self.table,
+            {"id": reminder_id},
+            {
+                "last_reminded_at": now_iso,
+                "reminder_count": current_count + 1,
+                "updated_at": now_iso,
+            },
+        )
+
+    async def update_status(self, reminder_id: int, status: str) -> None:
+        """Update reminder status. If completed, also set completed_at."""
+        now = datetime.now(timezone.utc).isoformat()
+        updates: dict[str, Any] = {"status": status, "updated_at": now}
+        if status == "completed":
+            updates["completed_at"] = now
+        await self.client.update(self.table, {"id": reminder_id}, updates)
+
+    async def snooze(self, reminder_id: int, new_due_iso: str) -> None:
+        """Snooze a reminder by updating due_at and incrementing snooze_count."""
+        rows = await self.client.query(
+            self.table,
+            filters={"id": reminder_id},
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return
+
+        current_snooze = rows[0].get("snooze_count", 0)
+        now = datetime.now(timezone.utc).isoformat()
+
+        await self.client.update(
+            self.table,
+            {"id": reminder_id},
+            {
+                "due_at": new_due_iso,
+                "status": "pending",
+                "snooze_count": current_snooze + 1,
+                "updated_at": now,
+            },
+        )
+
+    async def delete_for_lead(self, lead_id: int) -> None:
+        """Delete all reminders for a lead (cascade on lead deletion)."""
+        await self.client.delete(self.table, {"lead_id": lead_id})
+
+    async def get_for_lead(self, lead_id: int) -> list[ScheduledReminderModel]:
+        """Get all reminders for a lead, ordered by step_id."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id},
+            order="step_id.asc",
+        )
+        if rows and isinstance(rows, list):
+            return [ScheduledReminderModel(**r) for r in rows]
+        return []
+
+    async def get_by_lead_and_step(self, lead_id: int, step_id: int) -> ScheduledReminderModel | None:
+        """Get a specific reminder by lead_id and step_id."""
+        rows = await self.client.query(
+            self.table,
+            filters={"lead_id": lead_id, "step_id": step_id},
+            limit=1,
+        )
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            return ScheduledReminderModel(**rows[0])
+        return None
 
 
 class CasebookRepo:
@@ -670,3 +1004,280 @@ class ConversationHistoryRepo:
                 await self.client.create(self.table, data)
         except Exception as e:
             logger.error("Failed to save conversation history for user %s: %s", telegram_id, e)
+
+
+class AgentModelConfigRepo:
+    """Repository for agent_model_config table."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self._client = client
+        self._table = "agent_model_config"
+
+    async def get_all_active(self) -> list[dict[str, Any]]:
+        """Get all active agent model configs."""
+        rows = await self._client.query(
+            self._table,
+            filters={"is_active": "eq.true"},
+        )
+        if rows and isinstance(rows, list):
+            return rows
+        return []
+
+    async def upsert(self, agent_name: str, model_id: str, set_by: str | None = None) -> dict[str, Any] | None:
+        """Create or update a model config for an agent."""
+        existing = await self._client.query(
+            self._table,
+            filters={"agent_name": agent_name},
+        )
+        if existing and isinstance(existing, list) and len(existing) > 0:
+            return await self._client.update(
+                self._table,
+                filters={"agent_name": agent_name},
+                data={
+                    "model_id": model_id,
+                    "is_active": True,
+                    "set_by": set_by,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+        else:
+            data: dict[str, Any] = {
+                "agent_name": agent_name,
+                "model_id": model_id,
+                "is_active": True,
+            }
+            if set_by is not None:
+                data["set_by"] = set_by
+            return await self._client.create(self._table, data)
+
+    async def deactivate(self, agent_name: str) -> dict[str, Any] | None:
+        """Deactivate (soft delete) a model config."""
+        return await self._client.update(
+            self._table,
+            filters={"agent_name": agent_name},
+            data={"is_active": False, "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+
+
+class DraftRequestRepo:
+    """Repository for draft generation request queue."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "draft_requests"
+
+    async def claim_next_pending(self) -> DraftRequestModel | None:
+        """Atomically claim the oldest pending request by setting status to 'processing'."""
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.pending"},
+            order="created_at.asc",
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return None
+
+        row = rows[0]
+        result = await self.client.update(
+            self.table,
+            filters={"id": row["id"], "status": "pending"},
+            data={"status": "processing", "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+        if not result:
+            return None
+        return DraftRequestModel(**result)
+
+    async def complete(self, request_id: int, result: dict[str, Any]) -> None:
+        """Mark a request as completed with the generation result."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "completed",
+                "result": result,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def fail(self, request_id: int, error: str) -> None:
+        """Mark a request as failed with error details."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "failed",
+                "result": {"error": error},
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def reset_stale_processing(self, max_age_minutes: int = 2) -> int:
+        """Reset processing requests older than max_age_minutes back to pending."""
+        cutoff = datetime.now(timezone.utc)
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.processing"},
+        )
+        if not rows or not isinstance(rows, list):
+            return 0
+
+        count = 0
+        for row in rows:
+            updated_at = datetime.fromisoformat(row["updated_at"].replace("Z", "+00:00"))
+            age_minutes = (cutoff - updated_at).total_seconds() / 60
+            if age_minutes > max_age_minutes:
+                await self.client.update(
+                    self.table,
+                    filters={"id": row["id"]},
+                    data={"status": "pending", "updated_at": cutoff.isoformat()},
+                )
+                count += 1
+        return count
+
+
+class PlanRequestRepo:
+    """Repository for engagement plan generation request queue."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "plan_requests"
+
+    async def claim_next_pending(self) -> PlanRequestModel | None:
+        """Atomically claim the oldest pending request by setting status to 'processing'."""
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.pending"},
+            order="created_at.asc",
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return None
+
+        row = rows[0]
+        result = await self.client.update(
+            self.table,
+            filters={"id": row["id"], "status": "pending"},
+            data={"status": "processing", "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+        if not result:
+            return None
+        return PlanRequestModel(**result)
+
+    async def complete(self, request_id: int, result: dict[str, Any]) -> None:
+        """Mark a request as completed with the generation result."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "completed",
+                "result": result,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def fail(self, request_id: int, error: str) -> None:
+        """Mark a request as failed with error details."""
+        await self.client.update(
+            self.table,
+            filters={"id": request_id},
+            data={
+                "status": "failed",
+                "result": {"error": error},
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def reset_stale_processing(self, max_age_minutes: int = 2) -> int:
+        """Reset processing requests older than max_age_minutes back to pending."""
+        cutoff = datetime.now(timezone.utc)
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.processing"},
+        )
+        if not rows or not isinstance(rows, list):
+            return 0
+
+        count = 0
+        for row in rows:
+            updated_at = datetime.fromisoformat(row["updated_at"].replace("Z", "+00:00"))
+            age_minutes = (cutoff - updated_at).total_seconds() / 60
+            if age_minutes > max_age_minutes:
+                await self.client.update(
+                    self.table,
+                    filters={"id": row["id"]},
+                    data={"status": "pending", "updated_at": cutoff.isoformat()},
+                )
+                count += 1
+        return count
+
+
+class TmaEventRepo:
+    """Repository for TMA-to-Bot event bus."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "tma_events"
+
+    async def claim_next(self) -> TmaEventModel | None:
+        """Claim the oldest pending event by setting status to 'processing'."""
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.pending"},
+            order="created_at.asc",
+            limit=1,
+        )
+        if not rows or not isinstance(rows, list) or len(rows) == 0:
+            return None
+
+        row = rows[0]
+        result = await self.client.update(
+            self.table,
+            filters={"id": row["id"], "status": "pending"},
+            data={"status": "processing"},
+        )
+        if not result:
+            return None
+        return TmaEventModel(**result)
+
+    async def mark_delivered(self, event_id: int) -> None:
+        """Mark an event as delivered with timestamp."""
+        await self.client.update(
+            self.table,
+            filters={"id": event_id},
+            data={
+                "status": "delivered",
+                "delivered_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    async def mark_failed(self, event_id: int, error: str) -> None:
+        """Mark an event as failed."""
+        logger.error("TMA event %d failed: %s", event_id, error)
+        await self.client.update(
+            self.table,
+            filters={"id": event_id},
+            data={"status": "failed"},
+        )
+
+    async def reset_stale_processing(self, max_age_minutes: int = 2) -> int:
+        """Reset stale 'processing' events back to 'pending'."""
+        cutoff = datetime.now(timezone.utc)
+        rows = await self.client.query(
+            self.table,
+            filters={"status": "eq.processing"},
+        )
+        if not rows or not isinstance(rows, list):
+            return 0
+
+        count = 0
+        for row in rows:
+            created_at = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
+            age_minutes = (cutoff - created_at).total_seconds() / 60
+            if age_minutes > max_age_minutes:
+                await self.client.update(
+                    self.table,
+                    filters={"id": row["id"]},
+                    data={"status": "pending"},
+                )
+                count += 1
+        return count

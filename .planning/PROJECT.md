@@ -1,94 +1,114 @@
-# Deal Quest Bot — AI Sales Partner
+# Deal Quest TMA
 
 ## What This Is
 
-A conversational AI sales partner inside Telegram that helps salespeople manage deals, prepare for calls, practice selling skills, and get proactive coaching — all through natural language. Instead of navigating commands, the salesperson just talks to the bot like a colleague. An orchestrator LLM routes requests to specialist agents (Deal, Coach, Strategy, Memory) that execute via tool-use loops.
+A Telegram Mini App (TMA) that gives Deal Quest users a rich, branded mobile experience for sales training, practice, deal support, and progress tracking. The existing Deal Quest bot handles AI-powered strategy generation, scenario scoring, and memory — the TMA becomes the visual layer that makes all of that accessible through interactive dashboards, scenario cards, charts, badges, and an admin panel. Built as a monorepo extension inside `deal-quest-bot/` using React + Vite + TypeScript, talking directly to the same InsForge backend the bot already uses.
 
 ## Core Value
 
-A salesperson can chat naturally in Telegram about any sales need — deals, training, strategy, follow-ups — and the AI partner understands, routes to the right specialist, and acts. No commands required.
-
-## Current Milestone: v2.0 AI Sales Partner
-
-**Goal:** Transform the command-driven bot into a conversation-driven AI sales partner with multi-agent orchestration, CRM capabilities, and proactive coaching.
-
-**Target features:**
-- Natural language routing via Orchestrator → Specialist agents
-- Deal management (CRM inside the bot — InsForge backend)
-- Proactive coaching (daily combined brief + context-triggered nudges)
-- Strategy assistance (call prep, deal analysis, competitive intel)
-- Persistent memory (learns salesperson's patterns and context)
-- Observability admin tools (folded from previous Phase 2)
+Sales reps can see their progress, practice scenarios, get deal support, and track leads through a visually engaging mobile interface — not just text in a chat.
 
 ## Requirements
 
 ### Validated
 
-- ✓ Telegram bot with aiogram 3 FSM-based handlers — v1.0
-- ✓ Agent pipeline system (PipelineRunner, YAML configs, sequential/parallel/background execution) — v1.0
-- ✓ Three agent pipelines: learn (trainer), train (trainer), support (strategist) — v1.0
-- ✓ Voice transcription via AssemblyAI — v1.0
-- ✓ InsForge (PostgREST) data layer with repository pattern — v1.0
-- ✓ Admin handler with username-based authorization — v1.0
-- ✓ Real-time progress updates during processing (ProgressUpdater) — v1.0
-- ✓ User API key encryption/decryption (CryptoService) — v1.0
-- ✓ Background tasks (followup scheduler, scenario generation) — v1.0
-- ✓ Pipeline tracing with step-level timing and agent I/O capture — v1.0
-- ✓ Trace persistence to InsForge pipeline_traces/pipeline_spans tables — v1.0
+<!-- Existing bot capabilities that the TMA will surface visually. These are working in the bot today. -->
+
+- ✓ Real-time deal support with prospect analysis, closing strategy, engagement tactics, and draft responses — existing (bot /support)
+- ✓ Structured learning tracks with 4 levels, rubric-based scoring, and auto-unlock progression — existing (bot /learn)
+- ✓ Random practice scenarios with never-repeat logic, difficulty filtering, and voice/text input — existing (bot /train)
+- ✓ XP/level system with streak tracking and rank titles — existing (bot scoring service)
+- ✓ Lead pipeline management with status tracking, photo upload, web research, engagement plans — existing (bot /leads)
+- ✓ Casebook of reusable responses with quality scoring — existing (bot casebook service)
+- ✓ Admin analytics: team stats, leaderboard, trends, weak areas — existing (bot /admin)
+- ✓ Multi-provider LLM routing (OpenRouter free tier / Claude premium) — existing (bot LLM router)
+- ✓ Voice transcription via AssemblyAI — existing (bot transcription service)
+- ✓ InsForge backend with PostgreSQL, auth, storage, realtime — existing
 
 ### Active
 
-- [ ] Orchestrator agent — LLM-driven message routing to specialist agents
-- [ ] Deal Agent — CRM operations: create/update deals, log notes, track pipeline stages
-- [ ] Coach Agent — training, practice sessions, objection handling, skill assessment
-- [ ] Strategy Agent — deal analysis, call preparation, competitive intel, re-engagement plans
-- [ ] Memory Agent — learns salesperson patterns, preferences, deal history context
-- [ ] Natural language message handling — catch-all handler routes to orchestrator instead of FSM
-- [ ] Tool-use loop architecture — agents execute tools iteratively until task complete
-- [ ] Confirmation-first writes — inline keyboards for approval before CRM mutations
-- [ ] Daily combined briefing — morning message with deal status + coaching nudge + alerts
-- [ ] Context-triggered nudges — proactive messages when deals go stale or practice streaks break
-- [ ] Admin traces/health commands — debugging tools for the new agent system
-- [ ] Conversation history — sliding window context management per user
+<!-- New TMA features to build. -->
+
+- [ ] TMA foundation: React + Vite + TypeScript scaffold inside deal-quest-bot/ monorepo with Telegram SDK integration
+- [ ] Telegram WebApp auth flow: initData verification → InsForge JWT → authenticated API calls
+- [ ] Dashboard page: XP/level progress bar, weekly activity chart, recent badges, leaderboard preview, quick-action navigation
+- [ ] Learn mode UI: track visualization with level cards, lesson content display, scenario practice with rich input, score/feedback display
+- [ ] Train mode UI: scenario cards with persona details, difficulty badge, timed response input, animated scoring results
+- [ ] Support mode UI: strategy builder with text/screenshot input, structured analysis display, draft with copy/regenerate/save actions
+- [ ] Casebook browser: searchable/filterable gallery of saved responses, quality indicators, "use as template" flow
+- [ ] Profile page: full stats, attempt history, badge collection, settings management
+- [ ] Badge system UI: badge wall with rarity tiers (common/rare/epic/legendary), earn animations, criteria display
+- [ ] Gamification visuals: level-up animations, streak indicators, XP gain animations, leaderboard with rankings
+- [ ] Admin dashboard: team performance charts, member rankings, weak area identification, content management
+- [ ] Bot hybrid integration: bot commands offer "Open in App" inline buttons alongside existing text responses
+- [ ] Custom branded design system: Deal Quest visual identity, not generic TelegramUI — mobile-optimized, polished
 
 ### Out of Scope
 
-- External CRM sync (HubSpot, Pipedrive, etc.) — planned for future milestone, bot is CRM for now
-- TMA changes — this milestone is purely Telegram chat, TMA evolves separately
-- Distributed tracing (OpenTelemetry/Jaeger) — overkill for single-process bot
-- Full PipelineRunner rewrite — new agent system works alongside existing pipelines
-- Multi-language support — English only for now
+- Native mobile app (iOS/Android) — TMA covers mobile use case within Telegram
+- Real-time chat/messaging features — bot handles conversational interactions
+- Payment/subscription system — not needed for current user base
+- Offline mode — requires network for LLM calls and data sync
+- Desktop-optimized layout — TMA is mobile-first (Telegram context)
+- Replacing bot commands entirely — hybrid approach, bot stays functional for quick actions
+- Multi-language i18n — English only for v1
 
 ## Context
 
-- Bot runs as a single Python async process with aiogram long polling
-- All data persists in InsForge (PostgREST over PostgreSQL)
-- Existing pipelines (learn, train, support) will be wrapped by the new Coach/Strategy agents
-- Voice messages supported via AssemblyAI transcription — should work with natural language routing
-- Admin handler already exists at `bot/handlers/admin.py`
-- Reference architecture: ClickUp MCP bot at `/Users/dmytrolevin/Desktop/clickup mcp/` — TypeScript/grammY implementation of the same pattern (Orchestrator + BaseAgent + tool-use loops + confirmation messages)
-- The ClickUp bot uses OpenRouter for LLM calls, agents.yaml for config, markdown prompt templates with {{token}} substitution
-- Current default LLM: z-ai/glm-5 via OpenRouter
+**Existing system:** The Deal Quest bot is a production-ready Python/aiogram 3 Telegram bot with sophisticated multi-agent architecture. It uses InsForge (self-hosted Supabase alternative) for PostgreSQL, auth, file storage, and realtime. The bot has 10+ database tables, 3 AI agents (strategist, trainer, memory), YAML-configured pipelines, and handles text/photo/voice input.
+
+**InsForge backend:** Already running with tables for users, attempts, track_progress, casebook, lead_registry, support_sessions, badges, teams, and more. The TMA will use InsForge's REST API directly (same as the bot's httpx client, but from browser via JS SDK).
+
+**Telegram Mini Apps:** TMAs are web apps that run inside Telegram's mobile client. They receive user identity via `initData` (cryptographically signed by Telegram). The TMA will use `@telegram-apps/sdk-react` for Telegram integration and verify auth through InsForge.
+
+**Exploration document:** `deal-quest-bot/docs/tma/idea_2_explore` contains detailed wireframes, proposed schema extensions (badges, teams tables), gamification specs (10-level system, 8 badge types, streak bonuses), and tech stack recommendations. General direction is solid; specific details will flex during implementation.
+
+**Monorepo approach:** TMA lives inside `deal-quest-bot/` as `packages/webapp/` alongside the existing bot code. Shared types and constants in `packages/shared/`. pnpm workspaces for dependency management.
 
 ## Constraints
 
-- **Stack**: Python/aiogram 3 — must integrate with existing async patterns (ClickUp ref is TypeScript, needs adaptation)
-- **Storage**: InsForge tables — consistent with existing data layer, no local SQLite
-- **Telegram limits**: 4096-char messages, inline keyboards for confirmations
-- **LLM costs**: All agent calls go through OpenRouter — cost-aware routing needed
-- **Backward compatibility**: Existing /learn, /train, /support commands should still work as shortcuts alongside natural language
+- **Tech stack**: React 18+ / Vite / TypeScript for TMA frontend — standard for Telegram Mini Apps
+- **Backend**: InsForge REST API only — no additional backend services, TMA talks directly to existing tables
+- **Auth**: Telegram WebApp initData verification — must validate cryptographic signature server-side
+- **Mobile-first**: TMA runs inside Telegram mobile client — all UI must be touch-friendly, performant on mobile
+- **Git workflow**: Every feature on a separate branch, merge to main only after manual testing (per CLAUDE.md)
+- **Branding**: Custom Deal Quest design — not generic TelegramUI components
+- **Bot compatibility**: Existing bot must keep working unchanged; TMA is additive
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| InsForge for trace storage | Consistent with existing data layer, accessible from future TMA | ✓ Good |
-| Instrument at handler level, not runner internals | Minimal code changes, wrap call sites like ProgressUpdater does | ✓ Good |
-| Bot is the CRM (InsForge) | External CRM sync deferred to future milestone | — Pending |
-| Multi-agent orchestrator pattern (inspired by ClickUp MCP) | Proven architecture for natural language → action routing, already working in production | — Pending |
-| Python adaptation of TypeScript BaseAgent pattern | Same concept (tool-use loops, agent config YAML) adapted to aiogram/async Python | — Pending |
-| Confirmation-first for CRM writes | Prevents accidental deal mutations, builds user trust | — Pending |
-| Existing commands as shortcuts | Backward compatibility, power users keep fast paths | — Pending |
+| Monorepo inside deal-quest-bot/ | Shared types, single repo, easier coordination | — Pending |
+| Custom branded design (not TelegramUI) | Distinctive identity, better UX for sales professionals | — Pending |
+| Hybrid bot + TMA | Bot stays functional for quick actions, TMA for rich experiences | — Pending |
+| InsForge direct from TMA | No BFF needed, InsForge has REST API + row-level security | — Pending |
+| pnpm workspaces | Industry standard for JS monorepos, better than npm workspaces for this | — Pending |
+| Deployment TBD | Focus on building first, deploy when ready | — Pending |
+| Railway for TMA webapp | Static SPA serving with `serve dist -s`, auto-deploys from remote branch | Confirmed |
+| Inlined shared types for Railway | Railway `root_dir=packages/webapp` can't access `../shared`; types copied to `webapp/src/types/` | Confirmed |
+| Always push after commits | Railway deploys from remote — local-only commits never reach production. GSD executors must push after plan completion | Lesson learned (Phase 2/3) |
+
+## Previous Milestones
+
+### v1.1 — Quick & Medium Wins (COMPLETE)
+**Result:** 19/19 requirements delivered across 4 phases (8-11). Lead management, training experience, error handling & UX, and performance & reliability.
+
+### v2.0 — Sales Co-Pilot (COMPLETE)
+**Result:** 51 requirements delivered across 11 phases (12-21). Scheduled engagement reminders, smart lead creation from screenshots, rich bot reminders with inline drafts, conversational re-analysis, multi-platform comment generation, bidirectional TMA-Bot communication, Langfuse observability, per-agent model config, step action screens, deal closure celebration, pipeline summary, first-time guide.
+
+## Current Milestone: v3.0 — Prospect Discovery & UX Evolution
+
+**Goal:** Add AI-powered prospect discovery via external LinkedIn search microservice, voice-first input across TMA, modernize the bot role toward notifications + quick actions, add team collaboration features, and deliver a comprehensive UX polish pass across the entire app.
+
+**Target features:**
+1. **LinkedIn Prospect Search** — Natural language search ("I need ML engineers at startups") → external microservice → review results in TMA → one-tap lead creation with full AI analysis + engagement plan
+2. **Voice Input in TMA** — Record voice memos anywhere text input exists today (lead notes, prospect context, meeting debriefs, analysis input) via browser MediaRecorder + AssemblyAI transcription
+3. **Bot Role Modernization** — Shift bot toward notifications, status updates, and quick confirmations; move complex workflows (lead creation, analysis) to TMA; resolve duplicate workflows
+4. **Team Collaboration** — Lead transfer/handoff with full context, team activity feed showing real-time teammate actions
+5. **UX Overhaul** — Reduce taps/steps, declutter information-heavy screens with progressive disclosure, animation/transition polish, visual consistency pass across all screens
+
+**Scope:** External microservice integration, TMA voice capabilities, bot simplification, team features, and full UX polish. Bot-side changes are subtractive (simplify) while TMA-side changes are additive (new features + polish).
 
 ---
-*Last updated: 2026-02-24 after milestone v2.0 initialization*
+*Last updated: 2026-02-11 after v3.0 milestone creation*

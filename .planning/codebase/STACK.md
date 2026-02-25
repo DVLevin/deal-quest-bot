@@ -1,116 +1,105 @@
 # Technology Stack
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-04
 
 ## Languages
 
 **Primary:**
-- Python 3.x - Telegram bot backend, AI agents, business logic
-- TypeScript 5.9 - Monorepo frontend and shared types
-- JavaScript - Runtime in webapp
+- Python 3.11+ - Bot backend (`bot/` directory)
+- TypeScript 5.9 - TMA frontend (`packages/webapp/`)
 
 **Secondary:**
-- YAML - Pipeline configuration, schema definitions
-- JSON - Configuration, environment variables
+- JavaScript (Deno runtime) - Edge functions (`functions/`)
 
 ## Runtime
 
 **Environment:**
-- Python (async via asyncio) - Bot server
-- Node.js + npm/pnpm - Frontend build and package management
+- Python 3.11 (production via Railway Nixpacks)
+- Python 3.13.0 (local development)
+- Node.js v23.3.0 (local development)
+- Deno 2.0.6 (InsForge Edge Functions runtime)
 
 **Package Manager:**
-- pnpm (workspace:*) - Monorepo management
-  - Lockfile: pnpm-lock.yaml (not present, inferred)
-- pip/venv - Python dependencies
-  - Virtual environment: `.venv/`
-  - Lockfile: requirements.txt
+- pnpm 10.28.2 (frontend monorepo)
+- Lockfile: `pnpm-lock.yaml` present
+- pip (Python bot)
+- Lockfile: None (uses `requirements.txt` directly)
 
 ## Frameworks
 
-**Backend:**
+**Core:**
 - aiogram 3.4.0+ - Async Telegram bot framework
-- httpx 0.27.0+ - Async HTTP client for external API integration
+- React 18.3.1 - TMA frontend UI
+- Vite 7.3.0 - Frontend build tool and dev server
 
-**Frontend:**
-- React 18.3.1 - Component framework
-- Vite 7.3.0 - Build tool and dev server
-- Tailwind CSS 4.1.0 - Utility-first styling
-- React Router 7.12.0 - Client-side routing
-- TanStack React Query 5.90.0 - Server state management
-- Zustand 5.0.10 - Client state management
-- @telegram-apps/sdk-react 3.3.9 - Telegram Mini App SDK
+**Testing:**
+- Not detected (no test framework in dependencies)
 
-**Shared:**
-- TypeScript 5.9 - Type safety across packages
-- Pydantic 2.6.0+ - Python data validation
+**Build/Dev:**
+- Vite 7.3.0 - Frontend bundler with SWC React plugin
+- Tailwind CSS 4.1.0 - Utility-first CSS framework
+- @tailwindcss/vite - Tailwind v4 Vite integration
+- vite-plugin-mkcert - Local HTTPS for Telegram Mini App dev
+- vite-tsconfig-paths - TypeScript path alias resolution
 
 ## Key Dependencies
 
-**Critical Backend:**
-- pydantic-settings 2.2.0+ - Config management via environment variables
-- cryptography 42.0.0+ - Fernet encryption for storing user API keys
-- pyyaml 6.0.1+ - Pipeline YAML parsing
-- python-dotenv 1.0.1+ - .env file loading
+**Critical:**
+- httpx 0.27.0+ - Async HTTP client for InsForge PostgREST and LLM APIs
+- @insforge/sdk latest - InsForge database client (TypeScript)
+- pydantic 2.6.0+ - Data validation and settings management
+- pydantic-settings 2.2.0+ - Environment-based configuration
+- cryptography 42.0.0+ - Fernet encryption for API key storage
+- anthropic 0.40.0+ - Claude API client
 
-**Critical Frontend:**
-- @insforge/sdk (latest) - InsForge database client
-- @telegram-apps/sdk-react 3.3.9 - Telegram Mini App integration
-- class-variance-authority 0.7.0 - CVA-based component styling
-- lucide-react 0.562.0 - Icon library
-- eruda 3.4.3 - Mobile debugging console (dev only)
+**Infrastructure:**
+- @telegram-apps/sdk-react 3.3.9 - Telegram Mini App SDK integration
+- @tanstack/react-query 5.90.0+ - Server state management
+- zustand 5.0.10+ - Client state management
+- react-router 7.12.0+ - TMA routing
+- serve 14.0.0+ - Production static file server
 
-**Critical Monorepo:**
-- @deal-quest/shared (workspace) - Shared type definitions
-- @deal-quest/webapp (workspace) - Telegram Mini App UI
+**UI Components:**
+- lucide-react 0.562.0+ - Icon library
+- class-variance-authority 0.7.0+ - Component variant API
+- clsx 2.0.0+ - Conditional className utilities
+- tailwind-merge 3.0.0+ - Tailwind class conflict resolution
+- eruda 3.4.3 - Mobile debugging console
+
+**Development:**
+- @vitejs/plugin-react-swc - Fast React compilation via SWC
+- python-dotenv 1.0.1+ - Load .env files (Python)
+- pyyaml 6.0.1+ - YAML pipeline configs and memory storage
 
 ## Configuration
 
 **Environment:**
-- `.env` file with required and optional variables
-- pydantic-settings loads from `.env` in `bot/config.py`
-- VITE_* prefixed env vars for Vite frontend exposure
-
-**Key Environment Variables:**
-- `TELEGRAM_BOT_TOKEN` - Bot authentication
-- `ENCRYPTION_KEY` - Fernet key for user API key storage
-- `INSFORGE_BASE_URL` - PostgREST database endpoint
-- `INSFORGE_ANON_KEY` - Anonymous JWT for InsForge
-- `OPENROUTER_API_KEY` - Shared LLM provider key
-- `ASSEMBLYAI_API_KEY` - Voice transcription
-- `DEFAULT_OPENROUTER_MODEL` - Default LLM model
-- `ADMIN_USERNAMES` - Comma-separated admin list
-- `ALLOWED_USERNAMES` - Comma-separated whitelist
-- `LOG_LEVEL` - Logging verbosity
-- `VITE_INSFORGE_URL` - InsForge URL for frontend
-- `VITE_INSFORGE_ANON_KEY` - InsForge anon key for frontend
+- Python bot: `.env` file via `pydantic-settings` (BaseSettings)
+- TMA: `VITE_*` prefixed vars baked into bundle at build time
+- Required vars: `TELEGRAM_BOT_TOKEN`, `ENCRYPTION_KEY`, `INSFORGE_BASE_URL`, `INSFORGE_ANON_KEY`, `OPENROUTER_API_KEY`
+- Optional: `ASSEMBLYAI_API_KEY`, `ADMIN_USERNAMES`, `ALLOWED_USERNAMES`, `LOG_LEVEL`
 
 **Build:**
-- `packages/webapp/vite.config.ts` - Vite config with React SWC, Tailwind, tsconfig paths
-- `packages/webapp/tsconfig.json` - Strict mode, React JSX, ES2020 target
-- `packages/shared/tsconfig.json` - Library mode, declaration maps
-- Root `pnpm-workspace.yaml` - Monorepo workspace definition
+- `railway.toml` - Bot deployment config (Nixpacks, Python 3.11)
+- `packages/webapp/railway.toml` - TMA static serving config
+- `tsconfig.json` - TypeScript strict mode, ES2020 target, path aliases
+- `vite.config.ts` - React SWC, Tailwind v4, mkcert, tsconfigPaths plugins
+- `pnpm-workspace.yaml` - Monorepo workspace definition (`packages/*`)
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.x (exact version not pinned)
-- Node.js (exact version not pinned, pnpm required)
-- pnpm package manager
-- Virtual environment (.venv) for Python isolation
+- Python 3.11+ with venv
+- Node.js 23+ (or compatible LTS)
+- pnpm 10.28.2
+- HTTPS certificates for local TMA dev (auto-generated by mkcert plugin)
 
 **Production:**
-- Python 3.x async runtime
-- Node.js for frontend build artifacts (or pre-built static bundle)
-- Environment variables for all API keys and config
-- Telegram Bot API access
-- Network access to:
-  - Telegram servers
-  - InsForge backend
-  - OpenRouter API
-  - AssemblyAI API
-  - Anthropic Claude API (optional)
+- Railway (bot): Nixpacks builder, Python 3.11 runtime
+- Railway (TMA): Static SPA serving via `serve` package
+- InsForge: Deno 2.0.6 runtime for edge functions
+- PostgreSQL via InsForge (no direct connection, all via PostgREST)
 
 ---
 
-*Stack analysis: 2026-02-02*
+*Stack analysis: 2026-02-04*

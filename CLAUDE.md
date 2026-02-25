@@ -28,6 +28,27 @@ Check `.planning/` for the current GSD (Get Shit Done) project tracking:
 - Only merge to `main` after **manual tests by the user** confirm the feature works.
 - When testing locally, run the bot from the **feature branch**.
 - Run the bot from `main` **only** when the user explicitly asks, or when there are no active feature branches.
+- **CRITICAL: Always push to remote after committing.** Railway deploys from the remote branch — local-only commits will never appear in the deployed app. After any batch of commits (including GSD plan execution), run `git push origin <branch>` before considering the work done.
+
+## Deployment
+
+### TMA Webapp (Railway)
+- **Platform**: Railway (static SPA serving)
+- **Config**: `packages/webapp/railway.toml` — root directory `packages/webapp`, build with `pnpm install && pnpm build`, serve with `serve dist -s`
+- **Branch**: Railway deploys from the current remote branch (currently `gsd/phase-01-foundation-and-auth`)
+- **Build env vars**: `VITE_INSFORGE_URL` and `VITE_INSFORGE_ANON_KEY` must be set in Railway dashboard (baked into bundle at build time)
+- **Shared types**: `packages/shared/` types are inlined into `packages/webapp/src/types/` because Railway's `root_dir` isolation prevents accessing `../shared` during build
+
+### Bot (Railway)
+- **Platform**: Railway (long-running process)
+- **Config**: `railway.toml` at repo root — Nixpacks builder, `python3 -m bot.main`
+- **Restart policy**: ON_FAILURE (max 10 retries)
+
+### Edge Functions (InsForge)
+- **Runtime**: Deno 2.0.6 (InsForge runtime)
+- **Functions**: `functions/verify-telegram/` (Telegram auth), `functions/db-proxy.js` (database proxy)
+- **Deploy**: Via InsForge dashboard or MCP — not auto-deployed from git
+- **Required secrets**: `TELEGRAM_BOT_TOKEN`, `JWT_SECRET` must be set as InsForge environment secrets
 
 ## Running the Bot
 

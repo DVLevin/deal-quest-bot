@@ -1,284 +1,433 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-02
+**Analysis Date:** 2026-02-06
 
 ## Test Framework
 
-**Status:** Not yet implemented
+**Python Runner:**
+- None detected
+- No `pytest.ini`, `setup.cfg`, or test files found in `bot/` or root directory
+- No test dependencies in `requirements.txt`
 
-**Current state:**
-- No test files exist in the codebase (0 `.test.ts`, `.spec.ts`, `.test.tsx`, `.spec.tsx` files)
-- No testing framework configured (no jest.config, vitest.config, or test runner in package.json)
-- No testing dependencies in webapp or shared packages
+**Python Status:**
+- **Zero test coverage** — no test infrastructure present
 
-**Implications:**
-- TypeScript compilation validation only (via `tsc --noEmit`)
-- All code must be manually tested
-- No automated regression detection
-- Integration testing relies on manual Telegram TMA testing
+**TypeScript Runner:**
+- Framework: Not configured for webapp (`packages/webapp/`)
+- InsForge backend has tests: Vitest detected in `insforge/insforge/backend/`
+  - Config: `insforge/insforge/backend/tests/unit/*.test.ts`
+  - Vitest config: `insforge/insforge/frontend/vitest.config.ts`
+- Webapp has no test files or config
 
-## Recommended Testing Setup
+**TypeScript Status:**
+- **Webapp: Zero test coverage** — no test infrastructure
+- InsForge (external dependency) has unit tests, but not relevant to this codebase
 
-**For future implementation, recommend:**
-
-**Test Runner:** Vitest (modern, fast, works well with Vite)
-- Already using Vite, so Vitest integrates seamlessly
-- Async/await support for testing async auth flows
-- Good TypeScript support
-
-**Assertion Library:** Vitest built-in + `@testing-library/react` for components
-- Component testing via React Testing Library (user-centric)
-- Mock Telegram SDK and InsForge client
-
-**Run Commands (to be implemented):**
+**Run Commands:**
 ```bash
-npm run test                # Run all tests once
-npm run test:watch         # Watch mode for development
-npm run test:coverage      # Generate coverage report
+# Python - Not applicable (no tests)
+
+# TypeScript - Not applicable (no tests configured for webapp)
 ```
 
-## Current Validation Approach
+## Test File Organization
 
-**TypeScript Compilation:**
-- Location: `packages/webapp/tsconfig.json`, `packages/shared/tsconfig.json`
-- Config: `tsc --noEmit` in package.json scripts
-- Enforcement:
-  - `strict: true` — all strict checks
-  - `noUnusedLocals: true` — unused variables caught
-  - `noUnusedParameters: true` — unused params caught
-  - Path aliases must resolve correctly
+**Location:**
+- Not applicable — no test files exist
 
-**Manual Testing Strategy:**
+**Naming:**
+- Not applicable
 
-**Authentication Flow:**
-- Run Telegram bot in development mode
-- Test Telegram Web App launch
-- Verify `initDataRaw` retrieval
-- Check verify-telegram Edge Function call
-- Validate JWT storage and client configuration
-- Test InsForge database query validation
+**Structure:**
+- Not applicable
 
-**Component Testing:**
-```bash
-npm run dev  # Start Vite dev server
-# Manually test each route in TMA
-# - Navigation between pages
-# - Auth state persistence
-# - Error states and recovery
-# - TanStack Query caching behavior
+## Test Structure
+
+**Python Suite Organization:**
+Not applicable — no tests exist.
+
+**Expected pattern** (based on Python best practices):
+```python
+# If tests existed, they would follow:
+# bot/tests/test_agents.py
+# bot/tests/test_storage.py
+# bot/tests/test_services.py
+# bot/tests/test_handlers.py
+
+import pytest
+from bot.agents.base import AgentInput, AgentOutput
+from bot.agents.strategist import StrategistAgent
+
+@pytest.mark.asyncio
+async def test_strategist_agent_success():
+    # Arrange
+    agent = StrategistAgent()
+    input_data = AgentInput(user_message="test")
+
+    # Act
+    result = await agent.run(input_data, mock_context)
+
+    # Assert
+    assert result.success is True
 ```
 
-**Integration Testing:**
-- Manual TMA testing covers:
-  - AuthProvider → verify-telegram → JWT → authenticated client
-  - QueryProvider → TanStack Query caching
-  - Router → lazy-loaded pages
-  - Telegram SDK integration (BackButton, MainButton, etc.)
+**TypeScript Suite Organization:**
+Not applicable — no tests exist.
 
-## Code Patterns Ready for Testing
-
-**Auth Hook - Easy to test:**
-Location: `packages/webapp/src/features/auth/useAuth.ts`
-
+**Expected pattern** (based on InsForge reference):
 ```typescript
-// Can be tested with:
-// 1. Mock retrieveLaunchParams to return test initDataRaw
-// 2. Mock insforgeAnon.functions.invoke to return JWT
-// 3. Assert createAuthenticatedClient called with correct JWT
-// 4. Assert validation query executes
-// 5. Assert error handling on various failure modes
+// If tests existed, they would follow Vitest pattern:
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { ErrorCard } from '@/shared/ui/ErrorCard';
+
+describe('ErrorCard', () => {
+  it('renders error message', () => {
+    render(<ErrorCard message="Failed to load" />);
+    expect(screen.getByText('Failed to load')).toBeInTheDocument();
+  });
+
+  it('shows retry button when onRetry provided', () => {
+    const onRetry = vi.fn();
+    render(<ErrorCard message="Error" onRetry={onRetry} />);
+    expect(screen.getByText('Retry')).toBeInTheDocument();
+  });
+});
 ```
 
-**Store - Very easy to test:**
-Location: `packages/webapp/src/features/auth/store.ts`
+## Mocking
 
-```typescript
-// Zustand store is a pure function, trivial to test:
-// 1. Create store instance
-// 2. Call setAuth() and assert state updates
-// 3. Call clearAuth() and assert state reset
-// 4. Test each action produces expected state
-// 5. No mocks needed for basic store tests
+**Python Framework:**
+Not applicable — no mocking infrastructure detected.
+
+**Expected approach** (based on codebase architecture):
+- Mock external dependencies: InsForge client, LLM providers, Telegram Bot API
+- Mock repositories for handler tests
+- Use `pytest-asyncio` for async test support
+- Fixture factories for Pydantic models
+
+**Example (if implemented):**
+```python
+# bot/tests/conftest.py
+import pytest
+from unittest.mock import AsyncMock
+from bot.storage.insforge_client import InsForgeClient
+
+@pytest.fixture
+def mock_insforge_client():
+    client = AsyncMock(spec=InsForgeClient)
+    client.get.return_value = {"data": [{"id": 1, "telegram_id": 12345}]}
+    return client
+
+@pytest.fixture
+def mock_llm_provider():
+    provider = AsyncMock()
+    provider.complete.return_value = {"analysis": "Test analysis"}
+    return provider
 ```
 
-**Components - Requires React Testing Library:**
-Location: `packages/webapp/src/shared/ui/Button.tsx`, etc.
+**TypeScript Framework:**
+Not applicable — no mocking detected.
 
+**Expected approach** (based on React best practices):
+- Mock API calls with Mock Service Worker (MSW) or Vitest mocks
+- Mock Telegram SDK: `@telegram-apps/sdk-react`
+- Mock InsForge client responses
+- Mock React Query for data fetching tests
+
+**Example (if implemented):**
 ```typescript
-// Component tests should verify:
-// 1. Renders with correct className variants
-// 2. Props correctly apply to underlying element
-// 3. isLoading prop shows spinner
-// 4. disabled prop prevents interaction
-// 5. onClick handler fires
-// 6. Accessibility (aria-hidden on spinner, etc.)
-```
+// src/test/mocks/insforge.ts
+import { vi } from 'vitest';
 
-**Providers - Requires Router and mocks:**
-Location: `packages/webapp/src/app/providers/AuthProvider.tsx`
-
-```typescript
-// Provider tests need:
-// 1. Mock useAuthStore for different auth states
-// 2. Mock authenticateWithTelegram for success/failure
-// 3. Assert loading state renders during auth
-// 4. Assert error state renders when auth fails
-// 5. Assert children render only when authenticated
-```
-
-## Test Coverage Targets (Future)
-
-**Priority order for initial test suite:**
-
-1. **Auth module (95%+ coverage):**
-   - `useAuth.ts` — all success/error paths
-   - `store.ts` — all store mutations
-   - `AuthProvider.tsx` — loading, error, success states
-
-2. **Shared utilities (100% coverage):**
-   - `shared/lib/cn.ts` — class merging logic
-   - All utility functions
-
-3. **UI Components (80%+ coverage):**
-   - Button variants (all sizes, variants, loading state)
-   - Card component (padding variants, polymorphic component)
-   - Badge component (all variants)
-
-4. **Integration (manual + E2E):**
-   - Full auth flow (via Telegram SDK mock)
-   - Page navigation
-   - TanStack Query caching behavior
-
-5. **Optional (Nice to have):**
-   - Individual pages
-   - Custom hooks
-   - Error boundaries
-
-## Mocking Strategy (When Implemented)
-
-**Telegram SDK:**
-```typescript
-// Mock @telegram-apps/sdk-react
-vi.mock('@telegram-apps/sdk-react', () => ({
-  retrieveLaunchParams: vi.fn(() => ({
-    initDataRaw: 'test-init-data-raw',
-  })),
-  // ... other Telegram functions
-}));
-```
-
-**InsForge Client:**
-```typescript
-// Mock @insforge/sdk
-vi.mock('@insforge/sdk', () => ({
-  createClient: vi.fn(() => ({
-    functions: {
-      invoke: vi.fn(async (fnName, opts) => {
-        if (fnName === 'verify-telegram') {
-          return {
-            data: { jwt: 'test-jwt', user: { id: 1, telegram_id: 123 } },
-            error: null,
-          };
-        }
-      }),
-    },
-    database: {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            limit: vi.fn(async () => ({
-              data: [{ id: 1, telegram_id: 123 }],
-              error: null,
-            })),
-          })),
-        })),
+export const mockInsforge = {
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        data: [{ id: 1, telegram_id: 12345 }],
+        error: null,
       })),
-    },
-    getHttpClient: vi.fn(() => ({
-      setAuthToken: vi.fn(),
     })),
   })),
-}));
+};
 ```
 
-**TanStack Query:**
+## Fixtures and Factories
+
+**Python Test Data:**
+Not applicable — no fixtures exist.
+
+**Expected pattern:**
+```python
+# bot/tests/fixtures.py (if it existed)
+import pytest
+from bot.storage.models import UserModel, LeadRegistryModel
+
+@pytest.fixture
+def sample_user():
+    return UserModel(
+        telegram_id=12345,
+        username="testuser",
+        provider="openrouter",
+        total_xp=1000,
+        current_level=5,
+    )
+
+@pytest.fixture
+def sample_lead():
+    return LeadRegistryModel(
+        telegram_id=12345,
+        prospect_name="John Doe",
+        prospect_company="Acme Corp",
+        prospect_title="VP Sales",
+        status="analyzed",
+    )
+```
+
+**TypeScript Test Data:**
+Not applicable — no test data factories exist.
+
+**Expected pattern:**
 ```typescript
-// Can be tested with QueryClient directly, no mock needed:
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 5 * 60_000, retry: 1 },
-  },
+// src/test/factories.ts (if it existed)
+export const createMockUser = (overrides = {}) => ({
+  id: 1,
+  telegram_id: 12345,
+  username: 'testuser',
+  provider: 'openrouter',
+  total_xp: 1000,
+  current_level: 5,
+  ...overrides,
 });
 
-// Tests wrap components in QueryClientProvider(client={queryClient})
+export const createMockLead = (overrides = {}) => ({
+  id: 1,
+  telegram_id: 12345,
+  prospect_name: 'John Doe',
+  prospect_company: 'Acme Corp',
+  status: 'analyzed',
+  ...overrides,
+});
 ```
 
-## What NOT to Mock
+## Coverage
 
-- **Zustand stores** — use real store in tests
-- **React Router** — use real router for navigation tests (wrap in MemoryRouter)
-- **Tailwind CSS classes** — test className values, not rendered styles
-- **Utils like `cn()`** — test directly with real input
+**Python Requirements:**
+None enforced — no coverage tooling detected.
+
+**TypeScript Requirements:**
+None enforced — no coverage tooling detected.
+
+**View Coverage:**
+```bash
+# Not applicable (no tests or coverage tools configured)
+```
+
+## Test Types
+
+**Unit Tests:**
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Agent logic (`bot/agents/`)
+  - Utility functions (`bot/utils.py`, `bot/utils_validation.py`)
+  - Data transformations (`bot/services/scoring.py`, `bot/services/diff_utils.py`)
+  - UI components (`packages/webapp/src/shared/ui/`)
+
+**Integration Tests:**
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Pipeline execution (`bot/pipeline/runner.py`)
+  - Repository operations with real database
+  - LLM provider calls with mocked HTTP responses
+  - Full handler flows (command → repository → response)
+
+**E2E Tests:**
+- Python: Not present
+- TypeScript: Not present
+- Expected scope (if implemented):
+  - Full bot conversation flows (aiogram testing utilities)
+  - Telegram Mini App user journeys (Playwright or Cypress)
+
+## Common Patterns
+
+**Python Async Testing:**
+Not implemented.
+
+**Expected pattern:**
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_user_repo_get_by_telegram_id(insforge_client_mock):
+    # Arrange
+    repo = UserRepo(insforge_client_mock)
+
+    # Act
+    user = await repo.get_by_telegram_id(12345)
+
+    # Assert
+    assert user is not None
+    assert user.telegram_id == 12345
+```
+
+**Python Error Testing:**
+Not implemented.
+
+**Expected pattern:**
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_llm_provider_handles_rate_limit():
+    # Arrange
+    provider = ClaudeProvider(api_key="test")
+
+    # Act & Assert
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        await provider.complete("system", "user")
+
+    assert exc_info.value.response.status_code == 429
+```
+
+**TypeScript Async Testing:**
+Not implemented.
+
+**Expected pattern:**
+```typescript
+import { describe, it, expect } from 'vitest';
+import { waitFor } from '@testing-library/react';
+
+describe('useUserSettings', () => {
+  it('fetches user settings', async () => {
+    const { result } = renderHook(() => useUserSettings());
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeDefined();
+  });
+});
+```
+
+**TypeScript Error Testing:**
+Not implemented.
+
+**Expected pattern:**
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('getInsforge', () => {
+  it('throws when client not authenticated', () => {
+    expect(() => getInsforge()).toThrow(
+      'InsForge client not authenticated'
+    );
+  });
+});
+```
 
 ## Testing Gaps
 
-**Current untested areas:**
+**Critical Untested Areas:**
 
-1. **Authentication flow** — Most critical
-   - No automated verification of JWT flow
-   - No test of Edge Function integration
-   - No test of session resilience
+**Python Bot:**
+- `bot/agents/*` — Zero coverage on AI agent logic (including new `extraction.py`, `reanalysis_strategist.py`)
+- `bot/pipeline/runner.py` — Pipeline execution not tested
+- `bot/storage/repositories.py` — Database operations not tested (11+ repo classes)
+- `bot/handlers/*` — Command handlers not tested (11+ handler modules including `context_input.py`, `comment.py`, `reminders.py`)
+- `bot/services/llm_router.py` — LLM provider logic not tested
+- `bot/services/plan_scheduler.py` — Reminder scheduling not tested (date parsing, escalation logic)
+- `bot/services/diff_utils.py` — Analysis diff computation not tested
+- `bot/services/image_utils.py` — Image pre-processing not tested
+- `bot/utils_validation.py` — Shared validation logic not tested (fuzzy command matching, context-specific messages)
+- `bot/task_utils.py` — Background task management not tested
+- `bot/tracing/*` — Observability system not tested (spans, traces, collector)
 
-2. **Router and navigation** — No test of:
-   - Page transitions
-   - Lazy loading behavior
-   - BackButton integration
+**TypeScript Webapp:**
+- `packages/webapp/src/features/*` — Zero coverage on all features
+- `packages/webapp/src/shared/ui/*` — UI components not tested (11+ components including new `ErrorBoundary`, `ErrorCard`, `EmptyState`, `Toast`)
+- `packages/webapp/src/lib/insforge.ts` — Client initialization not tested
+- `packages/webapp/src/app/providers/*` — Auth and Query providers not tested
 
-3. **UI Components** — No regression tests for:
-   - Button variants and states
-   - Card layouts
-   - Responsive behavior
+**Risk Assessment:**
+- High risk: Agent pipeline execution (complex async flows, external API dependencies)
+- High risk: Database operations (data integrity, error handling)
+- High risk: Reminder scheduling logic (`plan_scheduler.py` — date parsing, escalation, auto-snooze)
+- High risk: Input validation (`utils_validation.py` — fuzzy command matching could have edge cases)
+- High risk: Image processing (`image_utils.py` — dimension calculations, format conversions)
+- Medium risk: UI components (user-facing, but type-safe; ErrorBoundary is critical for error handling)
+- Medium risk: LLM provider abstraction (retry logic, error handling)
+- Medium risk: Background task management (`task_utils.py` — GC prevention, error logging)
 
-4. **Error handling** — No automated tests for:
-   - Network failures
-   - Invalid auth responses
-   - Telegram SDK initialization failures
+**Recommended First Tests:**
+1. Python: `utils_validation.py` — Unit tests for `validate_user_input()` and `_check_mistyped_command()` (pure functions, high value)
+2. Python: `diff_utils.py` — Unit tests for `compute_analysis_diff()` and `summarize_diff_for_humans()` (pure functions, complex logic)
+3. Python: `image_utils.py` — Unit tests for `pre_resize_image()` (file I/O, dimension calculations)
+4. Python: `plan_scheduler.py` — Unit tests for `parse_step_due_date()` (complex regex matching, edge cases)
+5. Python: Repository unit tests with mocked InsForge client
+6. Python: Agent unit tests with mocked LLM responses
+7. TypeScript: `ErrorBoundary` — Render tests with error injection
+8. TypeScript: `ErrorCard`, `EmptyState`, `Toast` — Snapshot/render tests
+9. TypeScript: Hook tests with mocked API responses
 
-5. **State management** — No tests of:
-   - Zustand store mutations
-   - Store selectors
-   - State persistence across navigation
+## Testing Infrastructure Setup (Recommended)
 
-## Manual Testing Checklist (Until Automated Tests)
+**Python:**
+```toml
+# pyproject.toml (to be created)
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["bot/tests"]
+python_files = "test_*.py"
 
-**Before deploying, manually verify:**
+[tool.coverage.run]
+source = ["bot"]
+omit = ["bot/tests/*", "bot/.venv/*"]
+```
 
-**Auth:**
-- [ ] Telegram TMA launches successfully
-- [ ] initDataRaw is retrieved
-- [ ] verify-telegram Edge Function returns JWT
-- [ ] InsForge client accepts JWT
-- [ ] Database queries work with authenticated client
-- [ ] Logout/session expiry handled gracefully
+**Python Dependencies:**
+```
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+httpx-mock>=0.15.0
+Pillow>=10.0.0  # For image_utils tests
+```
 
-**Navigation:**
-- [ ] All 8 routes load
-- [ ] Page skeletons display during lazy load
-- [ ] BackButton syncs with browser back
-- [ ] No console errors during navigation
+**TypeScript:**
+```typescript
+// vitest.config.ts (to be created)
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react-swc';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
-**UI:**
-- [ ] All components render without errors
-- [ ] Buttons are clickable and respond to state
-- [ ] Cards display content correctly
-- [ ] Loading states show spinners
-- [ ] Error states display error messages
+export default defineConfig({
+  plugins: [react(), tsconfigPaths()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
+});
+```
 
-**Performance:**
-- [ ] Pages load quickly
-- [ ] TanStack Query caches between routes
-- [ ] No memory leaks from effects
+**TypeScript Dependencies:**
+```json
+{
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jsdom": "^23.0.0",
+    "msw": "^2.0.0"
+  }
+}
+```
 
 ---
 
-*Testing analysis: 2026-02-02*
+*Testing analysis: 2026-02-06*

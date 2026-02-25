@@ -84,8 +84,11 @@ class LeadRegistryModel(BaseModel):
     user_id: int | None = None
     telegram_id: int
     prospect_name: str | None = None
+    prospect_first_name: str | None = None
+    prospect_last_name: str | None = None
     prospect_title: str | None = None
     prospect_company: str | None = None
+    prospect_geography: str | None = None
     photo_url: str | None = None
     photo_key: str | None = None
     prospect_analysis: str | None = None
@@ -97,6 +100,7 @@ class LeadRegistryModel(BaseModel):
     input_type: str = "text"
     original_context: str | None = None
     web_research: str | None = None
+    web_research_versions: dict[str, Any] | None = None
     engagement_plan: list[dict[str, Any]] | None = None
     last_contacted: str | None = None
     next_followup: str | None = None
@@ -109,9 +113,10 @@ class LeadActivityModel(BaseModel):
     id: int | None = None
     lead_id: int
     telegram_id: int
-    activity_type: str  # context_update | screenshot_comment | ai_advice | followup_sent
+    activity_type: str  # context_update | screenshot_comment | ai_advice | followup_sent | prospect_response | meeting_notes | re_analysis
     content: str
     ai_response: str | None = None
+    metadata: dict[str, Any] | None = None
     created_at: str | None = None
 
 
@@ -147,6 +152,35 @@ class GeneratedScenarioModel(BaseModel):
     source_casebook_ids: list[int] = Field(default_factory=list)
     times_used: int = 0
     avg_score: float = 0.0
+    created_at: str | None = None
+
+
+class ScheduledReminderModel(BaseModel):
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    step_id: int
+    due_at: str
+    status: str = "pending"
+    snooze_count: int = 0
+    reminder_count: int = 0
+    last_reminded_at: str | None = None
+    draft_text: str | None = None
+    completed_at: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class LeadAnalysisHistoryModel(BaseModel):
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    version_number: int = 1
+    analysis_snapshot: dict[str, Any] = Field(default_factory=dict)
+    changes_summary: str | None = None
+    field_diff: dict[str, Any] | None = None
+    triggered_by: str = "initial"  # 'initial' | 'context_update' | 'manual'
+    triggering_activity_id: int | None = None
     created_at: str | None = None
 
 
@@ -189,3 +223,56 @@ class ConversationTurnModel(BaseModel):
     tool_call_id: str | None = None
     timestamp: str | None = None
     created_at: str | None = None
+
+
+class AgentModelConfigModel(BaseModel):
+    """Per-agent model configuration set by admin."""
+
+    id: int | None = None
+    agent_name: str
+    model_id: str
+    is_active: bool = True
+    set_by: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class DraftRequestModel(BaseModel):
+    """Draft generation request (TMA -> Bot async message bus)."""
+
+    id: int | None = None
+    lead_id: int
+    step_id: int
+    telegram_id: int
+    proof_url: str
+    lead_context: dict[str, Any] = {}
+    user_instructions: str | None = None
+    status: str = "pending"
+    result: dict[str, Any] | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class PlanRequestModel(BaseModel):
+    """Engagement plan generation request (TMA -> Bot async message bus)."""
+
+    id: int | None = None
+    lead_id: int
+    telegram_id: int
+    status: str = "pending"
+    result: dict[str, Any] | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class TmaEventModel(BaseModel):
+    """TMA-to-Bot event for cross-interface notifications."""
+
+    id: int | None = None
+    telegram_id: int
+    event_type: str  # step_completed, step_skipped, status_changed, lead_assigned
+    lead_id: int | None = None
+    payload: dict[str, Any] = {}
+    status: str = "pending"
+    created_at: str | None = None
+    delivered_at: str | None = None

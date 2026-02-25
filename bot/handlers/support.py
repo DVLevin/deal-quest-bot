@@ -6,6 +6,7 @@ import asyncio
 import base64
 import io
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -31,21 +32,78 @@ from bot.services.knowledge import KnowledgeService
 from bot.services.llm_router import create_provider, web_research_call
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
-from bot.tracing import TraceContext
+from langfuse import get_client, observe
+from bot.task_utils import create_background_task
 from bot.states import SupportState
 from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import LeadRegistryModel, SupportSessionModel
+from bot.services.plan_scheduler import schedule_plan_reminders
 from bot.storage.repositories import (
     LeadRegistryRepo,
+    ScheduledReminderRepo,
     SupportSessionRepo,
     UserMemoryRepo,
     UserRepo,
 )
 from bot.utils import format_support_response
+from bot.utils_tma import add_open_in_app_row
+from bot.utils_validation import validate_user_input
+from bot.services.image_utils import pre_resize_image
 
 logger = logging.getLogger(__name__)
 
+# URL detection pattern for routing
+URL_PATTERN = re.compile(
+    r'(?:https?://)?'  # Optional protocol
+    r'(?:www\.)?'      # Optional www
+    r'(?:'
+    r'linkedin\.com/(?:in|pub|profile)/[\w-]+'  # LinkedIn profiles
+    r'|'
+    r'[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}'   # Generic domains
+    r')'
+)
+
+URL_GUIDANCE_MESSAGE = (
+    "I noticed you sent a URL. Unfortunately, I can't automatically "
+    "scrape web pages (LinkedIn blocks this anyway).\n\n"
+    "Instead, please:\n"
+    "1. Open the profile in your browser\n"
+    "2. Select and copy the visible text\n"
+    "3. Paste it here\n\n"
+    "Or take a screenshot and send it as a photo!"
+)
+
 router = Router(name="support")
+
+
+@observe(name="pipeline:support")
+async def _traced_support_run(runner, pipeline_config, ctx, tg_id, user_id, pipeline_name="support"):
+    """Run support pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"{pipeline_name}_{tg_id}",
+            metadata={"pipeline": pipeline_name, "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
+
+
+@observe(name="pipeline:support_regen")
+async def _traced_support_regen_run(runner, pipeline_config, ctx, tg_id, user_id):
+    """Run support regen pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"support_regen_{tg_id}",
+            metadata={"pipeline": "support_regen", "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
 
 def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarkup:
     """Build support actions keyboard, optionally including a lead link."""
@@ -56,7 +114,7 @@ def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarku
         ],
         [
             InlineKeyboardButton(text="🔥 More Aggressive", callback_data="support:aggressive"),
-            InlineKeyboardButton(text="✅ Done", callback_data="support:done"),
+            InlineKeyboardButton(text="✅ Looks Good", callback_data="support:done"),
         ],
     ]
     if lead_id:
@@ -69,7 +127,7 @@ def _support_actions_keyboard(lead_id: int | None = None) -> InlineKeyboardMarku
 
 
 @router.message(Command("support"))
-async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) -> None:
+async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo, tma_url: str = "") -> None:
     """Start support mode."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -78,6 +136,7 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
         await message.answer("Please run /start first to set up your account.")
         return
 
+    keyboard = add_open_in_app_row(None, tma_url, "support")
     await message.answer(
         "📊 *Support Mode*\n\n"
         "Describe your prospect or deal situation:\n"
@@ -88,6 +147,7 @@ async def cmd_support(message: Message, state: FSMContext, user_repo: UserRepo) 
         "🎙️ *Voice messages work great here!*\n\n"
         "_Photos are saved to your lead registry for tracking._",
         parse_mode="Markdown",
+        reply_markup=keyboard,
     )
     await state.set_state(SupportState.waiting_input)
 
@@ -112,6 +172,9 @@ async def _run_support_pipeline(
     photo_key: str | None = None,
     input_type: str = "text",
     image_b64: str | None = None,
+    reminder_repo: ScheduledReminderRepo | None = None,
+    pipeline_name: str = "support",
+    model_config_service=None,
 ) -> None:
     """Run the strategist pipeline and log to lead registry."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -147,14 +210,14 @@ async def _run_support_pipeline(
             telegram_id=tg_id,
             user_id=user.id or 0,
             image_b64=image_b64,
+            model_config=model_config_service,
         )
 
-        # Run support pipeline
-        pipeline_config = load_pipeline("support")
+        # Run support pipeline (or support_photo for images)
+        pipeline_config = load_pipeline(pipeline_name)
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="support", telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(status_msg, Phase.ANALYSIS):
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.ANALYSIS):
+            await _traced_support_run(runner, pipeline_config, ctx, tg_id, user.id or 0, pipeline_name)
 
         # Get strategist output
         strategist_result = ctx.get_result("strategist")
@@ -165,6 +228,21 @@ async def _run_support_pipeline(
             return
 
         output_data = strategist_result.data
+
+        # If extraction ran, merge its data into prospect_info for lead storage
+        extraction_result = ctx.get_result("extraction")
+        if extraction_result and extraction_result.success:
+            extracted = extraction_result.data or {}
+            # Extraction data provides cleaner names than strategist parsing
+            if "prospect_info" not in output_data:
+                output_data["prospect_info"] = {}
+            # Only override if extraction found values
+            for field in ("first_name", "last_name", "title", "company", "geography"):
+                if extracted.get(field) and not output_data["prospect_info"].get(field):
+                    output_data["prospect_info"][field] = extracted[field]
+            # Add context as additional signal
+            if extracted.get("context"):
+                output_data["prospect_info"]["extracted_context"] = extracted["context"]
 
         # Handle memory update from background agent
         memory_result = ctx.get_result("memory")
@@ -204,17 +282,49 @@ async def _run_support_pipeline(
                     return obj
                 return _json.dumps(obj, indent=2, ensure_ascii=False)
 
-            # Extract prospect name/title/company from full output
-            prospect_name = _extract_prospect_name_from_output(output_data, user_input)
+            # Extract structured prospect info (new format)
+            prospect_info = output_data.get("prospect_info", {})
+            if not isinstance(prospect_info, dict):
+                prospect_info = {}
+
+            prospect_first_name = prospect_info.get("first_name") or None
+            prospect_last_name = prospect_info.get("last_name") or None
+            prospect_geography = prospect_info.get("geography") or None
+
+            # Clean up "Unknown" values
+            _unknown_values = ("unknown", "n/a", "not specified", "not mentioned")
+            if prospect_first_name and prospect_first_name.strip().lower() in _unknown_values:
+                prospect_first_name = None
+            if prospect_last_name and prospect_last_name.strip().lower() in _unknown_values:
+                prospect_last_name = None
+            if prospect_geography and prospect_geography.strip().lower() in _unknown_values:
+                prospect_geography = None
+
+            # Compose prospect_name from structured first/last name if available
+            prospect_name: str | None = None
+            if prospect_first_name and prospect_last_name:
+                prospect_name = f"{prospect_first_name} {prospect_last_name}"
+            elif prospect_first_name:
+                prospect_name = prospect_first_name
+            # Fall back to existing extraction if prospect_info didn't have name
+            if not prospect_name:
+                prospect_name = _extract_prospect_name_from_output(output_data, user_input)
+
             prospect_title = (
                 _extract_field(analysis_obj, "seniority")
                 or _extract_field(analysis_obj, "title")
                 or _extract_field(analysis_obj, "role")
             )
-            prospect_company = (
-                _extract_prospect_company_from_output(output_data)
-                or _extract_field(analysis_obj, "company")
-            )
+
+            # Prefer structured company from prospect_info
+            prospect_company_from_info = prospect_info.get("company") or None
+            if prospect_company_from_info and prospect_company_from_info.strip().lower() not in _unknown_values:
+                prospect_company = prospect_company_from_info
+            else:
+                prospect_company = (
+                    _extract_prospect_company_from_output(output_data)
+                    or _extract_field(analysis_obj, "company")
+                )
 
             # Dedup: check if a similar lead already exists for this user
             existing_lead = await lead_repo.find_duplicate(tg_id, prospect_name, prospect_company)
@@ -236,6 +346,12 @@ async def _run_support_pipeline(
                     merge_updates["prospect_title"] = prospect_title
                 if prospect_company and not existing_lead.prospect_company:
                     merge_updates["prospect_company"] = prospect_company
+                if prospect_first_name and not existing_lead.prospect_first_name:
+                    merge_updates["prospect_first_name"] = prospect_first_name
+                if prospect_last_name and not existing_lead.prospect_last_name:
+                    merge_updates["prospect_last_name"] = prospect_last_name
+                if prospect_geography and not existing_lead.prospect_geography:
+                    merge_updates["prospect_geography"] = prospect_geography
                 # Update photo if new one provided
                 if photo_url:
                     merge_updates["photo_url"] = photo_url
@@ -253,8 +369,11 @@ async def _run_support_pipeline(
                         user_id=user.id,
                         telegram_id=tg_id,
                         prospect_name=prospect_name,
+                        prospect_first_name=prospect_first_name,
+                        prospect_last_name=prospect_last_name,
                         prospect_title=prospect_title,
                         prospect_company=prospect_company,
+                        prospect_geography=prospect_geography,
                         photo_url=photo_url,
                         photo_key=photo_key,
                         prospect_analysis=_dict_to_text(analysis_obj),
@@ -272,7 +391,7 @@ async def _run_support_pipeline(
             # Skip if merging into a lead that already has research
             needs_enrichment = not is_merge or not existing_lead or not existing_lead.web_research
             if engagement_service and saved_lead_id and shared_openrouter_key and needs_enrichment:
-                asyncio.create_task(
+                create_background_task(
                     _background_enrich_lead(
                         lead_id=saved_lead_id,
                         lead_repo=lead_repo,
@@ -280,11 +399,48 @@ async def _run_support_pipeline(
                         openrouter_api_key=shared_openrouter_key,
                         prospect_name=prospect_name,
                         prospect_company=prospect_company,
+                        prospect_geography=prospect_geography,
                         original_context=user_input[:300],
-                    )
+                        reminder_repo=reminder_repo,
+                    ),
+                    name=f"enrich_lead_{saved_lead_id}",
                 )
         except Exception as e:
             logger.error("Failed to save lead registry: %s", e)
+
+        # Auto-save to casebook for team knowledge base
+        try:
+            persona = (
+                _extract_field(analysis_obj, "persona")
+                or _extract_field(analysis_obj, "buyer_type")
+                or _extract_field(analysis_obj, "role")
+                or "general"
+            )
+            industry = (
+                _extract_field(analysis_obj, "industry")
+                or _extract_field(analysis_obj, "sector")
+            )
+            seniority = (
+                _extract_field(analysis_obj, "seniority")
+                or _extract_field(analysis_obj, "level")
+            )
+            await casebook_service.maybe_save(
+                persona_type=persona,
+                scenario_type="deal_support",
+                industry=industry,
+                seniority=seniority,
+                analysis=_dict_to_text(analysis_obj),
+                strategy=_dict_to_text(strategy_obj),
+                tactics=_dict_to_text(tactics_obj),
+                draft=_dict_to_text(draft_obj),
+                playbook_refs="",
+                quality_score=0.8,
+                accepted_first_draft=True,
+                user_feedback="",
+                telegram_id=tg_id,
+            )
+        except Exception as e:
+            logger.error("Failed to save casebook entry: %s", e)
 
         # Format and send response
         response_text = format_support_response(output_data)
@@ -298,9 +454,10 @@ async def _run_support_pipeline(
         elif saved_lead_id:
             response_text += (
                 "\n\n"
-                "💡 _Saved to your leads. Web research & engagement plan "
-                "are generating in the background — tap \"View Lead & Plan\" "
-                "in ~30s to see them._"
+                "💡 _Lead created! Web research & engagement plan "
+                "generating in the background.\n\n"
+                "Tap \"View Lead & Plan\" in ~30s, "
+                "or hit \"Looks Good\" to dismiss._"
             )
         await status_msg.edit_text(
             response_text,
@@ -332,7 +489,9 @@ async def _background_enrich_lead(
     openrouter_api_key: str,
     prospect_name: str | None,
     prospect_company: str | None,
-    original_context: str | None,
+    prospect_geography: str | None = None,
+    original_context: str | None = None,
+    reminder_repo: ScheduledReminderRepo | None = None,
 ) -> None:
     """Background task: web research + engagement plan generation for a new lead."""
     try:
@@ -342,6 +501,8 @@ async def _background_enrich_lead(
             research_query_parts.append(prospect_name)
         if prospect_company:
             research_query_parts.append(prospect_company)
+        if prospect_geography:
+            research_query_parts.append(prospect_geography)
 
         # If no name/company, try to build query from stored analysis
         if not research_query_parts:
@@ -378,11 +539,23 @@ async def _background_enrich_lead(
 
         plan = await engagement_service.generate_plan(lead, research)
         if plan:
-            # Schedule first followup 3 days from now
+            # Schedule first followup 3 days from now (backward compat with old scheduler)
             next_followup = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
             await lead_repo.update_lead(
                 lead_id, engagement_plan=plan, next_followup=next_followup
             )
+            # Schedule per-step reminders (new scheduler)
+            if reminder_repo:
+                try:
+                    await schedule_plan_reminders(
+                        reminder_repo=reminder_repo,
+                        lead_id=lead_id,
+                        telegram_id=lead.telegram_id,
+                        plan_steps=plan,
+                        base_date=datetime.now(timezone.utc),
+                    )
+                except Exception as e:
+                    logger.error("Failed to schedule plan reminders for lead %s: %s", lead_id, e)
 
         logger.info("Background enrichment complete for lead %s", lead_id)
     except Exception as e:
@@ -528,6 +701,8 @@ async def on_support_photo(
     insforge: InsForgeClient,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Process photo upload in support mode — download, store, analyze."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -541,6 +716,9 @@ async def on_support_photo(
     file_bytes_io = io.BytesIO()
     await bot.download_file(file.file_path, file_bytes_io)  # type: ignore[arg-type]
     file_bytes = file_bytes_io.getvalue()
+
+    # Pre-resize image for vision models (max 1568px)
+    file_bytes = pre_resize_image(file_bytes)
 
     # Upload to InsForge storage
     photo_url: str | None = None
@@ -585,6 +763,9 @@ async def on_support_photo(
         photo_key=photo_key,
         input_type="photo",
         image_b64=photo_b64,
+        reminder_repo=reminder_repo,
+        pipeline_name="support_photo",
+        model_config_service=model_config_service,
     )
 
 
@@ -604,6 +785,8 @@ async def on_support_voice(
     transcription: TranscriptionService,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Transcribe voice message and run through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -648,53 +831,82 @@ async def on_support_voice(
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
         input_type="voice",
+        reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
     )
 
 
-KNOWN_COMMANDS = {
-    "/start", "/support", "/learn", "/train", "/stats",
-    "/settings", "/leads", "/admin", "/help", "/cancel",
-}
+@router.message(SupportState.waiting_input, F.forward_date)
+async def on_support_forward(
+    message: Message,
+    state: FSMContext,
+    user_repo: UserRepo,
+    memory_repo: UserMemoryRepo,
+    session_repo: SupportSessionRepo,
+    lead_repo: LeadRegistryRepo,
+    crypto: CryptoService,
+    knowledge: KnowledgeService,
+    casebook_service: CasebookService,
+    agent_registry: AgentRegistry,
+    engagement_service: EngagementService | None = None,
+    shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
+) -> None:
+    """Handle forwarded messages -- auto-extract sender as prospect info."""
+    tg_id = message.from_user.id  # type: ignore[union-attr]
+    forward_text = message.text or message.caption or ""
 
+    # Extract forward sender metadata
+    forward_from = None
+    if message.forward_from:
+        fn = message.forward_from.first_name or ""
+        ln = message.forward_from.last_name or ""
+        forward_from = f"{fn} {ln}".strip() or (
+            message.forward_from.username or None
+        )
+    elif message.forward_sender_name:
+        forward_from = message.forward_sender_name
 
-def _check_mistyped_command(text: str) -> str | None:
-    """If text looks like a mistyped command, suggest the correct one."""
-    text = text.strip().lower()
-    if not text.startswith("/"):
-        return None
+    # Enrich input with forward metadata for better prospect extraction
+    if forward_from:
+        user_input = (
+            f"Prospect name: {forward_from}\n\n"
+            f"Their message:\n{forward_text}"
+        )
+    else:
+        user_input = forward_text
 
-    # Exact match — it's a real command, clear state and let them re-send
-    if text in KNOWN_COMMANDS:
-        return text
+    if not user_input.strip():
+        await message.answer(
+            "The forwarded message appears empty. "
+            "Please forward a text message or paste the content."
+        )
+        return
 
-    # Fuzzy match: find closest command
-    word = text.split()[0]  # just the first word
-    best_match = None
-    best_dist = 999
-    for cmd in KNOWN_COMMANDS:
-        dist = _edit_distance(word, cmd)
-        if dist < best_dist:
-            best_dist = dist
-            best_match = cmd
+    status_msg = await message.answer(
+        f"Analyzing forwarded message"
+        f"{f' from {forward_from}' if forward_from else ''}..."
+    )
 
-    if best_dist <= 2 and best_match:
-        return best_match
-    return "unknown"
-
-
-def _edit_distance(a: str, b: str) -> int:
-    """Simple Levenshtein distance."""
-    if len(a) < len(b):
-        return _edit_distance(b, a)
-    if len(b) == 0:
-        return len(a)
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a):
-        curr = [i + 1]
-        for j, cb in enumerate(b):
-            curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (ca != cb)))
-        prev = curr
-    return prev[len(b)]
+    await _run_support_pipeline(
+        user_input=user_input,
+        tg_id=tg_id,
+        user_repo=user_repo,
+        memory_repo=memory_repo,
+        session_repo=session_repo,
+        lead_repo=lead_repo,
+        crypto=crypto,
+        knowledge=knowledge,
+        casebook_service=casebook_service,
+        agent_registry=agent_registry,
+        status_msg=status_msg,
+        state=state,
+        engagement_service=engagement_service,
+        shared_openrouter_key=shared_openrouter_key,
+        reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
+    )
 
 
 @router.message(SupportState.waiting_input)
@@ -711,49 +923,41 @@ async def on_support_input(
     agent_registry: AgentRegistry,
     engagement_service: EngagementService | None = None,
     shared_openrouter_key: str = "",
+    reminder_repo: ScheduledReminderRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Process text input through strategist pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_input = message.text or ""
 
-    if not user_input.strip():
-        await message.answer("Please describe your prospect or send a screenshot.")
-        return
+    # Check for URL input and show guidance
+    if URL_PATTERN.search(user_input.strip()):
+        await message.answer(URL_GUIDANCE_MESSAGE)
+        return  # Stay in waiting_input state so user can paste text
 
-    # Guard: catch commands and typos before sending to LLM
-    if user_input.strip().startswith("/"):
-        suggestion = _check_mistyped_command(user_input)
-        await state.clear()
-        if suggestion and suggestion != "unknown" and suggestion in KNOWN_COMMANDS:
-            await message.answer(
-                f"Looks like you meant *{suggestion}*? "
-                f"I've exited support mode — just send the command again.",
-                parse_mode="Markdown",
-            )
-        else:
-            await message.answer(
-                "That doesn't look like a prospect description.\n\n"
-                "I've exited support mode. Available commands:\n"
-                "💼 /support — Deal strategy advice\n"
-                "📋 /leads — Your prospect pipeline\n"
-                "🎓 /learn — Training\n"
-                "🎲 /train — Practice\n"
-                "📊 /stats — Progress\n"
-                "⚙️ /settings — Setup",
-            )
+    result = validate_user_input(user_input, context="support", min_length=10)
+    if not result.is_valid:
+        if result.is_command:
+            if result.suggested_command == "/cancel":
+                await state.clear()
+                await message.answer("Support session cancelled.")
+                return
+            if result.suggested_command and result.suggested_command != "unknown":
+                await state.clear()
+                await message.answer(
+                    f"Looks like you meant {result.suggested_command}. "
+                    f"I've cancelled the support session. Try the command again."
+                )
+            else:
+                await state.clear()
+                await message.answer(
+                    "That looks like a command. I've cancelled the support session. "
+                    "Try your command again."
+                )
+            return
+        await message.answer(result.error_message)
         return
-
-    # Guard: very short input that's probably not a real prospect description
-    if len(user_input.strip()) < 10:
-        await message.answer(
-            "That's quite short. Please provide more context about your prospect:\n"
-            "- Their role, company, and situation\n"
-            "- Or send a LinkedIn screenshot 📸\n"
-            "- Or a voice message 🎙️\n\n"
-            "_Type /cancel to exit support mode._",
-            parse_mode="Markdown",
-        )
-        return
+    user_input = result.cleaned_input
 
     status_msg = await message.answer("🔄 Analyzing your prospect...")
 
@@ -772,6 +976,8 @@ async def on_support_input(
         state=state,
         engagement_service=engagement_service,
         shared_openrouter_key=shared_openrouter_key,
+        reminder_repo=reminder_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -785,6 +991,7 @@ async def on_support_action(
     knowledge: KnowledgeService,
     casebook_service: CasebookService,
     agent_registry: AgentRegistry,
+    model_config_service=None,
 ) -> None:
     """Handle support action buttons (regenerate, shorter, aggressive)."""
     action = callback.data.split(":")[1]  # type: ignore[union-attr]
@@ -840,13 +1047,13 @@ async def on_support_action(
             user_message=original_input + modifier,
             telegram_id=tg_id,
             user_id=user.id or 0,
+            model_config=model_config_service,
         )
 
         pipeline_config = load_pipeline("support")
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="support_regen", telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(callback.message, Phase.ANALYSIS):  # type: ignore[arg-type]
+            await _traced_support_regen_run(runner, pipeline_config, ctx, tg_id, user.id or 0)
 
         strategist_result = ctx.get_result("strategist")
         if strategist_result and strategist_result.success:

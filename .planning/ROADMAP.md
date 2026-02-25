@@ -1,221 +1,603 @@
-# Roadmap: Deal Quest Bot — AI Sales Partner
+# Roadmap: Deal Quest TMA
 
-## Milestones
+## Overview
 
-- [x] **v1.0 Pipeline Observability** - Phases 1-2 (Phase 1 complete 2026-02-02; Phase 2 merged into v2.0)
-- [ ] **v2.0 AI Sales Partner** - Phases 3-9 (in progress)
+The Deal Quest TMA delivers a visual, gamified mobile experience for sales training inside Telegram. The build progresses from foundational auth and scaffold (everything depends on working initData verification and InsForge connectivity), through the dashboard as proof-of-stack, into the core training loop (Learn + Train), then broadens to deal support features (Support + Casebook), independent feature pages (Leads + Profile), engagement and administration layers (Gamification + Admin), and finally wires the TMA back into the existing bot with inline buttons and deep links.
 
 ## Phases
 
-<details>
-<summary>v1.0 Pipeline Observability (Phase 1 complete, Phase 2 merged into v2.0)</summary>
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-### Phase 1: Foundation - Tracing Infrastructure & Storage
+Decimal phases appear between their surrounding integers in numeric order.
 
-**Goal**: Every pipeline execution generates a trace with step-level timing and agent I/O, persisted to InsForge for later analysis
-
-**Depends on**: Nothing (first phase)
-
-**Requirements**: TRACE-01, TRACE-02, TRACE-03, TRACE-04, TRACE-05, TRACE-06
-
-**Success Criteria** (what must be TRUE):
-  1. Pipeline execution creates a trace with unique trace_id, capturing start/end timestamps and overall duration
-  2. Each pipeline step is recorded as a span with timing data
-  3. Trace context propagates correctly across async boundaries
-  4. Agent prompts and responses are captured and stored alongside timing data
-  5. Traces can be queried from InsForge by trace_id, telegram_id, pipeline name, and date range
-
-**Plans**: 3 plans
-
-Plans:
-- [x] 01-01-PLAN.md — Tracing core module (TraceContext, traced_span, TraceCollector) + storage layer (TraceRepo, SQL migration)
-- [x] 01-02-PLAN.md — Handler instrumentation (wire TraceCollector lifecycle in main.py, wrap learn/train/support call sites)
-- [x] 01-03-PLAN.md — Step-level instrumentation (apply @traced_span to agent .run() methods and LLM .complete() calls)
-
-### Phase 2: Operations - Admin Commands & Synthetic Testing (MERGED INTO v2.0)
-
-Merged into v2.0 as Phase 9 (Admin & Observability). Admin tooling is more valuable once the new agent system exists to observe.
-
-</details>
-
----
-
-### v2.0 AI Sales Partner
-
-**Milestone Goal:** Transform the command-driven bot into a conversation-driven AI sales partner with multi-agent orchestration, CRM capabilities, and proactive coaching.
-
-## Phases (v2.0)
-
-- [x] **Phase 3: Agent Infrastructure** - ToolUseAgent base class, agents.yaml config, complete_with_tools() extension, conversation history store
-- [ ] **Phase 4: Deal Storage + Deal Agent** - InsForge deals/deal_notes tables, DealAgent with full CRM lifecycle and confirmation flow
-- [ ] **Phase 5: Orchestrator + Natural Language Handler** - LLM-driven routing, catch-all handler, voice routing, backward compat, fallback
-- [ ] **Phase 6: Coach + Strategy Agents** - Wrap existing pipelines, add coaching and strategy tool-use loops
-- [ ] **Phase 7: Memory Agent** - Persistent memory with inactivity-timer updates and context injection into specialist prompts
-- [ ] **Phase 8: Proactive Features** - Daily brief, stale deal nudges, context-triggered alerts, APScheduler integration
-- [ ] **Phase 9: Admin & Observability** - Admin traces/health/agent-stats commands for the new agent system
+- [x] **Phase 1: Foundation & Auth** - Monorepo scaffold, Telegram SDK, initData auth, InsForge client, routing shell, design system
+- [x] **Phase 2: Dashboard & Profile** - First visual pages proving the full stack end-to-end
+- [x] **Phase 3: Learn & Train** - Core training loop with scenario practice, scoring, and timed challenges
+- [x] **Phase 4: Support & Casebook** - Deal support strategy builder and reusable response library
+- [x] **Phase 5: Leads & Profile Settings** - Lead pipeline management and user settings
+- [x] **Phase 6: Gamification & Admin** - Badge wall, animations, streak visuals, and team admin dashboard
+- [x] **Phase 7: Bot Integration** - Wire TMA into existing bot with inline buttons and deep links
 
 ## Phase Details
 
-### Phase 3: Agent Infrastructure
-
-**Goal**: The foundation for all specialist agents exists — ToolUseAgent base class runs tool-use loops, agents.yaml configures agent behavior, LLM provider supports function calling, and per-user conversation history accumulates across turns
-
-**Depends on**: Phase 1 (tracing infrastructure, existing LLM router, existing InsForge client)
-
-**Requirements**: NLR-03
-
+### Phase 1: Foundation & Auth
+**Goal**: A working TMA scaffold where a Telegram user opens the app, gets silently authenticated via initData, sees a routable shell with branded navigation, and all API calls hit InsForge with a valid JWT
+**Depends on**: Nothing (first phase)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05, FOUND-06, FOUND-07, FOUND-08, FOUND-09
 **Success Criteria** (what must be TRUE):
-  1. A ToolUseAgent subclass can be instantiated from agents.yaml config and execute a tool-use loop against OpenRouter without infinite looping (max_iterations enforced)
-  2. Conversation history stores the last N turns per user in memory and returns them as ordered message context for any agent call
-  3. The LLM provider's complete_with_tools() method sends function definitions to OpenRouter and returns either a text response or a tool call for the caller to execute
-  4. All agent infrastructure components have tracing wired in so every tool-use loop generates observable spans
+  1. Opening the TMA inside Telegram authenticates the user automatically -- no login screen, no friction, JWT minted from initData
+  2. The app displays a branded navigation shell with working page routes (Dashboard, Learn, Train, Support, Casebook, Leads, Profile, Admin) and Telegram BackButton navigates back correctly
+  3. MainButton and SecondaryButton render as native Telegram bottom buttons and respond to taps
+  4. API calls to InsForge return real data for the authenticated user (RLS policies enforced -- users only see their own data)
+  5. Backgrounding and reopening the TMA restores the user's session without re-authentication or lost state
+**Plans**: 4 plans
 
+Plans:
+- [x] 01-01-PLAN.md -- Monorepo scaffold + Telegram SDK + shared types package (Wave 1)
+- [x] 01-02-PLAN.md -- Auth flow: Edge Function, InsForge client, JWT, RLS policies (Wave 2)
+- [x] 01-03-PLAN.md -- Design system: Tailwind v4 tokens, base UI components, NavBar, AppLayout (Wave 2)
+- [x] 01-04-PLAN.md -- Routing shell, Telegram button hooks, session resilience, integration (Wave 3)
+
+### Phase 2: Dashboard & Profile
+**Goal**: Users see their training progress at a glance on a dashboard and can view their full profile -- proving the complete data pipeline from InsForge through API hooks to rendered UI
+**Depends on**: Phase 1
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, PROF-01, PROF-02, PROF-03, PROF-04
+**Success Criteria** (what must be TRUE):
+  1. Dashboard displays the user's current XP, level, rank title, and streak count with a visual progress bar
+  2. Dashboard shows the last 4 earned badges, a top-5 leaderboard with the user's position highlighted, and quick-action buttons that navigate to Learn, Train, Support, Casebook, and Leads
+  3. Profile page shows avatar, username, rank, level, total XP, member-since date, full stats (total attempts, average score, best score), and paginated attempt history
+  4. Profile page displays the user's badge collection with earned count vs total count
 **Plans**: 2 plans
 
 Plans:
-- [x] 03-01-PLAN.md — Agent framework: agents.yaml config system, complete_with_tools() on OpenRouterProvider, ToolUseAgent base class
-- [x] 03-02-PLAN.md — Conversation history: InsForge table + hybrid service + main.py wiring for all Phase 3 components
+- [x] 02-01-PLAN.md -- Shared data infrastructure + Dashboard page with progress, leaderboard, and navigation (Wave 1)
+- [x] 02-02-PLAN.md -- Profile page with stats, paginated history, and badge collection (Wave 2)
 
-### Phase 4: Deal Storage + Deal Agent
-
-**Goal**: A salesperson can manage their full deal portfolio through the bot — creating, querying, updating, and annotating deals — with all writes protected by an inline confirmation step before execution
-
-**Depends on**: Phase 3 (ToolUseAgent base class, agents.yaml, complete_with_tools())
-
-**Requirements**: DEAL-01, DEAL-02, DEAL-03, DEAL-04, DEAL-05, DEAL-06, DEAL-07
-
+### Phase 3: Learn & Train
+**Goal**: Users can practice structured learning tracks and random timed scenarios, receive AI-scored feedback, and see their scores -- the core training experience that defines Deal Quest's value
+**Depends on**: Phase 2
+**Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04, LEARN-05, TRAIN-01, TRAIN-02, TRAIN-03, TRAIN-04, TRAIN-05, TRAIN-06
 **Success Criteria** (what must be TRUE):
-  1. User can describe a new deal in natural language and it gets created in InsForge with correct fields (company, value, stage, date)
-  2. User can query deal status for a named deal and receive current stage, last update, and any logged notes
-  3. User can request a stage update, receive a confirmation keyboard, and the deal stage only changes after tapping Confirm
-  4. User can log a note on a deal and it persists in InsForge linked to the correct deal
-  5. User can request portfolio view ("show my active deals" or "deals at risk") and receive a formatted list capped at 10 results
-  6. Deals progress through defined stages (lead → qualified → proposal → negotiation → closed-won/lost) with the stage validated at the DB level
-
-**Plans**: TBD
+  1. User can browse learning tracks, see locked/unlocked/completed levels with best scores, open a level to read lesson content, and practice the scenario with text input
+  2. User receives a score out of 100 with strengths, areas for improvement, and ideal response -- and the next level auto-unlocks when score >= 60%
+  3. User can start a random training scenario with difficulty filter (Easy/Medium/Hard/Random), see persona details and situation text, and submit a timed response
+  4. After submitting a training response, user sees animated scoring results with XP earned, feedback, and quick actions (Next Scenario, Retry, View Stats)
+  5. SecondaryButton presents A/B sales decision branching during scenarios as native Telegram buttons
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [x] 03-01-PLAN.md -- Learn mode: track visualization, lessons, and scenario practice with bot deep link (Wave 1)
+- [x] 03-02-PLAN.md -- Train mode: difficulty filter, scenario cards, countdown timer, and A/B branching (Wave 1)
+- [x] 03-03-PLAN.md -- Scoring and feedback display: animated scores, feedback breakdown, quick actions (Wave 2)
 
-### Phase 5: Orchestrator + Natural Language Handler
-
-**Goal**: Any message the user sends — text or voice — is intelligently routed to the correct specialist agent, existing commands continue working exactly as before, and the orchestrator recovers gracefully when a specialist fails
-
-**Depends on**: Phase 3 (ToolUseAgent, conversation history, complete_with_tools()), Phase 4 (DealAgent registered and available)
-
-**Requirements**: NLR-01, NLR-02, NLR-04, NLR-05
-
+### Phase 4: Support & Casebook
+**Goal**: Users can get AI-powered deal support with strategy analysis and browse/reuse their saved response library
+**Depends on**: Phase 1
+**Requirements**: SUPP-01, SUPP-02, SUPP-03, SUPP-04, SUPP-05, CASE-01, CASE-02, CASE-03, CASE-04, CASE-05
 **Success Criteria** (what must be TRUE):
-  1. User sends a free-form text message and the bot routes it to the correct specialist (deal, coach, strategy) without the user invoking any command
-  2. User sends a voice message and it gets transcribed, routed through the orchestrator, and answered by the appropriate specialist
-  3. User runs /learn, /train, or /support and the original pipeline handler fires — not the orchestrator
-  4. When a specialist agent fails or times out (90s), the orchestrator returns a graceful fallback message rather than silently hanging or throwing an error
-  5. A typing indicator appears within 2 seconds of any message being sent to the orchestrator and continues every 4 seconds until a response is delivered
-
-**Plans**: TBD
+  1. User can submit prospect context (text and optional screenshot) and receive a structured analysis with prospect type, stage, signal strength, and closing strategy
+  2. User can view engagement tactics (LinkedIn actions, comment suggestions, DM draft) and a draft response with copy, regenerate, and save-to-casebook actions
+  3. User can browse past support sessions with dates and prospect info
+  4. User can browse, search, and filter the casebook by keyword, persona type, scenario type, and industry -- and open any entry to see full details
+  5. User can use a casebook entry as a template to start a new support session
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [x] 04-01-PLAN.md -- Support mode: strategy builder input CTA, analysis display, session history (Wave 1)
+- [x] 04-02-PLAN.md -- Casebook: browsable list with search, filter, detail view, and template flow (Wave 2)
 
-### Phase 6: Coach + Strategy Agents
-
-**Goal**: A salesperson can request any coaching or strategy assistance through natural language and the bot delivers it by wrapping the existing training and strategy pipelines — no duplication of existing logic
-
-**Depends on**: Phase 5 (orchestrator routing to specialist agents)
-
-**Requirements**: COACH-01, COACH-02, COACH-03, COACH-04, STRAT-01, STRAT-02, STRAT-03, STRAT-04, STRAT-05
-
+### Phase 5: Leads
+**Goal**: Users can manage their sales lead pipeline with status tracking, notes, and activity history
+**Depends on**: Phase 1
+**Requirements**: LEAD-01, LEAD-02, LEAD-03, LEAD-04, LEAD-05, PROF-05
 **Success Criteria** (what must be TRUE):
-  1. User can say "practice pricing objections" in natural language and receive an objection handling scenario from the existing training pipeline
-  2. User can request coaching on a specific topic ("teach me cold calling") and receive structured training content
-  3. User can ask for skill assessment ("how am I doing on objection handling?") and receive qualitative feedback based on past attempts
-  4. User can say "prep me for my Acme call" and receive a call briefing that draws on deal context and company knowledge
-  5. User can ask for competitive intel or a re-engagement draft and receive a response grounded in the company knowledge base
-
-**Plans**: TBD
+  1. User can browse a paginated list of leads showing name, company, title, and status badge
+  2. User can open a lead to see full analysis, strategy, engagement plan, draft, photos, and web research
+  3. User can update lead status through the pipeline stages (Analyzed, Reached Out, Meeting, In Progress, Closed) and add context/notes
+  4. User can view a lead's activity log showing a timeline of status changes and actions
+  5. User can manage settings for LLM provider/model selection and API key configuration from the Profile page
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [x] 05-01-PLAN.md -- Lead pipeline: enum fixes, types/parsers, hooks (first mutation), list view, detail view, status management (Wave 1)
+- [x] 05-02-PLAN.md -- Lead activity timeline, notes, and Profile settings panel (Wave 2)
 
-### Phase 7: Memory Agent
-
-**Goal**: The bot learns a salesperson's patterns and preferences over time and injects that context into specialist responses — memory updates happen quietly in the background, not after every message
-
-**Depends on**: Phase 5 (orchestrator running, conversation history accumulated), Phase 4 (deal context available)
-
-**Requirements**: MEM-01, MEM-02, MEM-03, MEM-04
-
+### Phase 6: Gamification & Admin
+**Goal**: The app rewards engagement with visual celebrations and badge mechanics, and admins can monitor team performance
+**Depends on**: Phase 3
+**Requirements**: GAME-01, GAME-02, GAME-03, GAME-04, GAME-05, ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05, ADMIN-06
 **Success Criteria** (what must be TRUE):
-  1. After a series of conversations, the bot's responses reflect awareness of the user's recurring patterns (preferred objection tactics, deal types, common scenarios) without the user restating them
-  2. Memory updates trigger on an inactivity timer (5 minutes after last message) rather than after every message — no extra LLM call per turn
-  3. A specialist agent prompt includes a memory context block with personalized user context drawn from InsForge
-  4. Memory persists across bot restarts — stored in InsForge, not in-process memory
-
-**Plans**: TBD
+  1. Badge wall displays all badges in a visual grid with earned (dated) and locked (silhouette) states, styled by rarity tier (common, rare, epic, legendary)
+  2. Leveling up triggers a celebration animation with confetti and the new rank title displayed
+  3. Completing a scenario shows an animated XP counter, and the streak tracker displays flame icon with current streak days and bonus XP indicators
+  4. Admin users see a team dashboard with total users, XP, active count, performance charts, member leaderboard, weak area identification, and recent activity feed
+  5. Non-admin users cannot access admin pages (access control enforced)
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [x] 06-01-PLAN.md -- Badge wall and rarity system (Wave 1)
+- [x] 06-02-PLAN.md -- Level-up, XP, and streak animations (Wave 1)
+- [x] 06-03-PLAN.md -- Admin dashboard with team analytics and access control (Wave 1)
 
-### Phase 8: Proactive Features
-
-**Goal**: The bot surfaces deal and coaching intelligence proactively — a morning briefing every day and nudges when deals go stale — without any one user failure stopping delivery for other users
-
-**Depends on**: Phase 4 (deal data), Phase 6 (coach/strategy output), Phase 7 (memory personalization)
-
-**Requirements**: PRO-01, PRO-02, PRO-03, PRO-04
-
+### Phase 7: Bot Integration
+**Goal**: The existing bot offers smooth transitions into the TMA, letting users jump from chat commands directly into rich app experiences
+**Depends on**: Phase 6
+**Requirements**: BOT-01, BOT-02, BOT-03
 **Success Criteria** (what must be TRUE):
-  1. User receives a morning briefing at a consistent time each day containing deal status, a coaching nudge, and any stale deal alerts
-  2. When a deal has not moved in N days, the user receives an unprompted nudge identifying the deal and suggesting a next action
-  3. When a practice streak is about to break, the user receives a context-triggered alert encouraging engagement
-  4. If one user's proactive message fails (blocked bot, network error), all other users still receive their messages that day
-
-**Plans**: TBD
+  1. Bot commands (/stats, /learn, /train, /support, /leads) display an "Open in App" inline button alongside the existing text response
+  2. Tapping an "Open in App" button deep-links to the correct TMA page (e.g., /stats opens Dashboard, /learn opens Learn page)
+  3. The TMA is accessible via the menu button in BotFather (direct app access without any command)
+**Plans**: 2 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [x] 07-01-PLAN.md -- Bot config, helper, main.py, and "Open in App" buttons in all 5 handlers (Wave 1)
+- [x] 07-02-PLAN.md -- TMA deep link routing hook for startParam fallback (Wave 1)
 
-### Phase 9: Admin & Observability
+---
 
-**Goal**: An admin can inspect the health and behavior of the new multi-agent system — viewing recent traces, checking per-agent error rates, and getting a bot health snapshot — all through existing /admin commands
+## Milestone: v1.1 -- Quick & Medium Wins
 
-**Depends on**: Phase 5 (orchestrator traces flowing), Phase 6 (specialist agent traces)
+### v1.1 Phases
 
-**Requirements**: ADM-01, ADM-02, ADM-03
+- [x] **Phase 8: Lead Management Enhancements** - Stale indicators, source tracking, company grouping, search/filter, type completeness
+- [x] **Phase 9: Training Experience** - Difficulty recommendations, track stats, weak area identification, scenario variety
+- [x] **Phase 10: Error Handling & UX** - Global error boundary, consistent error states, mutation feedback, input validation, empty states
+- [x] **Phase 11: Performance & Reliability** - Remove eruda from prod, KB caching, InsForge retry, background task safety, query optimization
 
+### Phase 8: Lead Management Enhancements
+**Goal**: Lead pipeline becomes more actionable -- stale leads are surfaced, leads are searchable/filterable, contacts at the same company are grouped, and all data fields are properly exposed
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: LEAD-V11-01, LEAD-V11-02, LEAD-V11-03, LEAD-V11-04, LEAD-V11-05
 **Success Criteria** (what must be TRUE):
-  1. Admin runs /admin traces and sees the 10 most recent orchestrator + specialist agent executions with routing decisions, step timing, and any errors
-  2. Admin runs /admin health and sees bot uptime, total messages routed today, per-agent call counts, and average response time
-  3. Admin runs /admin stats (or /admin agents) and sees routing distribution across specialists, error rates per agent, and any agents above threshold error rate
-
-**Plans**: TBD
+  1. Leads not updated in 7+ days show a stale indicator badge with "X days ago" in both list and detail views
+  2. Each lead displays its source (support analysis, manual, import) and source is auto-set on creation
+  3. Lead list can be grouped by company with collapsible headers showing contact count
+  4. LeadRegistryRow TypeScript type includes all fields from the Python LeadRegistryModel (web_research, engagement_plan, next_followup, followup_count, lead_source, original_context)
+  5. Users can search leads by name/company and filter by status from the lead list page
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: TBD
+- [x] 08-01-PLAN.md -- lead_source full-stack field, stale indicators, source badges in LeadCard and LeadDetail (Wave 1)
+- [x] 08-02-PLAN.md -- Search/filter bar, status filter chips, company grouping with collapsible headers (Wave 2)
+
+### Phase 9: Training Experience
+**Goal**: Users get smarter training recommendations -- the app suggests appropriate difficulty, shows per-track progress, identifies weak areas, and encourages scenario variety
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: TRAIN-V11-01, TRAIN-V11-02, TRAIN-V11-03, TRAIN-V11-04
+**Success Criteria** (what must be TRUE):
+  1. Train page shows a recommended difficulty level based on user's average scores per difficulty
+  2. Learn page displays per-track summary (levels completed, avg score, best score) at the top of each track
+  3. Dashboard highlights weak areas (tracks/difficulties with below-average scores) with a "Practice this" button
+  4. Train mode shows remaining unseen scenarios count and displays a nudge when the pool is running low
+**Plans**: 2 plans
+
+Plans:
+- [x] 09-01-PLAN.md -- useTrainingStats hook, difficulty recommendation, scenario variety indicator on Train page (Wave 1)
+- [x] 09-02-PLAN.md -- Track completion stats on Learn page, weak areas card on Dashboard (Wave 2)
+
+### Phase 10: Error Handling & UX
+**Goal**: The app handles errors gracefully everywhere -- users see friendly error messages with retry options, mutations show feedback, and empty states guide users to take action
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: UX-V11-01, UX-V11-02, UX-V11-03, UX-V11-04, UX-V11-05
+**Success Criteria** (what must be TRUE):
+  1. Unhandled React errors show a user-friendly fallback page with a retry button instead of a white screen
+  2. All TMA data-fetching components use a standardized ErrorCard component for error states
+  3. Failed mutations (status update, note save) show a toast notification with error message and retry
+  4. Bot handlers (support, learn, train) use a shared validation utility with consistent error messages
+  5. Pages with no data (no leads, no casebook entries, no attempts) show designed empty states with guidance
+**Plans**: 4 plans
+
+Plans:
+- [x] 10-01-PLAN.md -- Core UI components: ErrorBoundary, ErrorCard, Toast system, EmptyState + wire into App.tsx (Wave 1)
+- [x] 10-02-PLAN.md -- ErrorCard integration: replace 18 inline error states with standardized ErrorCard (Wave 2)
+- [x] 10-03-PLAN.md -- Toast mutation feedback + empty state upgrades for leads, attempts, support (Wave 2)
+- [x] 10-04-PLAN.md -- Bot validation utility: shared validate_user_input() in support/learn/train handlers (Wave 1)
+
+### Phase 11: Performance & Reliability
+**Goal**: Production-grade reliability -- debug tools removed from production, knowledge cached at startup, network calls retry on failure, and background tasks don't silently disappear
+**Depends on**: Phase 7 (v1.0 complete)
+**Requirements**: PERF-V11-01, PERF-V11-02, PERF-V11-03, PERF-V11-04, PERF-V11-05
+**Success Criteria** (what must be TRUE):
+  1. Eruda debug console only loads in development mode (not in production builds)
+  2. Playbook and company KB are loaded once at bot startup and reused across all pipeline calls
+  3. InsForge PostgREST calls retry up to 3 times with exponential backoff on transient failures (429, 500, 502, 503)
+  4. Background tasks (followup scheduler, scenario generator, memory agent) have error callbacks and task references preventing garbage collection
+  5. TMA queries for lead detail and attempts use explicit column selection instead of `select('*')`
+**Plans**: 2 plans
+
+Plans:
+- [x] 11-01-PLAN.md -- TMA hardening: eruda DEV gate + lead query column optimization (Wave 1)
+- [x] 11-02-PLAN.md -- Bot reliability: InsForge retry with backoff + background task safety + KB caching verification (Wave 1)
+
+---
+
+## Milestone: v2.0 -- Sales Co-Pilot
+
+v2.0 transforms Deal Quest from a training tool into an active sales co-pilot. The bot gains the ability to create leads from screenshots with AI extraction, execute timed engagement plans with step-by-step reminders, and re-analyze strategies as deals evolve with new context. The TMA shifts from a passive lead viewer to an action-oriented cockpit with plan-first layout and a "Today's Actions" dashboard. The build progresses bottom-up: scheduling infrastructure and smart lead creation first (independent foundations), then bot-side reminder UX and re-analysis on top, and finally the TMA experience that surfaces the full workflow loop.
+
+### v2.0 Phases
+
+- [x] **Phase 12: Scheduling & Reminder Infrastructure** - scheduled_reminders table, timing parser, polling scheduler, plan-to-reminders wiring, enhanced prompts
+- [x] **Phase 13: Smart Lead Creation** - ExtractionAgent, two-step pipeline, ClaudeProvider image fix, image pre-resize, input routing
+- [x] **Phase 14: Engagement Plan Execution** - Rich reminder messages, Done/Snooze/Skip interactions, escalation logic, draft display, activity logging
+- [x] **Phase 15.1: Lead Enhancements & Comment Suggestions** (INSERTED) - Web research versioning, TMA plan step updates, /comment command for post screenshots
+- [x] **Phase 15: Conversational Re-analysis** - Context update flow, ReanalysisStrategistAgent, analysis history, enhanced activity types, re-analyze trigger
+- [x] **Phase 16: TMA Lead Experience & Dashboard** - Plan-first layout, interactive step completion, LeadCard enhancements, Today's Actions widget, deep link coordination
+- [x] **Phase 17: LazyFlow UX Overhaul** - Zero-click workflows, smart defaults, predictive navigation, context-aware UI, effort-eliminating interactions across bot and TMA
+- [x] **Phase 18: Agent Observatory & Model Configuration** - Langfuse tracing integration, full prompt/I-O/cost capture, per-agent model selection via admin UI, OpenRouter model browser, pipeline debugging tools
+- [x] **Phase 19: Active Engagement Execution** - Step-by-step action screens in TMA with contextual lead display, screenshot upload for proof-of-action, AI draft generation via bot agent pipeline, tabbed multi-option drafts, post-copy nudge, DB message bus for TMA-bot communication
+- [x] **Phase 20: Quick Wins by Prody** - PM-audit-driven quick wins: deal closure celebration + XP, pipeline velocity display, smart status suggestions, outcome capture, onboarding polish, weak area training routing
+- [x] **Phase 21: Seamless TMA-Bot Integration** - Smart step handoff in bot (inline drafts, copy, mark-done without TMA), bidirectional activity sync (TMA->Bot confirmation messages, Bot->TMA toasts), contextual TMA landing (deep link targeting, session resume, action-aware home)
+
+### Phase 12: Scheduling & Reminder Infrastructure
+**Goal**: Engagement plans become executable -- every plan step has a concrete due date, a scheduler polls for due reminders, and new plans automatically generate reminder rows
+**Depends on**: Phase 11 (v1.1 complete)
+**Requirements**: SCHED-V20-01, SCHED-V20-02, SCHED-V20-03, SCHED-V20-04, SCHED-V20-05
+**Success Criteria** (what must be TRUE):
+  1. When a lead's engagement plan is generated, `scheduled_reminders` rows are automatically created with concrete `due_at` timestamps for each step
+  2. The engagement plan prompt produces `delay_days` integer for each step, and the timing parser correctly computes due dates from plan creation time
+  3. The polling scheduler runs every 15 minutes, finds due reminders, and sends a basic notification to the user (rich UX in Phase 14)
+  4. Duplicate reminders are prevented -- restarting the bot does not re-send reminders that were already dispatched (guarded by `last_reminded_at`)
+**Plans**: 2 plans
+
+Plans:
+- [x] 12-01-PLAN.md -- Data foundation: migration SQL, ScheduledReminderModel, ScheduledReminderRepo, updated engagement plan prompt (Wave 1)
+- [x] 12-02-PLAN.md -- Plan scheduler service, plan-to-reminders wiring in support.py, lead lifecycle hooks, scheduler startup (Wave 2)
+
+### Phase 13: Smart Lead Creation
+**Goal**: Users can screenshot a LinkedIn profile, email, or business card and get a fully analyzed lead with strategy and engagement plan -- reducing lead creation from minutes of manual typing to a single photo
+**Depends on**: Phase 11 (v1.1 complete)
+**Requirements**: SLEAD-V20-01, SLEAD-V20-02, SLEAD-V20-03, SLEAD-V20-04, SLEAD-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Sending a screenshot to the bot extracts prospect name, title, company, and context via a focused OCR step before running full analysis -- no more garbled names from combined OCR+strategy prompts
+  2. ClaudeProvider correctly processes images (multipart content array) so Claude vision models work for screenshot analysis alongside OpenRouter
+  3. Uploaded images are pre-resized to 1568px max dimension before vision model calls (verified by checking image dimensions in the pipeline)
+  4. Sending a URL shows guidance to paste the profile text instead of attempting automated scraping
+  5. Sending plain text still routes through the existing strategist pipeline with no regression
+**Plans**: 3 plans
+
+Plans:
+- [x] 13-01-PLAN.md -- ClaudeProvider image fix + image pre-resize utility (Wave 1)
+- [x] 13-02-PLAN.md -- ExtractionAgent with focused OCR prompt (Wave 1)
+- [x] 13-03-PLAN.md -- Two-step pipeline config + input routing in support.py (Wave 2)
+
+### Phase 14: Engagement Plan Execution
+**Goal**: The bot actively coaches users through their engagement plans -- sending timed reminders with contextual drafts, accepting Done/Snooze/Skip responses, and escalating overdue steps
+**Depends on**: Phase 12 (scheduling infrastructure must exist)
+**Requirements**: EPLAN-V20-01, EPLAN-V20-02, EPLAN-V20-03, EPLAN-V20-04, EPLAN-V20-05
+**Success Criteria** (what must be TRUE):
+  1. When a reminder is due, the bot sends a formatted message with lead name, step description, and a short draft preview
+  2. User can tap Done (marks step complete, logs activity), Snooze (delays 24h), or Skip (marks skipped) via inline buttons on the reminder message
+  3. Overdue reminders escalate through 3 levels (initial, nudge, final) before auto-snoozing -- user is not bombarded indefinitely
+  4. User can tap "View Full Draft" on a reminder to see the full contextual draft message for that engagement step
+  5. Every step action (done, snooze, skip) is recorded in `lead_activity_log` with the step metadata
+**Plans**: 2 plans
+
+Plans:
+- [x] 14-01-PLAN.md -- Scheduler upgrade: snooze() method, rich messages, inline keyboards, escalation logic (Wave 1)
+- [x] 14-02-PLAN.md -- Callback handlers: reminders.py module with Done/Snooze/Skip/ViewDraft, main.py wiring (Wave 2)
+
+### Phase 15.1: Lead Enhancements & Comment Suggestions (INSERTED)
+**Goal**: Users can remake web research with version history, toggle engagement plan steps from TMA, and get AI-generated comment suggestions for LinkedIn post screenshots -- making lead management more flexible and engagement more contextual
+**Depends on**: Phase 14 (engagement plan step execution must exist for TMA toggling)
+**Requirements**: LEAD-V20-01, LEAD-V20-02, LEAD-V20-03
+**Success Criteria** (what must be TRUE):
+  1. User can trigger web research re-generation from bot, optionally providing a URL for more accurate results, and previous research versions are preserved in a JSONB array
+  2. User can delete irrelevant web research versions while keeping useful ones
+  3. User can mark engagement plan steps as Done/Skip directly from TMA lead detail with immediate feedback and dual-table sync (scheduled_reminders + engagement_plan JSONB)
+  4. User can send a LinkedIn POST screenshot to the bot via /comment command and receive contextual comment suggestions based on the post content
+  5. Generated comments can be regenerated with different tone/approach without leaving the conversation
+**Plans**: 3 plans
+
+Plans:
+- [x] 15.1-01-PLAN.md -- Web research versioning: schema migration, model update, bot re-research flow with URL input (Wave 1)
+- [x] 15.1-02-PLAN.md -- TMA engagement step mutation: useUpdatePlanStep hook, interactive LeadDetail toggles (Wave 1)
+- [x] 15.1-03-PLAN.md -- Standalone /comment command: FSM states, prompt, handler module with regeneration (Wave 1)
+
+### Phase 15: Conversational Re-analysis
+**Goal**: Users can feed prospect responses and meeting notes back into a lead, and the AI re-analyzes the strategy with full context of how the deal has evolved -- turning Deal Quest into a living co-pilot, not a one-shot analyzer
+**Depends on**: Phase 13 (lead creation quality matters for re-analysis)
+**Requirements**: REANA-V20-01, REANA-V20-02, REANA-V20-03, REANA-V20-04, REANA-V20-05
+**Success Criteria** (what must be TRUE):
+  1. User can forward a prospect's message, send a voice note, or type meeting notes as new context on an existing lead
+  2. After adding context, the bot offers a "Re-analyze Strategy?" button -- re-analysis only happens when the user triggers it
+  3. Re-analysis produces an updated strategy with a narrative summary of what changed, and the prior analysis version is preserved in `lead_analysis_history`
+  4. The activity timeline shows `prospect_response`, `meeting_notes`, and `re_analysis` entries with metadata, creating a readable deal thread
+  5. Field-level diffs between analysis versions are computed in code (JSON diff), not by LLM self-reports
+**Plans**: 4 plans
+
+Plans:
+- [x] 15-01-PLAN.md -- Database foundation: lead_analysis_history table, extended activity types, models (Wave 1)
+- [x] 15-02-PLAN.md -- Context input flow: FSM states, multimodal handlers (text/voice/photo/forward), activity logging (Wave 1)
+- [x] 15-03-PLAN.md -- ReanalysisStrategistAgent: agent class, prompt, JSON diff utility (Wave 2)
+- [x] 15-04-PLAN.md -- Re-analysis trigger: button handlers, history saving, plan update flow, TMA display (Wave 3)
+
+### Phase 16: TMA Lead Experience & Dashboard
+**Goal**: The TMA transforms from a passive lead viewer into an action-oriented sales cockpit -- leads open to their engagement plan first, steps are completable from the app, and the dashboard tells users what to do today
+**Depends on**: Phase 12 + Phase 14 + Phase 15 (reminder data, step execution, and re-analysis entries must exist for TMA to display)
+**Requirements**: TMAUX-V20-01, TMAUX-V20-02, TMAUX-V20-03, TMAUX-V20-04, TMAUX-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Opening a lead shows the Active Plan section first (engagement steps with status, due dates, overdue indicators) with Intelligence and Activity available as secondary sections
+  2. User can mark engagement steps as Done or Skip directly from the TMA with immediate UI feedback, and both `scheduled_reminders` and `engagement_plan` JSONB stay in sync
+  3. Lead list cards show overdue step count, engagement plan progress bar, and next action preview -- users can scan their pipeline and see what needs attention
+  4. Dashboard displays a "Today's Actions" widget aggregating overdue and due-today steps across all leads, with tap-to-navigate to the relevant lead
+  5. Bot reminder messages include an "Open in App" button that deep-links to the lead detail with the specific step highlighted
+**Plans**: 4 plans
+
+Plans:
+- [x] 16-01-PLAN.md -- LeadCard enhancements: computePlanProgress utility, useLeadReminders hook, progress bar and overdue badge (Wave 1)
+- [x] 16-02-PLAN.md -- LeadDetail plan-first layout: CollapsibleSection component, three-section restructure, deep link step highlighting (Wave 1)
+- [x] 16-03-PLAN.md -- Today's Actions dashboard widget: useTodayActions hook, TodayActionsCard component, cache invalidation wiring (Wave 2)
+- [x] 16-04-PLAN.md -- Bot deep link enhancement: add_open_in_app_row query_params support, reminder message Open in App button (Wave 2)
+
+### Phase 17: LazyFlow UX Overhaul
+**Goal**: Apply LazyFlow principles across the entire experience -- zero-click workflows that auto-detect user intent, mind-reading defaults that pre-populate everything, one-tap completions that collapse multi-step processes, and invisible intelligence that handles complexity in the background so users feel like the system reads their minds
+**Depends on**: Phase 16 (TMA experience must be complete before optimizing UX across it)
+**Requirements**: LAZY-01, LAZY-02, LAZY-03, LAZY-04, LAZY-05
+**Success Criteria** (what must be TRUE):
+  1. Opening the TMA auto-detects context and surfaces the most relevant view -- no navigation needed for the primary daily task (Today's Actions, overdue leads, or training streak)
+  2. Bot /support flow pre-populates prospect info from forwarded messages and screenshots with zero manual typing -- user only confirms or tweaks edge cases
+  3. Lead creation from screenshot requires exactly 1 user action (send photo) -> AI extracts, analyzes, generates strategy, creates lead, schedules plan -- user taps "Looks good"
+  4. Every TMA form and input uses smart defaults with 95%+ accuracy based on user history, context, and patterns -- empty fields are eliminated
+  5. Complex workflows (re-analysis, comment generation, training scenario selection) are condensed to single-tap completions with ambient background processing
+**Plans**: 4 plans
+
+Plans:
+- [x] 17-01-PLAN.md -- Smart landing: useSmartLanding hook, contextual headers, card reordering, lead detail prefetching (Wave 1)
+- [x] 17-02-PLAN.md -- Training Quick Start: auto-select recommended difficulty, one-tap Quick Start button (Wave 1)
+- [x] 17-03-PLAN.md -- Lead smart defaults: next-status suggestion highlight, context-aware note placeholders (Wave 1)
+- [x] 17-04-PLAN.md -- Bot LazyFlow: forwarded message auto-detection in /support, "Looks Good" confirmation framing (Wave 1)
+
+### Phase 18: Agent Observatory & Model Configuration
+**Goal**: Admin gains full visibility into every AI agent's behavior -- see exact prompts, inputs, outputs, token usage, and costs for every pipeline run via Langfuse, and can configure which OpenRouter model each agent uses from a TMA admin panel, enabling rapid iteration on agent quality without code deploys
+**Depends on**: Phase 17 (v2.0 features complete, now optimizing the AI layer)
+**Requirements**: OBS-V20-01, OBS-V20-02, OBS-V20-03, OBS-V20-04, OBS-V20-05
+**Success Criteria** (what must be TRUE):
+  1. Every pipeline run (support, learn, train, re-analysis, comment) produces a full Langfuse trace with hierarchical spans showing each agent's system prompt, user input, LLM output, model used, token count, and cost
+  2. Admin can open the Langfuse dashboard (cloud hobby tier) and drill into any trace to see exactly what each agent saw and produced -- no code access needed to debug agent behavior
+  3. Admin can set per-agent model overrides from the TMA admin page (e.g., strategist uses claude-sonnet, extraction uses gpt-4o-mini, trainer uses deepseek) -- agents that have no override use the user's default model
+  4. Admin model configuration is stored in a database table and takes effect immediately (no bot restart or code deploy needed)
+  5. Langfuse integration is designed for easy migration to self-hosted instance (single environment variable swap from cloud URL to self-hosted URL)
+**Plans**: 4 plans
+
+Plans:
+- [x] 18-01-PLAN.md -- Langfuse SDK setup, config env vars, LLM provider generation observations (Wave 1)
+- [x] 18-02-PLAN.md -- Agent @observe decorators, handler trace wiring, model_config PipelineContext pass-through, main.py lifecycle (Wave 2)
+- [x] 18-03-PLAN.md -- Per-agent model config: migration, repository, ModelConfigService, PipelineContext/Runner refactoring (Wave 1)
+- [x] 18-04-PLAN.md -- TMA Admin ModelConfigPanel: agent model overrides UI, OpenRouter model browser (Wave 2)
+
+### Phase 19: Active Engagement Execution
+**Goal**: Users execute engagement plan steps through guided action screens in TMA -- with screenshot upload, AI-powered multi-platform draft generation via bot agent pipeline, tabbed draft options, post-copy completion nudge, and async TMA-to-bot communication via DB message bus
+**Depends on**: Phase 18 (agent infrastructure must exist for CommentGeneratorAgent)
+**Success Criteria** (what must be TRUE):
+  1. User can open a step in the TMA and see a guided action screen with lead context, draft display, screenshot upload, and action buttons
+  2. Uploading a screenshot and tapping "Generate Draft" produces multi-platform draft options (auto-detects LinkedIn, email, Twitter/X, Slack, DM, etc.) displayed in a tabbed segmented control
+  3. Admin can configure which model the comment_generator agent uses via the TMA admin panel (ModelConfigService)
+  4. Copying a draft triggers a "Done -- I posted it" nudge toast and the Mark Done button pulses and changes label
+  5. Bot-side draft generation appears in Langfuse traces with full observability
+**Plans**: 5 plans
+
+Plans:
+- [x] 19-01-PLAN.md -- Types & hooks foundation: extended EngagementPlanStep, useUploadProof, useUpdatePlanStep enhancements (Wave 1)
+- [x] 19-02-PLAN.md -- Step action screen components: DraftCopyCard, ProofUpload, CantPerformFlow, StepActionScreen (Wave 1)
+- [x] 19-03-PLAN.md -- Wire StepActionScreen into LeadDetail with deep link auto-expand and proof indicators (Wave 2)
+- [x] 19-04-PLAN.md -- Bot backend: draft_requests migration, CommentGeneratorAgent, multi-platform prompt, draft poller, main.py wiring (Wave 1)
+- [x] 19-05-PLAN.md -- TMA migration: DB message bus hook, tabbed DraftCopyCard, post-copy nudge, edge function removal (Wave 2)
+
+### Phase 20: Quick Wins by Prody
+**Goal**: Implement 10 PM-audit-driven quick wins that reward deal closure with XP and confetti, add pipeline visibility, route weak areas to filtered training, suggest status progression on step completion, capture closure outcomes, send stale lead digests, provide admin rep detail views, and guide first-time users
+**Depends on**: Phase 19
+**Requirements**: QW-01 through QW-10 (from docs/pm-audit/06-QUICK-WINS.md)
+**Success Criteria** (what must be TRUE):
+  1. Closing a deal (closed_won) awards 500 XP, triggers confetti, and shows celebration toast in both TMA and bot
+  2. Lead list page shows pipeline summary bar (Active | Stale | Closed counts) and closure prompts for outcome reasons
+  3. Weak area "Practice" button routes to /train with difficulty pre-selected, and step completion triggers smart status suggestion toasts
+  4. TodayActionsCard shows "All caught up!" celebration when no actions remain
+  5. Admin can drill into any leaderboard member to see their stats and recent attempts
+  6. First-time users (0 XP, 0 leads) see a 3-step guided onboarding card on the Dashboard
+  7. Bot sends daily stale lead digest when stale leads exist (7+ days without update)
+**Plans**: 5 plans
+
+Plans:
+- [x] 20-01-PLAN.md -- Deal closure celebration + XP award (TMA + bot) and "Start Free" onboarding label (Wave 1)
+- [x] 20-02-PLAN.md -- Pipeline summary bar on leads page and "Done for Today" celebration (Wave 1)
+- [x] 20-03-PLAN.md -- Weak area filtered training link and smart status suggestion on step completion (Wave 1)
+- [x] 20-04-PLAN.md -- Outcome capture modal on lead closure and stale lead daily digest (Wave 1)
+- [x] 20-05-PLAN.md -- Admin rep detail view and first-time user guided tour (Wave 2)
+
+### Phase 21: Seamless TMA-Bot Integration
+**Goal**: The bot and TMA feel like one product, not two -- bot reminders are self-contained action points with inline drafts and completion, TMA actions trigger bot confirmations, and opening the TMA always lands you exactly where you need to be
+**Depends on**: Phase 20 (v2.0 complete)
+**Requirements**: SEAM-01, SEAM-02, SEAM-03 (from docs/analysis/tma-bot-communication-analysis.md)
+**Success Criteria** (what must be TRUE):
+  1. Bot reminder messages include the full draft text, a [Copy Draft] button, and a [Mark Done] inline button -- 80% of step completions can happen without opening TMA
+  2. When a user completes a step, changes status, or assigns a lead in TMA, the bot sends a brief confirmation message in the Telegram chat (e.g., "Step 3 marked complete for {lead_name}. Next step due in 2 days.")
+  3. When the bot finishes async work (draft ready, plan ready, re-analysis complete) and TMA is open, a toast notification appears inside TMA with a link to the relevant item
+  4. Opening TMA via deep link lands on the exact screen and section (step action screen, plan section expanded, etc.) -- not just the lead page
+  5. Opening TMA via menu button resumes the last-viewed context (stored in localStorage) or shows action-aware landing (overdue actions hero section when actions exist)
+**Plans**: 4 plans
+
+Plans:
+- [x] 21-01-PLAN.md -- Bot reminder enhancements: full inline drafts, Copy Draft button, Mark Done with next step info (Wave 1)
+- [x] 21-02-PLAN.md -- TMA event bus: tma_events table, model, repo, bot poller for Telegram confirmations (Wave 1)
+- [x] 21-03-PLAN.md -- TMA mutation event writes + bot-to-TMA toast notifications for async work (Wave 2)
+- [x] 21-04-PLAN.md -- Deep link precision (action=execute, section=plan) and localStorage session resume (Wave 2)
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 3 → 4 → 5 → 6 → 7 → 8 → 9
+### v1.0 Progress (Complete)
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Foundation - Tracing Infrastructure & Storage | v1.0 | 3/3 | Complete | 2026-02-02 |
-| 2. Operations - Admin Commands (MERGED) | v1.0 | -/- | Merged into Phase 9 | - |
-| 3. Agent Infrastructure | v2.0 | 2/2 | Complete | 2026-02-25 |
-| 4. Deal Storage + Deal Agent | v2.0 | 0/TBD | Not started | - |
-| 5. Orchestrator + Natural Language Handler | v2.0 | 0/TBD | Not started | - |
-| 6. Coach + Strategy Agents | v2.0 | 0/TBD | Not started | - |
-| 7. Memory Agent | v2.0 | 0/TBD | Not started | - |
-| 8. Proactive Features | v2.0 | 0/TBD | Not started | - |
-| 9. Admin & Observability | v2.0 | 0/TBD | Not started | - |
+**Execution Order:**
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Note: Phases 4 and 5 depend only on Phase 1 and can execute in parallel with Phase 3 if desired.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation & Auth | 4/4 | Complete | 2026-02-02 |
+| 2. Dashboard & Profile | 2/2 | Complete | 2026-02-03 |
+| 3. Learn & Train | 3/3 | Complete | 2026-02-03 |
+| 4. Support & Casebook | 2/2 | Complete | 2026-02-03 |
+| 5. Leads | 2/2 | Complete | 2026-02-04 |
+| 6. Gamification & Admin | 3/3 | Complete | 2026-02-04 |
+| 7. Bot Integration | 2/2 | Complete | 2026-02-04 |
+
+### v1.1 Progress (Complete)
+
+**Execution Order:**
+Phases 8, 9, 10, 11 all depend only on v1.0 completion and can execute in any order or in parallel.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 8. Lead Management | 2/2 | Complete | 2026-02-04 |
+| 9. Training Experience | 2/2 | Complete | 2026-02-04 |
+| 10. Error Handling & UX | 4/4 | Complete | 2026-02-04 |
+| 11. Performance & Reliability | 2/2 | Complete | 2026-02-05 |
+
+### v2.0 Progress
+
+**Execution Order:**
+Phases 12 and 13 are independent (both depend only on v1.1 completion) and can execute in either order.
+Phase 14 depends on Phase 12. Phase 15.1 depends on Phase 14. Phase 15 depends on Phase 13.
+Phase 16 depends on Phases 12 + 14 + 15.1 + 15 (all bot-side work complete).
+Phase 17 depends on Phase 16 (full TMA experience must exist before LazyFlow optimization).
+Phase 18 depends on Phase 17 (observability layer wraps completed agent features).
+
+```
+12 (Scheduling) ──> 14 (Reminder UX) ──> 15.1 (Enhancements) ──┐
+                                                                ├──> 16 (TMA Experience) ──> 17 (LazyFlow UX) ──> 18 (Observatory) ──> 19 (Active Engagement)
+13 (Smart Lead) ──────────────────────> 15 (Re-analysis) ──────┘
+```
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 12. Scheduling Infrastructure | 2/2 | Complete | 2026-02-05 |
+| 13. Smart Lead Creation | 3/3 | Complete | 2026-02-05 |
+| 14. Engagement Plan Execution | 2/2 | Complete | 2026-02-05 |
+| 15.1. Lead Enhancements | 3/3 | Complete | 2026-02-05 |
+| 15. Conversational Re-analysis | 4/4 | Complete | 2026-02-05 |
+| 16. TMA Lead Experience & Dashboard | 4/4 | Complete | 2026-02-06 |
+| 17. LazyFlow UX Overhaul | 4/4 | Complete | 2026-02-06 |
+| 18. Agent Observatory & Model Config | 4/4 | Complete | 2026-02-06 |
+| 19. Active Engagement Execution | 5/5 | Complete | 2026-02-09 |
+| 20. Quick Wins by Prody | 5/5 | Complete | 2026-02-08 |
+| 21. Seamless TMA-Bot Integration | 4/4 | Complete | 2026-02-09 |
 
 ---
-*Last updated: 2026-02-25 — 03-02 complete (conversation history, main.py wiring). Phase 3 complete.*
+
+## Milestone: v3.0 -- Prospect Discovery & UX Evolution
+
+v3.0 expands Deal Quest from a reactive sales tool into a proactive prospect discovery platform. Users gain the ability to search LinkedIn prospects directly from the TMA and create leads with one tap, record voice notes anywhere in the app for hands-free input, and collaborate on leads with team transfers and shared activity feeds. The bot evolves from a full-featured command interface to a lean notification hub with quick-confirm interactions, while the TMA receives a comprehensive UX overhaul covering progressive disclosure, interaction reduction, animations, visual consistency, and mobile viewport optimization. The build starts with the highest-value standalone feature (LinkedIn search), validates the riskiest capability early (voice recording on Android WebView), then modernizes the bot once TMA alternatives exist, adds team collaboration on stable foundations, and finishes with a cross-cutting UX polish pass.
+
+### v3.0 Phases
+
+- [ ] **Phase 22: LinkedIn Prospect Search** - Edge function proxy, search UI, prospect result cards, one-tap lead creation, search resilience
+- [ ] **Phase 23: TMA Voice Input** - useVoiceRecorder hook, recording UI, audio upload pipeline, bot transcription poller, voice integration points
+- [ ] **Phase 24: Bot Role Modernization** - Command simplification, graceful deprecation, enhanced notification hub, quick-confirm interactions
+- [ ] **Phase 25: Team Collaboration** - Lead transfer flow, team activity feed, assigned leads visibility, transfer notifications
+- [ ] **Phase 26: UX Overhaul** - Progressive disclosure, interaction reduction, animation polish, visual consistency, mobile viewport optimization
+
+### Phase 22: LinkedIn Prospect Search
+**Goal**: Users can discover new prospects by searching LinkedIn directly from the TMA, browse results as visual cards, and create a fully analyzed lead from any search result with a single tap -- turning prospect discovery from a manual multi-app process into an integrated in-app workflow
+**Depends on**: Phase 21 (v2.0 complete)
+**Requirements**: LSRCH-V30-01, LSRCH-V30-02, LSRCH-V30-03, LSRCH-V30-04, LSRCH-V30-05
+**Success Criteria** (what must be TRUE):
+  1. TMA can search LinkedIn prospects via an InsForge edge function proxy -- the edge function handles CORS headers and mixed content bypass to the external microservice, and the TMA never makes direct HTTP-only requests
+  2. User can enter a keyword (and optional company filter), tap search, and see a scrollable list of prospect cards showing name, headline, location, company, profile image, and open-to-work badge
+  3. User can tap any search result to create a lead with LinkedIn data pre-filled (name, title, company, location, image URL) and the existing AI analysis + engagement plan pipeline runs automatically
+  4. Search requests have an 8-second timeout with user-friendly error messages for timeout, service-down, and rate-limit scenarios, and duplicate submissions are blocked while a request is in-flight
+  5. Search results render correctly for zero results (empty state with guidance), partial data (missing fields gracefully hidden), and large result sets (scrollable without layout issues)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md -- InsForge edge function proxy: linkedin-search function, CORS handling, timeout, error normalization (Wave 1)
+- [ ] 22-02-PLAN.md -- Search UI and prospect cards: search page, keyword/company inputs, ProspectCard component, result list with loading/empty/error states (Wave 1)
+- [ ] 22-03-PLAN.md -- Prospect-to-lead creation: one-tap flow, pre-fill lead data, trigger AI pipeline via existing support flow, navigation to new lead (Wave 2)
+
+### Phase 23: TMA Voice Input
+**Goal**: Users can record voice notes directly in the TMA for any text input context -- lead notes, support context, context updates -- and have the audio automatically transcribed via the existing AssemblyAI pipeline, making hands-free input a first-class interaction pattern
+**Depends on**: Phase 22 (LinkedIn search provides new input contexts to voice-enable; sequential ordering ensures voice testing happens after first v3.0 phase validates the build pipeline)
+**Requirements**: VOICE-V30-01, VOICE-V30-02, VOICE-V30-03, VOICE-V30-04, VOICE-V30-05
+**Success Criteria** (what must be TRUE):
+  1. User can tap a microphone button next to any text input (lead notes, support context, context update) to start recording, see a recording timer with animated waveform, and stop or cancel the recording
+  2. On devices where MediaRecorder is unavailable (detected via feature check), the microphone button is hidden and the user sees no broken UI -- voice input silently degrades to text-only
+  3. Recorded audio is uploaded to InsForge Storage, a `transcription_requests` row is created, the TMA polls for completion, and the transcribed text populates the text field for user review and editing before saving
+  4. The bot-side transcription poller picks up `transcription_requests` rows, downloads audio from InsForge Storage, transcribes via AssemblyAI, and writes the result back -- all within 30 seconds for a typical recording
+  5. Voice recording works with codec detection (`audio/webm;codecs=opus` primary, `audio/mp4` fallback) and enforces a 120-second maximum recording duration
+**Plans**: 3 plans
+
+Plans:
+- [ ] 23-01-PLAN.md -- useVoiceRecorder hook + VoiceRecordButton component: MediaRecorder API, codec detection, recording state, timer, waveform, feature detection fallback (Wave 1)
+- [ ] 23-02-PLAN.md -- Audio upload pipeline + transcription polling: InsForge Storage upload, transcription_requests migration/model/repo, useTranscriptionRequest hook with polling (Wave 1)
+- [ ] 23-03-PLAN.md -- Bot transcription poller + voice integration points: start_transcription_request_poller service, wire VoiceRecordButton into lead notes, support context, and context update inputs (Wave 2)
+
+### Phase 24: Bot Role Modernization
+**Goal**: The bot evolves from a feature-complete command interface into a lean notification hub with quick-confirm interactions -- complex workflows redirect to the TMA while the bot excels at proactive notifications, inline draft delivery, and one-tap confirmations that don't require opening the app
+**Depends on**: Phase 23 (TMA must have LinkedIn search and voice input as alternatives before bot commands are simplified; all v3.0 TMA features must be stable)
+**Requirements**: BOTMOD-V30-01, BOTMOD-V30-02, BOTMOD-V30-03, BOTMOD-V30-04
+**Success Criteria** (what must be TRUE):
+  1. Bot commands are reduced to essential quick actions -- complex workflows (lead analysis, engagement planning, detailed stats) redirect to the TMA with "Open in App" deep link buttons instead of duplicating the full flow in chat
+  2. Deprecated commands still respond with a friendly redirect message ("This feature has moved to the app. Tap below to open it.") with a deep link button for at least 30 days before handler removal
+  3. Bot proactively sends contextual notifications for new lead assignments, engagement step reminders with inline drafts, async work completion (draft/plan generation), and team activity highlights
+  4. Common actions (approve draft, mark step done, snooze reminder) are completable with one-tap inline buttons directly in the bot chat without opening the TMA
+**Plans**: 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md -- Command audit and simplification: identify commands to deprecate, add redirect handlers with deep links, update /start menu (Wave 1)
+- [ ] 24-02-PLAN.md -- Enhanced notification hub and quick-confirm buttons: consolidate notification patterns, add proactive notifications for assignments and team highlights, one-tap confirm buttons (Wave 1)
+
+### Phase 25: Team Collaboration
+**Goal**: Team members can transfer leads to each other, see shared activity across the team, and receive notifications when leads are assigned to them -- enabling collaborative deal management without leaving the existing Deal Quest workflow
+**Depends on**: Phase 24 (bot notification hub must exist for transfer notifications; bot modernization ensures notification patterns are consolidated before team events are added)
+**Requirements**: TEAM-V30-01, TEAM-V30-02, TEAM-V30-03, TEAM-V30-04
+**Success Criteria** (what must be TRUE):
+  1. Admin or lead owner can transfer a lead to another team member via a TMA modal with team member picker -- the transfer updates `lead_assignments`, logs a `transfer` activity, and notifies the recipient via bot message with "Open in App" deep link
+  2. Team activity feed shows lead activities across all team members (status changes, step completions, transfers, notes) with actor attribution and 15-second polling refresh
+  3. Lead list shows both owned and assigned leads with clear visual distinction ("Your lead" vs "Assigned by [name]") and the query correctly unions own leads with assigned leads
+  4. Transfer notifications arrive in the recipient's Telegram chat within 5 seconds with lead name, assigner name, and a deep link button to the lead detail page
+**Plans**: 3 plans
+
+Plans:
+- [ ] 25-01-PLAN.md -- Lead transfer flow: TransferModal component, team member picker, lead_assignments mutation, transfer activity logging (Wave 1)
+- [ ] 25-02-PLAN.md -- Assigned leads visibility: query union for own + assigned leads, visual indicators on LeadCard, lead list filter for "Assigned to me" (Wave 1)
+- [ ] 25-03-PLAN.md -- Team activity feed + transfer notifications: TeamActivityFeed component with polling, bot transfer notification handler via tma_events bus (Wave 2)
+
+### Phase 26: UX Overhaul
+**Goal**: The entire TMA receives a comprehensive UX polish pass -- information-heavy screens use progressive disclosure, multi-step flows are condensed, state changes are animated, visual patterns are consistent across all pages, and every screen works flawlessly on small mobile viewports
+**Depends on**: Phase 25 (all v3.0 features must be complete before cross-cutting UX pass -- progressive disclosure, animation, and viewport fixes need to cover the new LinkedIn search, voice input, and team collaboration screens in addition to existing pages)
+**Requirements**: UX-V30-01, UX-V30-02, UX-V30-03, UX-V30-04, UX-V30-05
+**Success Criteria** (what must be TRUE):
+  1. Information-heavy screens (LeadDetail, Dashboard, Admin) collapse secondary information behind expand/tap interactions -- primary actions and critical data are visible first, details are one tap away
+  2. Multi-step flows across the app are audited and reduced in tap count -- unnecessary confirmation dialogs are removed, obvious defaults are auto-selected, and the total interaction cost of common workflows drops measurably
+  3. State changes (step completion, status update, card expand/collapse), page transitions, and loading states have smooth micro-animations across all screens -- no jarring instant-swap UI updates
+  4. Spacing, typography, color usage, icon style, and component patterns are consistent across all TMA pages -- visual inconsistencies accumulated during v2.0 and v3.0 rapid development are resolved
+  5. All screens render correctly on small viewports (iPhone SE, older Android) with no overflow issues, all buttons have minimum 44px touch targets, and safe area insets are respected on notched devices
+**Plans**: 3 plans
+
+Plans:
+- [ ] 26-01-PLAN.md -- Progressive disclosure + interaction reduction: audit and refactor LeadDetail, Dashboard, Admin, and new v3.0 screens with collapsible sections and reduced confirmation steps (Wave 1)
+- [ ] 26-02-PLAN.md -- Animation and transition polish: micro-animations for state changes, page transitions (framer-motion or CSS), loading state animations across all screens (Wave 1)
+- [ ] 26-03-PLAN.md -- Visual consistency + mobile viewport: spacing/typography/color/icon audit, component pattern normalization, small viewport fixes, 44px touch targets, safe area insets (Wave 2)
+
+### v3.0 Progress
+
+**Execution Order:**
+Phases execute sequentially: 22 -> 23 -> 24 -> 25 -> 26.
+Phase 22 (LinkedIn search) is independent with highest standalone value and lowest risk.
+Phase 23 (voice input) has a critical Android WebView feasibility question that must be answered early.
+Phase 24 (bot modernization) must wait until TMA alternatives exist for deprecated commands.
+Phase 25 (team collaboration) depends on stable features and consolidated notification patterns.
+Phase 26 (UX overhaul) must be last to cover all new v3.0 screens in addition to existing pages.
+
+```
+22 (LinkedIn Search) ──> 23 (Voice Input) ──> 24 (Bot Modernization) ──> 25 (Team Collaboration) ──> 26 (UX Overhaul)
+```
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 22. LinkedIn Prospect Search | 0/3 | Pending | -- |
+| 23. TMA Voice Input | 0/3 | Pending | -- |
+| 24. Bot Role Modernization | 0/2 | Pending | -- |
+| 25. Team Collaboration | 0/3 | Pending | -- |
+| 26. UX Overhaul | 0/3 | Pending | -- |

@@ -26,6 +26,19 @@ class LeadEngagementState(StatesGroup):
     adding_context = State()
     sending_screenshot = State()
     editing_lead = State()
+    reresearch_input = State()
+
+
+class CommentSupportState(StatesGroup):
+    waiting_screenshot = State()
+    refining_comment = State()
+
+
+class ReanalysisState(StatesGroup):
+    """States for context input and re-analysis flow."""
+    collecting_context = State()      # Waiting for context input (text/voice/photo/forward)
+    confirming_reanalysis = State()   # Showing "Re-analyze Strategy?" button
+    updating_plan = State()           # Showing "Update engagement plan too?" button
 
 
 class SettingsState(StatesGroup):

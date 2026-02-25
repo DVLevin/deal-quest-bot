@@ -23,6 +23,7 @@ from bot.storage.repositories import (
     UserRepo,
 )
 from bot.utils import format_score_bar
+from bot.utils_tma import add_open_in_app_row
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ async def cmd_stats(
     attempt_repo: AttemptRepo,
     seen_repo: ScenariosSeenRepo,
     lead_repo: LeadRegistryRepo,
+    tma_url: str = "",
 ) -> None:
     """Show user's progress card."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -127,6 +129,7 @@ async def cmd_stats(
             InlineKeyboardButton(text="📋 My Leads", callback_data="stats:leads"),
         ],
     ])
+    keyboard = add_open_in_app_row(keyboard, tma_url)
 
     await message.answer("\n".join(parts), parse_mode="Markdown", reply_markup=keyboard)
 

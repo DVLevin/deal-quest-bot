@@ -1,22 +1,30 @@
-import { Card } from '@/shared/ui';
-import { useAuthStore } from '@/features/auth/store';
+/**
+ * Admin dashboard page composing all team analytics and configuration sections.
+ *
+ * Renders team overview stats, weekly performance chart, member leaderboard,
+ * weak areas, activity feed, and agent model configuration.
+ * Access is controlled by AdminGuard in the router.
+ */
+
+import { TeamOverview } from '@/features/admin/components/TeamOverview';
+import { PerformanceChart } from '@/features/admin/components/PerformanceChart';
+import { MemberLeaderboard } from '@/features/admin/components/MemberLeaderboard';
+import { WeakAreas } from '@/features/admin/components/WeakAreas';
+import { ActivityFeed } from '@/features/admin/components/ActivityFeed';
+import { ModelConfigPanel } from '@/features/admin/components/ModelConfigPanel';
+import { AdminLeadsSection } from '@/features/admin/components/AdminLeadsSection';
 
 export default function Admin() {
-  const telegramId = useAuthStore((s) => s.telegramId);
-
   return (
     <div className="space-y-4 px-4 pt-4">
-      <h1 className="text-xl font-bold text-text">Admin</h1>
-      <Card>
-        <p className="text-sm text-text-hint">
-          Telegram ID: <span className="font-mono text-text">{telegramId}</span>
-        </p>
-      </Card>
-      <Card>
-        <p className="text-sm text-text-hint">
-          Admin dashboard with user management and analytics will appear here.
-        </p>
-      </Card>
+      <h1 className="text-xl font-bold text-text">Team Dashboard</h1>
+      <TeamOverview />
+      <PerformanceChart />
+      <MemberLeaderboard />
+      <AdminLeadsSection />
+      <WeakAreas />
+      <ActivityFeed />
+      <ModelConfigPanel />
     </div>
   );
 }

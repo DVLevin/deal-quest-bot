@@ -109,8 +109,11 @@ export interface LeadRegistryRow {
   user_id: number | null;
   telegram_id: number;
   prospect_name: string | null;
+  prospect_first_name: string | null;
+  prospect_last_name: string | null;
   prospect_title: string | null;
   prospect_company: string | null;
+  prospect_geography: string | null;
   photo_url: string | null;
   photo_key: string | null;
   prospect_analysis: string | null;
@@ -140,6 +143,34 @@ export interface LeadActivityRow {
   activity_type: string;
   content: string;
   ai_response: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// lead_analysis_history
+// ---------------------------------------------------------------------------
+export interface LeadAnalysisHistoryRow {
+  id: number;
+  lead_id: number;
+  telegram_id: number;
+  version_number: number;
+  analysis_snapshot: Record<string, unknown>;
+  changes_summary: string | null;
+  field_diff: Record<string, unknown> | null;
+  triggered_by: string;
+  triggering_activity_id: number | null;
+  created_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// lead_assignments
+// ---------------------------------------------------------------------------
+export interface LeadAssignmentRow {
+  id: number;
+  lead_id: number;
+  telegram_id: number;
+  assigned_by: number;
   created_at: string | null;
 }
 

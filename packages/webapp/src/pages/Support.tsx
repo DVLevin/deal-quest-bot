@@ -1,22 +1,227 @@
-import { Card } from '@/shared/ui';
-import { useAuthStore } from '@/features/auth/store';
+/**
+ * Support page with nested sub-routes.
+ *
+ * Three views:
+ * - Index (SupportHome): CTA to start analysis + recent sessions list
+ * - Session detail: Full structured analysis display
+ * - History: Complete session list (reuses useSupportSessions)
+ *
+ * Uses the /support/* wildcard route from Router.tsx.
+ */
 
-export default function Support() {
-  const telegramId = useAuthStore((s) => s.telegramId);
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router';
+import { Zap, MessageSquare } from 'lucide-react';
+import { Skeleton, EmptyState } from '@/shared/ui';
+import { SupportInput } from '@/features/support/components/SupportInput';
+import { AnalysisDisplay } from '@/features/support/components/AnalysisDisplay';
+import { StrategyDisplay } from '@/features/support/components/StrategyDisplay';
+import { TacticsDisplay } from '@/features/support/components/TacticsDisplay';
+import { DraftDisplay } from '@/features/support/components/DraftDisplay';
+import { SessionCard } from '@/features/support/components/SessionCard';
+import { useSupportSessions } from '@/features/support/hooks/useSupportSessions';
+import { useSupportSession } from '@/features/support/hooks/useSupportSession';
+import { parseOutputJson } from '@/features/support/types';
+
+// ---------------------------------------------------------------------------
+// SupportHome (index route)
+// ---------------------------------------------------------------------------
+
+function SupportHome() {
+  const navigate = useNavigate();
+  const { data: sessions, isLoading } = useSupportSessions();
 
   return (
-    <div className="space-y-4 px-4 pt-4">
-      <h1 className="text-xl font-bold text-text">Support</h1>
-      <Card>
-        <p className="text-sm text-text-hint">
-          Telegram ID: <span className="font-mono text-text">{telegramId}</span>
-        </p>
-      </Card>
-      <Card>
-        <p className="text-sm text-text-hint">
-          AI deal support and coaching assistance will appear here.
-        </p>
-      </Card>
+    <div className="space-y-6">
+      {/* CTA section */}
+      <SupportInput />
+
+      {/* Recent sessions */}
+      <div className="space-y-3">
+        <span className="text-overline">Recent Sessions</span>
+
+        {isLoading && (
+          <div className="space-y-2">
+            <Skeleton height={72} />
+            <Skeleton height={72} />
+            <Skeleton height={72} />
+          </div>
+        )}
+
+        {!isLoading && (!sessions || sessions.length === 0) && (
+          <EmptyState
+            icon={MessageSquare}
+            title="No sessions yet"
+            description="Analyze a prospect in the bot to get AI-powered deal strategy and insights."
+            action={{
+              label: 'Open Bot',
+              onClick: () => {
+                window.open('https://t.me/DealQuestBot?start=support', '_blank');
+              },
+            }}
+          />
+        )}
+
+        {!isLoading && sessions && sessions.length > 0 && (
+          <div className="space-y-2">
+            {sessions.slice(0, 5).map((session) => (
+              <SessionCard
+                key={session.id}
+                session={session}
+                onClick={() => navigate(`/support/session/${session.id}`)}
+              />
+            ))}
+            {sessions.length > 5 && (
+              <button
+                onClick={() => navigate('/support/history')}
+                className="w-full rounded-card py-2 text-center text-sm font-medium text-accent transition-colors hover:bg-accent/5"
+              >
+                View all sessions
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SessionDetail (session/:sessionId route)
+// ---------------------------------------------------------------------------
+
+function SessionDetail() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const numericId = Number(sessionId);
+
+  const { data: session, isLoading } = useSupportSession(
+    Number.isNaN(numericId) ? 0 : numericId,
+  );
+
+  if (Number.isNaN(numericId)) {
+    return <Navigate to="/support" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton height={28} width="60%" />
+        <Skeleton height={120} />
+        <Skeleton height={120} />
+        <Skeleton height={120} />
+        <Skeleton height={120} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/support" replace />;
+  }
+
+  const output = parseOutputJson(session.output_json);
+
+  return (
+    <div className="space-y-6">
+      {/* Input preview */}
+      {session.input_text && (
+        <div className="rounded-card border border-surface-secondary bg-surface-secondary/30 p-3">
+          <p className="text-xs font-medium text-text-secondary">Your input</p>
+          <p className="mt-1 text-sm text-text">{session.input_text}</p>
+        </div>
+      )}
+
+      {/* Analysis sections stacked vertically */}
+      <AnalysisDisplay analysis={output.analysis} />
+
+      <div className="border-t border-surface-secondary" />
+
+      <StrategyDisplay strategy={output.strategy} />
+
+      <div className="border-t border-surface-secondary" />
+
+      <TacticsDisplay tactics={output.engagement_tactics} />
+
+      <div className="border-t border-surface-secondary" />
+
+      <DraftDisplay draft={output.draft} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SessionHistory (history route)
+// ---------------------------------------------------------------------------
+
+function SessionHistory() {
+  const navigate = useNavigate();
+  const { data: sessions, isLoading } = useSupportSessions();
+
+  return (
+    <div className="space-y-3">
+      <span className="text-overline">All Sessions</span>
+
+      {isLoading && (
+        <div className="space-y-2">
+          <Skeleton height={72} />
+          <Skeleton height={72} />
+          <Skeleton height={72} />
+          <Skeleton height={72} />
+        </div>
+      )}
+
+      {!isLoading && (!sessions || sessions.length === 0) && (
+        <EmptyState
+          icon={MessageSquare}
+          title="No support sessions yet"
+          description="Analyze a prospect in the bot to get AI-powered deal strategy and insights."
+          action={{
+            label: 'Open Bot',
+            onClick: () => {
+              window.open('https://t.me/DealQuestBot?start=support', '_blank');
+            },
+          }}
+        />
+      )}
+
+      {!isLoading && sessions && sessions.length > 0 && (
+        <div className="space-y-2">
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onClick={() => navigate(`/support/session/${session.id}`)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Support page (root with nested routes)
+// ---------------------------------------------------------------------------
+
+export default function Support() {
+  return (
+    <div className="space-y-4 px-4 pt-4 pb-24">
+      {/* Page title */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
+          <Zap className="h-5 w-5 text-accent" />
+        </div>
+        <div>
+          <p className="text-overline">AI Co-Pilot</p>
+          <h1 className="text-lg font-bold text-text">Deal Support</h1>
+        </div>
+      </div>
+
+      {/* Sub-routes */}
+      <Routes>
+        <Route index element={<SupportHome />} />
+        <Route path="session/:sessionId" element={<SessionDetail />} />
+        <Route path="history" element={<SessionHistory />} />
+        <Route path="*" element={<Navigate to="/support" replace />} />
+      </Routes>
     </div>
   );
 }

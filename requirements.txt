@@ -17,3 +17,9 @@ python-dotenv>=1.0.1
 
 # Security
 cryptography>=42.0.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Observability
+langfuse>=3.12.1

@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-from bot.tracing import traced_span
+from langfuse import get_client, observe
 
 logger = logging.getLogger(__name__)
 
@@ -115,11 +115,27 @@ class ClaudeProvider(LLMProvider):
             timeout=120.0,
         )
 
-    @traced_span("llm:claude")
+    @observe(as_type="generation", name="llm:claude")
     async def complete(
         self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
     ) -> dict[str, Any]:
         import asyncio
+
+        # Build user content - multipart if image provided
+        if image_b64:
+            user_content: list[dict[str, Any]] | str = [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_b64,
+                    },
+                },
+                {"type": "text", "text": user_message},
+            ]
+        else:
+            user_content = user_message
 
         for attempt in range(MAX_RETRIES):
             try:
@@ -129,12 +145,32 @@ class ClaudeProvider(LLMProvider):
                         "model": self.model,
                         "max_tokens": 4096,
                         "system": system_prompt,
-                        "messages": [{"role": "user", "content": user_message}],
+                        "messages": [{"role": "user", "content": user_content}],
                     },
                 )
                 resp.raise_for_status()
                 data = resp.json()
                 text = data["content"][0]["text"]
+
+                # Record Langfuse generation observation
+                try:
+                    usage = data.get("usage", {})
+                    input_tokens = usage.get("input_tokens", 0)
+                    output_tokens = usage.get("output_tokens", 0)
+                    get_client().update_current_generation(
+                        model=self.model,
+                        input={
+                            "system": system_prompt[:500],
+                            "user": user_message[:500],
+                            "has_image": bool(image_b64),
+                        },
+                        output=text[:2000],
+                        usage_details={"input": input_tokens, "output": output_tokens},
+                        metadata={"provider": "claude"},
+                    )
+                except Exception:
+                    logger.debug("Langfuse observation update failed (non-critical)", exc_info=True)
+
                 return _extract_json(text)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code in (429, 500, 502, 503) and attempt < MAX_RETRIES - 1:
@@ -200,7 +236,7 @@ class OpenRouterProvider(LLMProvider):
             timeout=120.0,
         )
 
-    @traced_span("llm:openrouter")
+    @observe(as_type="generation", name="llm:openrouter")
     async def complete(
         self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
     ) -> dict[str, Any]:
@@ -235,6 +271,32 @@ class OpenRouterProvider(LLMProvider):
                 resp.raise_for_status()
                 data = resp.json()
                 text = data["choices"][0]["message"]["content"]
+
+                # Record Langfuse generation observation
+                try:
+                    usage = data.get("usage", {})
+                    prompt_tokens = usage.get("prompt_tokens", 0)
+                    completion_tokens = usage.get("completion_tokens", 0)
+                    cost_value = usage.get("cost")
+
+                    update_kwargs: dict[str, Any] = {
+                        "model": self.model,
+                        "input": {
+                            "system": system_prompt[:500],
+                            "user": user_message[:500],
+                            "has_image": bool(image_b64),
+                        },
+                        "output": text[:2000],
+                        "usage_details": {"input": prompt_tokens, "output": completion_tokens},
+                        "metadata": {"provider": "openrouter"},
+                    }
+                    if cost_value is not None:
+                        update_kwargs["cost_details"] = {"total": float(cost_value)}
+
+                    get_client().update_current_generation(**update_kwargs)
+                except Exception:
+                    logger.debug("Langfuse observation update failed (non-critical)", exc_info=True)
+
                 return _extract_json(text)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code in (429, 500, 502, 503) and attempt < MAX_RETRIES - 1:

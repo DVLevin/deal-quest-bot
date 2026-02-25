@@ -16,16 +16,24 @@ export type AttemptMode = 'learn' | 'train';
 export type LeadStatus =
   | 'analyzed'
   | 'reached_out'
-  | 'meeting'
+  | 'meeting_booked'
   | 'in_progress'
-  | 'closed';
+  | 'closed_won'
+  | 'closed_lost';
 
 /** lead_activity_log.activity_type */
 export type LeadActivityType =
   | 'context_update'
   | 'screenshot_comment'
   | 'ai_advice'
-  | 'followup_sent';
+  | 'followup_sent'
+  | 'status_change'
+  | 'step_execution'
+  | 'step_snooze'
+  | 'step_skip'
+  | 'prospect_response'
+  | 'meeting_notes'
+  | 're_analysis';
 
 /** users.provider */
 export type LLMProvider = 'openrouter' | 'anthropic';

@@ -3,12 +3,22 @@ import { createRoot } from 'react-dom/client';
 import { initTelegramSDK } from '@/lib/telegram';
 import App from '@/app/App';
 
-// Initialize Telegram SDK before rendering
-initTelegramSDK();
-
-// Initialize mobile debugging console in development
+// Development-only debug console
 if (import.meta.env.DEV) {
   import('eruda').then((m) => m.default.init());
+}
+
+// Build version stamp — check this in console to verify which build is deployed
+declare const __BUILD_TIME__: string;
+console.info(`[BUILD] Deal Quest TMA built at: ${__BUILD_TIME__}`);
+
+// Initialize Telegram SDK with error handling
+try {
+  initTelegramSDK();
+} catch (err) {
+  console.error('Telegram SDK init failed:', err);
+  document.body.innerHTML = `<pre style="color:red;padding:1rem;">${err}</pre>`;
+  throw err;
 }
 
 const root = document.getElementById('root');

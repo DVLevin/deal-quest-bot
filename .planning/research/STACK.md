@@ -1,533 +1,308 @@
-# Technology Stack — Multi-Agent AI Sales Partner (v2.0)
+# Stack Research
 
-**Project:** Deal Quest Bot v2.0 — Multi-Agent Orchestration Milestone
-**Researched:** 2026-02-24
-**Scope:** NEW additions only. Existing validated stack is NOT re-researched.
-
----
-
-## What Is Already In Place (Do Not Re-Add)
-
-These are validated, production-running dependencies. The roadmap must NOT replace or duplicate them:
-
-| Capability | Already Solved By |
-|---|---|
-| Telegram bot framework | `aiogram>=3.4.0` |
-| HTTP client for LLM calls | `httpx>=0.27.0` (AsyncClient, connection pooling, retry) |
-| LLM provider abstraction | `bot/services/llm_router.py` (ClaudeProvider + OpenRouterProvider) |
-| YAML pipeline config | `pyyaml>=6.0.1` + `bot/pipeline/config_loader.py` |
-| Data validation + models | `pydantic>=2.6.0` + `pydantic-settings>=2.2.0` |
-| Database (all tables) | InsForge PostgREST via `bot/storage/insforge_client.py` |
-| Background interval tasks | `asyncio.create_task()` + `while True` loops in `followup_scheduler.py` |
-| Tracing/observability | `bot/tracing/` (TraceContext, traced_span, TraceCollector) |
-| Agent ABC + registry | `bot/agents/base.py`, `bot/agents/registry.py` |
-| Pipeline execution | `bot/pipeline/runner.py` (sequential/parallel/background) |
-| Voice transcription | AssemblyAI via `bot/services/transcription.py` |
-| Encryption | `cryptography>=42.0.0` (Fernet) |
+**Domain:** Telegram Mini App (TMA) -- React SPA frontend for sales training platform
+**Project:** Deal Quest TMA
+**Researched:** 2026-02-01
+**Confidence:** HIGH (core stack), MEDIUM (supporting libraries)
 
 ---
 
-## New Capabilities Required
+## Recommended Stack
 
-### 1. Tool-Use Loop Engine (OpenRouter Function Calling)
+### Core Technologies
 
-**What is needed:** The existing `OpenRouterProvider.complete()` returns parsed JSON from a single LLM call. The new orchestrator agents need multi-turn tool-use loops: call LLM with tools array → execute tool calls → append results → call LLM again → repeat until no more tool calls (or `max_iterations` reached).
+| Technology | Version | Purpose | Why Recommended | Confidence |
+|------------|---------|---------|-----------------|------------|
+| React | ^18.3.1 | UI framework | TMA ecosystem (official templates, SDK bindings) targets React 18. React 19 is available but `@telegram-apps/sdk-react` is tested against 18. Stay on 18 until SDK explicitly supports 19. | HIGH |
+| TypeScript | ^5.9.x | Type safety | Non-negotiable for any non-trivial project. Official TMA templates use TS. Vite 7 has excellent TS support out of the box. | HIGH |
+| Vite | ^7.3.x | Build tool / dev server | Official TMA template build tool. Native ESM, fast HMR, dedicated Tailwind v4 plugin. Vite 7 requires Node 20.19+ or 22.12+. Note: official template currently pins Vite 6 -- we use 7 because it is stable and we have no legacy constraints. | HIGH |
+| @telegram-apps/sdk-react | ^3.3.9 | TMA SDK (React bindings) | The official React bindings for Telegram Mini Apps. v3 is current stable. Re-exports `@telegram-apps/sdk` so you do NOT install that separately. Key hooks: `useSignal` for reactive signal access. **Breaking change from v2:** `useLaunchParams` removed -- use `retrieveLaunchParams` from the SDK directly. | HIGH |
+| @telegram-apps/sdk | (bundled via sdk-react) | TMA core SDK | Bundled with sdk-react. Provides `init()`, `backButton`, `miniApp`, `themeParams`, `viewport`, `swipeBehavior`, `closingBehavior`, `cloudStorage`, `hapticFeedback`. | HIGH |
+| react-router | ^7.12.x | Client-side routing | React Router v7 in **declarative mode** for SPA. Import everything from `react-router` (no separate `react-router-dom` needed in v7). Declarative mode is sufficient for a TMA SPA -- no SSR, no framework mode overhead. v7 is a non-breaking upgrade path from v6. | HIGH |
+| Tailwind CSS | ^4.1.x | Utility-first CSS | CSS-first configuration in v4 (no `tailwind.config.js`). Dedicated Vite plugin `@tailwindcss/vite`. Built-in Lightning CSS eliminates need for postcss-import and autoprefixer. Custom branded design = Tailwind's `@theme` rule for design tokens. | HIGH |
+| Zustand | ^5.0.10 | Client-side state management | 3KB, zero dependencies, no Provider wrapper needed. Centralized store pattern fits our use case: user session, navigation state, cached learning progress. Simple mental model for a TMA where most state is server-derived. | HIGH |
+| @tanstack/react-query | ^5.90.x | Server state / data fetching | Caching, background refetching, optimistic updates, retry logic. Pairs with Supabase client for all data operations. Zero dependencies. De facto standard for React server-state management. | HIGH |
+| @supabase/supabase-js | ^2.90.x | Backend client (InsForge) | Isomorphic JS client for Supabase-compatible backends. Handles DB queries, auth, storage, realtime subscriptions. InsForge is Supabase-compatible, so this client works directly. | HIGH |
 
-**Verdict: Extend existing `llm_router.py` with a new method — no new library.**
+### Supporting Libraries
 
-The existing `httpx.AsyncClient` in `OpenRouterProvider` already handles the HTTP transport. OpenRouter supports OpenAI-compatible function calling natively (verified at openrouter.ai/docs/api/reference). The reference TypeScript ClickUp bot uses raw `fetch` with this exact format — the Python equivalent is identical except using `httpx`.
+| Library | Version | Purpose | When to Use | Confidence |
+|---------|---------|---------|-------------|------------|
+| Recharts | ^3.6.0 | Dashboard charts | All chart views: progress charts, performance dashboards, leaderboards. SVG-based, declarative React components wrapping D3. Responsive and animated by default. 26.5K GitHub stars. | HIGH |
+| Motion (formerly Framer Motion) | ^12.26.x | UI animations & gamification | Page transitions, badge reveals, achievement celebrations, micro-interactions. Install as `motion` package, import from `motion/react`. Use `LazyMotion` + `m` component to keep bundle under 4.6KB (vs ~24KB full). | HIGH |
+| canvas-confetti | ^1.9.4 | Celebration effects | Achievement unlocks, badge awards, level-ups. Framework-agnostic, supports web workers for off-main-thread rendering, custom SVG shapes for branded confetti. ~3KB. | MEDIUM |
+| clsx | ^2.x | Conditional class names | Every component with conditional styling. <1KB. De facto standard. | HIGH |
+| tailwind-merge | ^3.x | Tailwind class conflict resolution | Any component accepting `className` prop overrides. Resolves Tailwind specificity conflicts intelligently. | HIGH |
+| class-variance-authority (CVA) | ^0.7.x | Component variant definitions | Buttons, cards, badges -- any component with size/color/state variants. Defines variant API declaratively. Standard pattern with Tailwind. | HIGH |
+| lucide-react | ^0.562.x | Icon set | All UI icons. Tree-shakable SVG icons (only imported icons ship). 1500+ icons. Fork of Feather Icons with active community. | MEDIUM |
+| @number-flow/react | latest | Animated number transitions | Score counters, XP displays, streak counts, leaderboard positions. Smooth digit-by-digit transitions. | LOW |
+| eruda | ^3.4.3 | Mobile debugging console | Development/debug builds only. Essential for TMA debugging since WebView has no devtools. Load conditionally: `debug && import('eruda').then(lib => lib.default.init())`. | HIGH |
+| vite-plugin-mkcert | ^1.17.8 | Local HTTPS certificates | Development only. Required because Telegram mandates HTTPS. Generates trusted local certs (requires sudo on first run). Better than `@vitejs/plugin-basic-ssl` which creates self-signed certs that fail on iOS/Android. | HIGH |
 
-**New method to add to `OpenRouterProvider`:**
+### Development Tools
 
-```python
-async def complete_with_tools(
-    self,
-    messages: list[dict],   # full OpenAI-format message thread
-    tools: list[dict],       # JSON Schema tool definitions (type: "function")
-    *,
-    tool_choice: str = "auto",
-) -> dict:
-    """Single LLM call returning raw choice message with possible tool_calls list."""
-    resp = await self._client.post("/chat/completions", json={
-        "model": self.model,
-        "messages": messages,
-        "tools": tools,
-        "tool_choice": tool_choice,
-        "max_tokens": 4096,
-    })
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]
-    # Returns: {"role": "assistant", "content": str|None, "tool_calls": [...]}
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| Vite ^7.3.x | Dev server + bundler | `@vitejs/plugin-react-swc` for fast React compilation via SWC. `vite-tsconfig-paths` for TS path alias resolution. |
+| ESLint ^9.x | Linting | Flat config format. `@typescript-eslint/eslint-plugin`, `eslint-plugin-react`, `eslint-plugin-react-hooks`. |
+| ngrok or Cloudflare Tunnel | HTTPS tunnel for mobile testing | mkcert only works for web.telegram.org testing. For iOS/Android testing, tunnel localhost to a public HTTPS URL. |
+
+---
+
+## Backend Integration Pattern (InsForge / Supabase)
+
+### Authentication Flow
+
+TMA does NOT use traditional Supabase email/password auth. The pattern is:
+
+1. **Client (TMA):** Retrieve `initDataRaw` from `@telegram-apps/sdk-react` on app launch.
+2. **Server (Edge Function / bot backend):** Validate `initData` signature using bot token via `@telegram-apps/init-data-node` (^2.0.10) or HMAC-SHA256 verification.
+3. **Server:** Generate a custom JWT signed with Supabase JWT secret, with `sub` = Telegram user ID.
+4. **Client:** Use `supabase.auth.setSession({ access_token, refresh_token })` to authenticate the Supabase client.
+5. **Result:** All subsequent DB queries pass through RLS policies keyed on the verified Telegram user identity.
+
+**Key package for server-side validation:** `@telegram-apps/init-data-node` ^2.0.10
+
+### Supabase Client Setup
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,    // InsForge instance URL
+  import.meta.env.VITE_SUPABASE_ANON_KEY // InsForge anon key
+);
 ```
 
-The tool-use loop logic (while iterations < max_iterations) lives in each agent class, not in the provider — matching the TypeScript pattern exactly. The provider is just an HTTP call wrapper.
+All environment variable keys MUST start with `VITE_` for Vite to expose them to the client bundle.
 
-**OpenRouter tool_calls response format** (verified from official docs):
-```json
-{
-  "role": "assistant",
-  "content": null,
-  "tool_calls": [
-    {
-      "id": "call_abc123",
-      "type": "function",
-      "function": {
-        "name": "create_deal",
-        "arguments": "{\"title\": \"Acme Corp\", \"stage\": \"qualified\"}"
-      }
+### Data Fetching Pattern
+
+```typescript
+// TanStack Query + Supabase
+const { data } = useQuery({
+  queryKey: ['user-progress', telegramUserId],
+  queryFn: () => supabase.from('user_progress').select('*').eq('telegram_id', telegramUserId)
+});
+```
+
+---
+
+## Navigation & Back Button
+
+### Critical Pattern
+
+Telegram's Back Button does NOT automatically navigate -- the developer must handle it. If unhandled, pressing back **closes the Mini App entirely**.
+
+### Recommended Approach
+
+Since `@telegram-apps/react-router-integration` (v1.0.1) was built for react-router-dom v6 and has not been updated in over a year, and we are using react-router v7, we implement back button management manually:
+
+```typescript
+import { backButton } from '@telegram-apps/sdk-react';
+import { useLocation, useNavigate } from 'react-router';
+
+function useBackButtonIntegration() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      backButton.hide();
+    } else {
+      backButton.show();
+      const off = backButton.onClick(() => navigate(-1));
+      return off;
     }
-  ]
+  }, [location.pathname]);
 }
 ```
 
-**Confidence:** HIGH — OpenRouter tool calling format is documented and matches OpenAI spec. Existing httpx client handles it without changes.
+### Why NOT use @telegram-apps/react-router-integration
+
+- Last published over a year ago (v1.0.1)
+- Built for `react-router-dom` v6's `<Router navigator={...}>` pattern
+- Does not support react-router v7's unified `react-router` package or Data APIs
+- Manual approach is ~15 lines and gives full control
 
 ---
 
-### 2. Agent Config Loader (agents.yaml)
-
-**What is needed:** YAML-defined agent configs: model, prompt_file, tools list, max_iterations, description. Reference: `bot/src/agents/config-loader.ts` in ClickUp bot.
-
-**Verdict: No new library — reuse existing `pyyaml`.**
-
-The existing bot uses PyYAML for pipeline configs (`bot/pipeline/config_loader.py`). Add `bot/agents/config_loader.py` following the same module-level cache pattern. The new `data/agents.yaml` mirrors the TypeScript `AgentConfig` interface.
-
-**`data/agents.yaml` structure:**
-
-```yaml
-agents:
-  orchestrator:
-    model: "openai/gpt-oss-120b"
-    prompt_file: "orchestrator.md"
-    tools:
-      - "invoke_deal_agent"
-      - "invoke_coach_agent"
-      - "invoke_strategy_agent"
-      - "invoke_memory_agent"
-    description: "Routes user messages to specialist agents"
-    max_iterations: 5
-
-  deal_agent:
-    model: "openai/gpt-oss-120b"
-    prompt_file: "deal_agent.md"
-    tools:
-      - "create_deal"
-      - "update_deal"
-      - "list_deals"
-      - "add_deal_note"
-      - "update_deal_stage"
-    description: "CRM: create/update deals, log notes, track pipeline"
-    max_iterations: 8
-
-  coach_agent:
-    model: "openai/gpt-oss-120b"
-    prompt_file: "coach_agent.md"
-    tools:
-      - "start_training_session"
-      - "run_practice_scenario"
-      - "get_progress_summary"
-    description: "Training, practice, objection handling"
-    max_iterations: 5
-
-  strategy_agent:
-    model: "openai/gpt-oss-120b"
-    prompt_file: "strategy_agent.md"
-    tools:
-      - "analyze_deal"
-      - "prep_call"
-      - "generate_re_engagement"
-    description: "Deal analysis, call prep, competitive intel"
-    max_iterations: 6
-
-  memory_agent:
-    model: "openai/gpt-oss-120b"
-    prompt_file: "memory_agent.md"
-    tools:
-      - "read_memory"
-      - "update_memory"
-    description: "Learns salesperson patterns, maintains long-term context"
-    max_iterations: 4
-```
-
-**`bot/agents/config_loader.py` pattern:**
-
-```python
-from __future__ import annotations
-import yaml
-from pathlib import Path
-from dataclasses import dataclass
-
-@dataclass
-class AgentConfig:
-    model: str
-    prompt_file: str
-    tools: list[str]
-    description: str
-    max_iterations: int
-
-_cache: dict[str, AgentConfig] | None = None
-
-def load_agent_configs() -> dict[str, AgentConfig]:
-    global _cache
-    if _cache is not None:
-        return _cache
-    path = Path(__file__).parent.parent.parent / "data" / "agents.yaml"
-    raw = yaml.safe_load(path.read_text())
-    _cache = {
-        name: AgentConfig(**cfg)
-        for name, cfg in raw["agents"].items()
-    }
-    return _cache
-
-def get_agent_config(name: str) -> AgentConfig | None:
-    return load_agent_configs().get(name)
-```
-
-**Confidence:** HIGH — direct adaptation of validated TypeScript pattern using already-present PyYAML.
-
----
-
-### 3. Conversation History Manager
-
-**What is needed:** Per-user sliding window of the last N message turns in OpenAI format, persisted across handler calls within a process lifetime. Must handle concurrent async access safely.
-
-**Verdict: Custom Python class using stdlib `collections.deque` — no new library.**
-
-The TypeScript reference (`conversation-history.ts`) is a 149-line in-memory class using a `Map`. The Python equivalent uses a module-level `dict[int, deque[dict]]` keyed by `chat_id`. Python's `deque(maxlen=N)` gives O(1) append with automatic eviction — no manual shifting required.
-
-**`bot/services/conversation_history.py`:**
-
-```python
-from __future__ import annotations
-from collections import deque
-from typing import Any
-
-_histories: dict[int, deque[dict[str, Any]]] = {}
-WINDOW_SIZE = 20  # 10 user+assistant turn pairs
-
-class ConversationHistory:
-    @classmethod
-    def add_message(cls, chat_id: int, message: dict[str, Any]) -> None:
-        if chat_id not in _histories:
-            _histories[chat_id] = deque(maxlen=WINDOW_SIZE)
-        _histories[chat_id].append(message)
-
-    @classmethod
-    def get_messages(cls, chat_id: int) -> list[dict[str, Any]]:
-        return list(_histories.get(chat_id, []))
-
-    @classmethod
-    def clear(cls, chat_id: int) -> None:
-        _histories.pop(chat_id, None)
-
-    @classmethod
-    def cleanup_stale(cls, max_age_sec: int = 3600) -> int:
-        # Implement timestamp tracking for stale entry cleanup
-        ...
-```
-
-**Why NOT persist to InsForge:** Conversation history is ephemeral session context, not business data. Process restart = natural session boundary for a sales partner. InsForge round-trips (100-300ms) on every message would add unacceptable latency. The existing `user_memory` table handles structured long-term memory (deals, patterns, preferences) separately.
-
-**Why NOT use aiogram `MemoryStorage`:** FSM storage is key-value per state machine. Conversation history is a list of N messages — a different data structure. Mixing them adds complexity with no benefit.
-
-**Concurrency safety:** Python asyncio is single-threaded event loop. Concurrent async handler calls serialize through the event loop, so read-modify-write on the `dict` is safe without explicit locking — same reasoning the TypeScript implementation uses for Node.js.
-
-**Confidence:** HIGH — standard Python stdlib pattern, direct port of validated TypeScript design.
-
----
-
-### 4. Proactive Scheduling (Daily Brief + Stale Deal Nudges)
-
-**What is needed:** Send a morning briefing to each active user at a configured UTC time. Also send context-triggered nudges when deals go stale.
-
-**Verdict: Add `APScheduler 3.x` for cron-triggered jobs. Keep existing `asyncio.create_task()` loops for interval jobs.**
-
-**Why APScheduler 3.x and NOT 4.x:**
-APScheduler 4.0 is explicitly pre-release alpha. The official migration guide states verbatim: "do NOT use this release in production." (Verified at apscheduler.readthedocs.io/en/master/migration.html.) APScheduler 3.x (`>=3.10`) has a stable `AsyncIOScheduler` that integrates directly with the running asyncio event loop — no additional thread or process required.
-
-**Why APScheduler and NOT raw `asyncio.sleep()`:**
-The existing `followup_scheduler.py` uses `while True` + `asyncio.sleep(6 * 60 * 60)` — fine for fixed interval jobs. For time-of-day jobs (daily brief at 09:00), `asyncio.sleep(seconds_until_9am)` is fragile: it drifts on restart, does not handle DST changes, and requires manual calculation. APScheduler's cron trigger handles this correctly.
-
-**When to use what:**
-- Keep `asyncio.create_task()` + `while True` + `asyncio.sleep()` for: followup checks (every 6h), scenario pool generation (every 6h). These are already working and don't need cron semantics.
-- Use `APScheduler AsyncIOScheduler` + cron trigger for: daily brief (specific time of day).
-
-**Installation:**
-```
-apscheduler>=3.10,<4.0
-```
-
-**Integration pattern (fits into existing `main.py`):**
-
-```python
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-# In main() after bot initialization:
-scheduler = AsyncIOScheduler(timezone="UTC")
-scheduler.add_job(
-    send_daily_brief,
-    "cron",
-    hour=6,  # 06:00 UTC
-    kwargs={"bot": bot, "user_repo": user_repo, "deal_repo": deal_repo},
-)
-scheduler.start()
-
-try:
-    await dp.start_polling(bot)
-finally:
-    scheduler.shutdown(wait=False)
-    await insforge.close()
-```
-
-**Confidence:** MEDIUM — APScheduler 3.x is widely used with aiogram (community pattern confirmed). Version pin `<4.0` is essential. The `scheduler.start()` call must happen after the event loop is running (inside an async context or after `asyncio.run()` starts).
-
----
-
-### 5. CRM Data Models (New InsForge Tables)
-
-**What is needed:** Pydantic models for `deals` and `deal_notes` tables. The existing `LeadRegistryModel` covers basic prospect analysis but lacks structured deal lifecycle: pipeline stages, deal value, probability, next actions.
-
-**Verdict: New Pydantic models in `bot/storage/models.py` — no new library.**
-
-Direct extension of existing pattern (11 existing models, all `pydantic.BaseModel`).
-
-**Models to add to `bot/storage/models.py`:**
-
-```python
-class DealModel(BaseModel):
-    id: int | None = None
-    telegram_id: int
-    user_id: int | None = None
-    title: str                          # "Acme Corp — Enterprise License"
-    prospect_name: str | None = None
-    prospect_company: str | None = None
-    prospect_title: str | None = None
-    stage: str = "prospecting"
-    # Stage values: prospecting | qualified | proposal | negotiation | closed_won | closed_lost
-    value: float | None = None
-    currency: str = "USD"
-    probability: int = 0                # 0-100
-    expected_close_date: str | None = None
-    source: str | None = None           # referral | inbound | outbound | linkedin
-    next_action: str | None = None
-    next_action_due: str | None = None  # ISO datetime
-    lead_id: int | None = None          # Optional link to existing lead_registry row
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-class DealNoteModel(BaseModel):
-    id: int | None = None
-    deal_id: int
-    telegram_id: int
-    note_type: str = "note"
-    # note_type values: note | call_log | meeting | email | stage_change | ai_insight
-    content: str
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str | None = None
-```
-
-**New repositories to add to `bot/storage/repositories.py`:**
-- `DealRepo` — CRUD for `deals` table, filter by `telegram_id`, `stage`, `next_action_due`
-- `DealNoteRepo` — append-only log for `deal_notes`, query by `deal_id`
-
-**Database migrations needed:** Two new InsForge tables: `deals` and `deal_notes`. These follow the same PostgREST-accessible pattern as existing tables.
-
-**Confidence:** HIGH — direct extension of existing Pydantic model + repository pattern, proven by 11 existing repository classes.
-
----
-
-### 6. Inline Keyboard Confirmation Flow (Confirmation-First CRM Writes)
-
-**What is needed:** Before executing a CRM mutation (create deal, update stage, add note), show the user a confirmation keyboard. The confirmation payload must survive between the agent response and the user's button press.
-
-**Verdict: Use existing `aiogram` inline keyboards + `aiogram.fsm` state storage — no new library.**
-
-The existing bot already uses:
-- `aiogram.types.InlineKeyboardMarkup`, `InlineKeyboardButton` for callback keyboards
-- `aiogram.fsm.storage.memory.MemoryStorage` for FSM state
-- `@router.callback_query()` handlers for button presses
-
-The TypeScript ClickUp bot's `confirmationPayload` pattern maps directly to aiogram FSM state:
-
-```python
-# In orchestrator handler, when agent returns confirmation_payload:
-if result.get("confirmation_payload"):
-    await state.set_state(OrchestratorStates.awaiting_confirmation)
-    await state.update_data(pending_action=result["confirmation_payload"])
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="Confirm", callback_data="confirm_action"),
-        InlineKeyboardButton(text="Cancel", callback_data="cancel_action"),
-    ]])
-    await message.answer(result["content"], reply_markup=keyboard)
-
-# In callback_query handler:
-@router.callback_query(OrchestratorStates.awaiting_confirmation, F.data == "confirm_action")
-async def on_confirm(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    pending = data["pending_action"]
-    # Execute the CRM mutation
-    await execute_pending_action(pending)
-    await state.clear()
-```
-
-**Confidence:** HIGH — aiogram FSM + inline keyboards are core framework features, zero new dependencies.
-
----
-
-### 7. Catch-All Message Handler (Natural Language Entry Point)
-
-**What is needed:** A handler that catches any text message not claimed by command handlers or active FSM states, and routes it to the Orchestrator.
-
-**Verdict: Use existing aiogram router with `StateFilter(default_state)` — no new library.**
-
-In aiogram 3, handlers are matched in registration order. The catch-all handler uses:
-
-```python
-from aiogram.filters import StateFilter
-from aiogram.fsm.state import default_state
-
-@router.message(StateFilter(default_state), F.text)
-async def handle_natural_language(message: Message, state: FSMContext, ...):
-    result = await orchestrator.process_message(
-        chat_id=message.chat.id,
-        telegram_id=message.from_user.id,
-        text=message.text,
-    )
-    # Handle result: text response, confirmation, or error
-```
-
-**Critical: this router must be registered LAST in `main.py`** after all command routers. aiogram matches the first handler that passes all filters — command handlers registered earlier will consume `/learn`, `/train`, etc. before the catch-all fires.
-
-```python
-# main.py — registration order matters:
-dp.include_router(start.router)
-dp.include_router(support.router)
-dp.include_router(learn.router)
-dp.include_router(train.router)
-dp.include_router(stats.router)
-dp.include_router(settings.router)
-dp.include_router(leads.router)
-dp.include_router(admin.router)
-dp.include_router(orchestrator.router)  # LAST — catches everything else
-```
-
-**Confidence:** HIGH — aiogram filter ordering is documented behavior, verified in official docs.
-
----
-
-## Summary: Net-New Dependencies
-
-| Package | Version Pin | Purpose | Justification |
-|---|---|---|---|
-| `apscheduler` | `>=3.10,<4.0` | Daily brief cron scheduling | Only stable asyncio-native cron scheduler; v4 is pre-release alpha; raw `asyncio.sleep()` is fragile for time-of-day jobs |
-
-**Everything else uses existing dependencies or Python stdlib. Zero other new packages.**
-
----
-
-## Full `requirements.txt` After Milestone
-
-```
-# Deal Quest Bot - Dependencies
-
-# Telegram Bot Framework (async, v3)
-aiogram>=3.4.0
-
-# LLM Providers
-anthropic>=0.40.0
-httpx>=0.27.0
-
-# Config & Validation
-pydantic>=2.6.0
-pydantic-settings>=2.2.0
-
-# Memory/Config
-pyyaml>=6.0.1
-python-dotenv>=1.0.1
-
-# Security
-cryptography>=42.0.0
-
-# Proactive scheduling (daily brief at specific time of day)
-apscheduler>=3.10,<4.0
+## Vite Configuration
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import tailwindcss from '@tailwindcss/vite';
+import mkcert from 'vite-plugin-mkcert';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+    mkcert(),
+    tsconfigPaths(),
+  ],
+  base: './',  // Relative paths for TMA deployment flexibility
+  build: {
+    outDir: 'dist',
+    target: 'es2020',
+  },
+  server: {
+    host: true,  // Expose on network for mobile testing
+  },
+});
 ```
 
 ---
 
-## Alternatives Considered and Rejected
+## Alternatives Considered
 
-| Category | Rejected Option | Reason |
-|---|---|---|
-| Scheduling | `APScheduler>=4.0` | Pre-release alpha. Official docs: "do NOT use in production." |
-| Scheduling | `aiocron` | Small library, limited production track record, no persistent job store |
-| Scheduling | `asyncio.sleep()` raw | Adequate for fixed intervals; fragile for time-of-day (drift on restart, no DST handling) |
-| Conversation history | LangChain `ConversationBufferWindowMemory` | Massive transitive dependency graph for a 20-line dict class; LangChain takes over the architecture |
-| Conversation history | Redis | No Redis in existing stack; InsForge is the single data store; in-memory is correct for per-session context |
-| Conversation history | InsForge persistence | 100-300ms round-trip per message is unacceptable for history reads; ephemeral is semantically correct |
-| Tool use | OpenAI Python SDK (`openai` package) | Already have raw httpx client; SDK adds ~20MB dependency + different async lifecycle; OpenRouter is the provider, not OpenAI |
-| Tool use | LangChain agents / LangGraph | Framework takeover incompatible with existing YAML pipeline system; adds 100+ transitive deps; no benefit for this pattern |
-| CRM models | External CRM SDK (HubSpot, Pipedrive) | Explicitly out of scope per PROJECT.md: "External CRM sync deferred to future milestone" |
-| Confirmation flow | Separate state database | MemoryStorage already handles FSM state; overkill for single-process bot |
-| Agent orchestration | AutoGen, CrewAI, Agentflow | Framework-level take-over; incompatible with existing `BaseAgent` ABC; would require rewriting v1.0 agents |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| **React 18** | React 19 | `@telegram-apps/sdk-react` ^3.3.9 is tested against React 18. React 19 introduces breaking changes (ref as prop, new hooks) that may conflict with TMA SDK. Upgrade after SDK confirms support. |
+| **Vite 7** | Vite 6 | Official template uses Vite 6, but Vite 7 is stable, has improved perf, and better browser target defaults. No breaking changes for our use case. |
+| **react-router v7 (declarative mode)** | react-router v6 | v7 is non-breaking from v6 and consolidates packages. Declarative mode is perfect for SPA TMAs. No reason to stay on v6 for new projects. |
+| **Zustand** | Jotai | Both are excellent. Zustand fits better here because our state is mostly centralized (user session, feature flags, navigation state) rather than atomic/granular. Jotai shines with many independent atoms -- not our pattern. |
+| **Zustand** | Redux Toolkit | Overkill for a TMA. Redux adds ~10KB + boilerplate. Zustand is 3KB with zero boilerplate. Our state complexity does not warrant Redux's middleware ecosystem. |
+| **Recharts** | Apache ECharts | ECharts is more powerful for complex visualizations and has better mobile touch support. But it's heavier (~1MB raw), imperative API clashes with React's declarative model, and our charts are standard (bar, line, pie, progress). Recharts' React-native API and lighter footprint win for this use case. |
+| **Recharts** | Visx (Airbnb) | Visx is the lightest option (tree-shakable D3 primitives). But it's low-level -- you build everything from scratch. Recharts gives production-ready charts with 10x less code. Time-to-ship matters more than bundle savings here. |
+| **Motion** | React Spring | React Spring uses physics-based animations (no duration curves) which feels great but is harder to control for precise sequences. Motion's timeline/orchestration is better for gamification sequences (badge appear -> counter increment -> confetti burst). |
+| **Motion** | GSAP | GSAP is the most powerful animation library (timeline, ScrollTrigger). But its licensing model (commercial requires paid license for some features) and imperative API make it suboptimal for a React TMA. Motion's declarative `<motion.div>` fits React idiomatically. |
+| **Tailwind CSS v4** | CSS Modules | Custom branded design needs a design token system. Tailwind v4's `@theme` rule provides exactly this. CSS Modules would require building a token system from scratch. Tailwind's utility classes also accelerate development velocity significantly. |
+| **Tailwind CSS v4** | TelegramUI (@telegram-apps/telegram-ui) | TelegramUI is designed to mimic Telegram's native look. Deal Quest wants a *custom branded* experience, not a Telegram-native one. TelegramUI constrains visual identity. We use Tailwind for full design control. |
+| **canvas-confetti** | react-confetti | react-confetti renders full-screen only. canvas-confetti supports scoped canvases, custom shapes, and web worker rendering. Better for targeted celebrations (within a card, modal, etc). |
 
 ---
 
-## System Integration Diagram
+## What NOT to Use
 
-```
-aiogram Dispatcher (existing)
-  │
-  ├── Command routers (existing — registered first, highest priority):
-  │   /start, /support, /learn, /train, /stats, /settings, /leads, /admin
-  │
-  └── Orchestrator router (NEW — registered last, lowest priority)
-        └── catch-all: F.text + StateFilter(default_state)
-              │
-              └── OrchestratorAgent.process_message()
-                    │
-                    ├── ConversationHistory.get_messages() [NEW in-memory]
-                    ├── AgentConfigLoader.get_agent_config() [NEW — uses existing PyYAML]
-                    ├── Tool-use loop via OpenRouterProvider.complete_with_tools() [EXTENDED]
-                    │     │
-                    │     ├── invoke_deal_agent → DealAgent.run()
-                    │     │     └── Tool calls: create_deal, update_deal, list_deals, ...
-                    │     │
-                    │     ├── invoke_coach_agent → CoachAgent.run()
-                    │     │     └── Wraps existing: PipelineRunner(learn/train pipelines)
-                    │     │
-                    │     ├── invoke_strategy_agent → StrategyAgent.run()
-                    │     │     └── Wraps existing: StrategistAgent pipelines
-                    │     │
-                    │     └── invoke_memory_agent → MemoryAgent.run()
-                    │           └── Reads/writes user_memory via existing UserMemoryRepo
-                    │
-                    └── Returns: text | confirmation_payload (triggers FSM keyboard)
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| **@telegram-apps/telegram-ui** | Designed for apps that want to look like native Telegram. Deal Quest needs custom branding. Constrains color, typography, and layout to TG patterns. | Tailwind CSS v4 with custom `@theme` design tokens |
+| **@twa-dev/sdk** | Community wrapper around raw `window.Telegram.WebApp`. Lacks TypeScript types, signals, component abstraction. The official `@telegram-apps/sdk-react` is vastly superior. | `@telegram-apps/sdk-react` ^3.3.9 |
+| **@tma.js/sdk-react** | Old package name (pre-rename). Still referenced in the official template's package.json but points to v3.0.8 under the old scope. Use the current `@telegram-apps` scope instead. | `@telegram-apps/sdk-react` ^3.3.9 |
+| **@telegram-apps/react-router-integration** | Last updated 1+ year ago. Designed for react-router-dom v6 `<Router navigator={...}>` pattern. Incompatible with react-router v7 Data APIs. Only 2 versions ever published. | Manual back button integration (~15 lines) with react-router v7 |
+| **react-router-dom** (separate package) | In react-router v7, the unified `react-router` package is the canonical import. `react-router-dom` is a re-export for migration convenience only. | `react-router` ^7.12.x |
+| **Redux / Redux Toolkit** | Massive overkill for a TMA. Adds ~10KB, boilerplate, and conceptual overhead. No middleware need (no complex async flows beyond what TanStack Query handles). | Zustand ^5.0.10 |
+| **Chart.js / react-chartjs-2** | Canvas-based (harder to style with CSS), imperative API wrapped awkwardly in React, accessibility challenges. | Recharts ^3.6.0 (SVG-based, declarative React) |
+| **Styled Components / Emotion** | CSS-in-JS adds runtime overhead and bundle size. The React ecosystem has shifted away from runtime CSS-in-JS toward utility CSS (Tailwind) and zero-runtime solutions. | Tailwind CSS v4 |
+| **postcss-import, autoprefixer** | Tailwind CSS v4 has built-in Lightning CSS that handles both vendor prefixes and imports. These plugins are now redundant. | Built into `@tailwindcss/vite` plugin |
+| **@vitejs/plugin-basic-ssl** | Creates self-signed certificates that iOS/Android Telegram rejects. Only works for web.telegram.org testing. | `vite-plugin-mkcert` (creates trusted local certs) |
 
-Background jobs (existing pattern — keep as-is):
-  ├── asyncio.create_task(): followup_scheduler (every 6h)
-  └── asyncio.create_task(): scenario_generator (every 6h)
+---
 
-NEW background jobs:
-  └── APScheduler AsyncIOScheduler
-        └── daily_brief_job (cron: hour=6, UTC)
-              └── Reads all active users → sends morning briefing via bot.send_message()
+## Stack Patterns by Variant
 
-InsForge tables:
-  Existing: users, user_memory, scenarios_seen, attempts, support_sessions,
-            track_progress, casebook, pipeline_traces, pipeline_spans,
-            lead_registry, lead_activity_log
-  NEW:      deals, deal_notes
+**If deploying to GitHub Pages:**
+- Set `base: '/repo-name/'` in vite.config.ts
+- Use `gh-pages` package for deployment
+- Add 404.html redirect hack for SPA routing
+
+**If deploying to own server / CDN:**
+- Set `base: './'` for relative paths
+- Ensure HTTPS (Telegram requirement)
+- Consider Cloudflare Pages for free HTTPS + global CDN
+
+**If adding admin panel:**
+- Same React app with route-based code splitting
+- `React.lazy()` for admin routes (admin users are rare, don't load admin bundle for regular users)
+- Same Supabase client, different RLS policies for admin role
+
+**If adding realtime features (leaderboards, live competitions):**
+- Use `@supabase/supabase-js` realtime subscriptions
+- Pair with TanStack Query's `queryClient.setQueryData` for optimistic cache updates
+- Supabase Realtime + Postgres LISTEN/NOTIFY is already available via InsForge
+
+---
+
+## Version Compatibility Matrix
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| @telegram-apps/sdk-react@^3.3.9 | react@^18.x | Not yet tested with React 19. Stay on 18. |
+| react-router@^7.12.x | react@^18.3+ | v7 declarative mode works with React 18. |
+| @supabase/supabase-js@^2.90.x | Node 20+, all modern browsers | Dropped Node 18 support in v2.79.0. |
+| Vite@^7.3.x | Node 20.19+ or 22.12+ | Dropped Node 18 support. ESM only. |
+| Tailwind CSS@^4.1.x | Vite 7 via @tailwindcss/vite | No tailwind.config.js needed. CSS-first config. |
+| Recharts@^3.6.0 | react@^16.0 \|\| ^17.0 \|\| ^18.0 | Broad React compat. SVG rendering. |
+| Motion@^12.26.x | react@^18.0 | Import from `motion/react`. Successor to framer-motion. |
+| Zustand@^5.0.10 | react@^18.0 | No dependencies. No Provider needed. |
+| @tanstack/react-query@^5.90.x | react@^18.0 | Zero dependencies. |
+
+---
+
+## Installation
+
+```bash
+# Core
+npm install react react-dom @telegram-apps/sdk-react react-router \
+  @supabase/supabase-js @tanstack/react-query zustand
+
+# Styling
+npm install tailwindcss @tailwindcss/vite clsx tailwind-merge class-variance-authority
+
+# Charts & Visualization
+npm install recharts
+
+# Animation & Gamification
+npm install motion canvas-confetti
+
+# Icons
+npm install lucide-react
+
+# Debugging (loaded conditionally, but installed as dep)
+npm install eruda
+
+# Dev dependencies
+npm install -D typescript @types/react @types/react-dom \
+  @vitejs/plugin-react-swc vite vite-plugin-mkcert vite-tsconfig-paths \
+  eslint @eslint/js @typescript-eslint/eslint-plugin @typescript-eslint/parser \
+  eslint-plugin-react eslint-plugin-react-hooks globals
 ```
 
 ---
 
 ## Sources
 
-- OpenRouter API tool calling format: https://openrouter.ai/docs/api/reference/overview (HIGH — official docs, verified)
-- APScheduler 3.x AsyncIOScheduler: https://apscheduler.readthedocs.io/en/3.x/userguide.html (HIGH — official docs, verified)
-- APScheduler 4.x pre-release warning: https://apscheduler.readthedocs.io/en/master/migration.html (HIGH — official docs state "do NOT use in production")
-- Reference architecture: `/Users/dmytrolevin/Desktop/clickup mcp/bot/src/agents/base-agent.ts` + `orchestrator.ts` + `conversation-history.ts` (HIGH — production code, read directly)
-- aiogram 3 handler/router registration: https://docs.aiogram.dev/en/latest/dispatcher/router.html (MEDIUM — WebSearch confirmed, official docs)
-- aiogram 3 FSM StateFilter: https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html (MEDIUM — WebSearch confirmed, official docs)
-- Existing bot code (HIGH — read directly): `bot/services/llm_router.py`, `bot/pipeline/runner.py`, `bot/storage/models.py`, `bot/main.py`, `bot/services/followup_scheduler.py`
+### HIGH confidence (official docs, npm registry)
+- [@telegram-apps/sdk-react npm](https://www.npmjs.com/package/@telegram-apps/sdk-react) -- v3.3.9, verified 2026-02-01
+- [@telegram-apps/sdk npm](https://www.npmjs.com/package/@telegram-apps/sdk) -- v3.11.8
+- [TMA SDK v3 migration guide](https://docs.telegram-mini-apps.com/packages/telegram-apps-sdk/3-x/migrate-v2-v3) -- official breaking changes
+- [TMA SDK v3 docs](https://docs.telegram-mini-apps.com/packages/telegram-apps-sdk/3-x) -- official API reference
+- [Telegram Mini Apps official React template](https://github.com/Telegram-Mini-Apps/reactjs-template) -- package.json verified
+- [TMA Back Button docs](https://docs.telegram-mini-apps.com/platform/back-button) -- official platform docs
+- [TMA Init Data docs](https://docs.telegram-mini-apps.com/platform/init-data) -- official auth pattern
+- [TMA Authorizing User](https://docs.telegram-mini-apps.com/platform/authorizing-user) -- official validation pattern
+- [TMA Debugging docs](https://docs.telegram-mini-apps.com/platform/debugging) -- Eruda recommendation
+- [Vite releases](https://vite.dev/releases) -- v7.3.1 verified
+- [Vite 7 announcement](https://vite.dev/blog/announcing-vite7) -- Node 20.19+ requirement
+- [React Router v7 docs](https://reactrouter.com/) -- v7.12.0 verified
+- [React Router modes](https://reactrouter.com/start/modes) -- declarative/data/framework
+- [Tailwind CSS v4.0 blog](https://tailwindcss.com/blog/tailwindcss-v4) -- CSS-first config, Vite plugin
+- [Zustand npm](https://www.npmjs.com/package/zustand) -- v5.0.10 verified
+- [@tanstack/react-query npm](https://www.npmjs.com/package/@tanstack/react-query) -- v5.90.19 verified
+- [@supabase/supabase-js npm](https://www.npmjs.com/package/@supabase/supabase-js) -- v2.90.1 verified
+- [Recharts npm](https://www.npmjs.com/package/recharts) -- v3.6.0 verified
+- [Motion npm](https://www.npmjs.com/package/motion) -- v12.26.2 verified
+- [Motion bundle size guide](https://motion.dev/docs/react-reduce-bundle-size) -- LazyMotion under 4.6KB
+- [lucide-react npm](https://www.npmjs.com/package/lucide-react) -- v0.562.0 verified
+- [canvas-confetti npm](https://www.npmjs.com/package/canvas-confetti) -- v1.9.4 verified
+
+### MEDIUM confidence (WebSearch verified with multiple sources)
+- [Supabase + TMA auth pattern (GitHub Gist)](https://gist.github.com/hos/20a4a83b2a4641078dacaea079517c79) -- initData validation in PostgreSQL for Supabase RLS
+- [TMA template with Supabase (DEV Community)](https://dev.to/victorgold/telegram-mini-app-template-how-to-build-and-launch-faster-in-2025-gbc) -- auth flow reference
+- [State management 2025 comparison (DEV Community)](https://dev.to/hijazi313/state-management-in-2025-when-to-use-context-redux-zustand-or-jotai-2d2k) -- Zustand vs Jotai analysis
+- [React chart libraries 2025 (LogRocket)](https://blog.logrocket.com/best-react-chart-libraries-2025/) -- Recharts recommendation
+- [React animation libraries 2026 (Syncfusion)](https://www.syncfusion.com/blogs/post/top-react-animation-libraries) -- Motion recommendation
+- [CVA + clsx + tailwind-merge pattern](https://cva.style/docs) -- standard Tailwind component pattern
+
+### LOW confidence (single source, needs validation)
+- @number-flow/react for animated counters -- looks promising but limited adoption data
+- @telegram-apps/react-router-integration v7 compat -- inferred from API analysis, not officially tested
+
+---
+
+*Stack research for: Deal Quest TMA (Telegram Mini App sales training platform)*
+*Researched: 2026-02-01*

@@ -28,7 +28,7 @@ from bot.services.llm_router import create_provider
 from bot.services.scoring import calculate_xp
 from bot.services.progress import Phase, ProgressUpdater
 from bot.services.transcription import TranscriptionService
-from bot.tracing import TraceContext
+from langfuse import get_client, observe
 from bot.states import TrainState
 from bot.storage.models import AttemptModel
 from bot.storage.repositories import (
@@ -39,10 +39,28 @@ from bot.storage.repositories import (
     UserRepo,
 )
 from bot.utils import _sanitize, format_training_feedback
+from bot.utils_tma import add_open_in_app_row
+from bot.utils_validation import validate_user_input
 
 logger = logging.getLogger(__name__)
 
 router = Router(name="train")
+
+
+@observe(name="pipeline:train")
+async def _traced_train_run(runner, pipeline_config, ctx, tg_id, user_id):
+    """Run train pipeline with Langfuse trace context."""
+    try:
+        client = get_client()
+        client.update_current_observation(
+            user_id=str(tg_id),
+            session_id=f"train_{tg_id}",
+            metadata={"pipeline": "train", "user_id": user_id},
+        )
+    except Exception:
+        pass  # Never break pipeline for observability
+    return await runner.run(pipeline_config, ctx)
+
 
 _SCENARIOS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "scenarios.json"
 
@@ -160,6 +178,7 @@ async def cmd_train(
     user_repo: UserRepo,
     seen_repo: ScenariosSeenRepo,
     generated_scenario_repo: GeneratedScenarioRepo,
+    tma_url: str = "",
 ) -> None:
     """Start a random training scenario — show difficulty picker."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -178,12 +197,13 @@ async def cmd_train(
     all_ids = [s["id"] for s in pool]
     unseen_count = sum(1 for sid in all_ids if sid not in seen_ids)
 
+    kb = add_open_in_app_row(DIFFICULTY_KEYBOARD, tma_url, "train")
     await message.answer(
         f"🎲 *Training Mode*\n\n"
         f"Pool: {len(pool)} scenarios ({unseen_count} unseen)\n\n"
         f"Choose difficulty:",
         parse_mode="Markdown",
-        reply_markup=DIFFICULTY_KEYBOARD,
+        reply_markup=kb,
     )
 
 
@@ -259,6 +279,7 @@ async def _run_train_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
     generated_scenario_repo: GeneratedScenarioRepo | None = None,
+    model_config_service=None,
 ) -> None:
     """Core train scoring logic shared by text and voice handlers."""
     user = await user_repo.get_by_telegram_id(tg_id)
@@ -291,13 +312,13 @@ async def _run_train_answer(
             user_message=user_response,
             telegram_id=tg_id,
             user_id=user.id or 0,
+            model_config=model_config_service,
         )
 
         pipeline_config = load_pipeline("train")
         runner = PipelineRunner(agent_registry)
-        async with TraceContext(pipeline_name="train", telegram_id=tg_id, user_id=user.id or 0):
-            async with ProgressUpdater(status_msg, Phase.EVALUATION):
-                await runner.run(pipeline_config, ctx)
+        async with ProgressUpdater(status_msg, Phase.EVALUATION):
+            await _traced_train_run(runner, pipeline_config, ctx, tg_id, user.id or 0)
 
         trainer_result = ctx.get_result("trainer")
         if not trainer_result or not trainer_result.success:
@@ -398,6 +419,7 @@ async def on_train_voice(
     agent_registry: AgentRegistry,
     transcription: TranscriptionService,
     generated_scenario_repo: GeneratedScenarioRepo,
+    model_config_service=None,
 ) -> None:
     """Transcribe voice and score via trainer pipeline."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
@@ -442,6 +464,7 @@ async def on_train_voice(
         knowledge=knowledge,
         agent_registry=agent_registry,
         generated_scenario_repo=generated_scenario_repo,
+        model_config_service=model_config_service,
     )
 
 
@@ -457,23 +480,34 @@ async def on_train_answer(
     knowledge: KnowledgeService,
     agent_registry: AgentRegistry,
     generated_scenario_repo: GeneratedScenarioRepo,
+    model_config_service=None,
 ) -> None:
     """Score the training response."""
     tg_id = message.from_user.id  # type: ignore[union-attr]
     user_response = message.text or ""
 
-    # Cancel escape hatch
-    if user_response.strip().lower() == "/cancel":
-        await state.clear()
-        await message.answer(
-            "Training cancelled. No penalty applied.\n"
-            "Use /train to get a new scenario."
-        )
+    result = validate_user_input(user_response, context="train")
+    if not result.is_valid:
+        if result.is_command:
+            if result.suggested_command == "/cancel":
+                await state.clear()
+                await message.answer("Training session cancelled. Use /train to start again.")
+                return
+            await state.clear()
+            if result.suggested_command and result.suggested_command != "unknown":
+                await message.answer(
+                    f"Looks like you meant {result.suggested_command}. "
+                    f"Training session cancelled. Try the command again."
+                )
+            else:
+                await message.answer(
+                    "That looks like a command. Training session cancelled. "
+                    "Try your command again."
+                )
+            return
+        await message.answer(result.error_message)
         return
-
-    if not user_response.strip():
-        await message.answer("Please type your response to the scenario.")
-        return
+    user_response = result.cleaned_input
 
     status_msg = await message.answer("🔄 Evaluating your response...")
 
@@ -491,6 +525,7 @@ async def on_train_answer(
         knowledge=knowledge,
         agent_registry=agent_registry,
         generated_scenario_repo=generated_scenario_repo,
+        model_config_service=model_config_service,
     )
 
 

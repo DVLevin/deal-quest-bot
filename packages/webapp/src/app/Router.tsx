@@ -6,11 +6,13 @@
  * useBackButton syncs Telegram's BackButton with navigation state.
  */
 
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { AppLayout } from '@/shared/layouts/AppLayout';
 import { Skeleton } from '@/shared/ui';
 import { useBackButton } from '@/shared/hooks/useBackButton';
+import { useDeepLink } from '@/shared/hooks/useDeepLink';
+import { AdminGuard } from '@/features/admin/components/AdminGuard';
 
 // Lazy-loaded page chunks
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -39,8 +41,39 @@ function PageSkeleton() {
  * Inner router component that has access to router context.
  * useBackButton must be called inside BrowserRouter.
  */
+/** Non-resumable path prefixes -- don't save these to session storage */
+const NON_RESUMABLE = ['/', '/admin'];
+
+function useSessionTracker() {
+  const location = useLocation();
+  const prevPath = useRef<string>('');
+
+  useEffect(() => {
+    const fullPath = location.pathname + location.search;
+
+    // Skip if path hasn't changed (debounce)
+    if (fullPath === prevPath.current) return;
+    prevPath.current = fullPath;
+
+    // Don't save non-resumable paths
+    const isNonResumable = NON_RESUMABLE.some((prefix) =>
+      prefix === '/'
+        ? location.pathname === '/'
+        : location.pathname.startsWith(prefix),
+    );
+    if (isNonResumable) return;
+
+    localStorage.setItem(
+      'dq_last_path',
+      JSON.stringify({ path: fullPath, ts: Date.now() }),
+    );
+  }, [location.pathname, location.search]);
+}
+
 function AppRoutes() {
   useBackButton();
+  useDeepLink();
+  useSessionTracker();
 
   return (
     <AppLayout>
@@ -50,10 +83,10 @@ function AppRoutes() {
           <Route path="/learn/*" element={<Learn />} />
           <Route path="/train/*" element={<Train />} />
           <Route path="/support/*" element={<Support />} />
-          <Route path="/casebook" element={<Casebook />} />
+          <Route path="/casebook/*" element={<Casebook />} />
           <Route path="/leads/*" element={<Leads />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/admin/*" element={<Admin />} />
+          <Route path="/admin/*" element={<AdminGuard><Admin /></AdminGuard>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
