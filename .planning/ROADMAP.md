@@ -73,7 +73,7 @@ Merged into v2.0 as Phase 9 (Admin & Observability). Admin tooling is more valua
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Agent framework: agents.yaml config system, complete_with_tools() on OpenRouterProvider, ToolUseAgent base class
+- [x] 03-01-PLAN.md — Agent framework: agents.yaml config system, complete_with_tools() on OpenRouterProvider, ToolUseAgent base class
 - [ ] 03-02-PLAN.md — Conversation history: InsForge table + hybrid service + main.py wiring for all Phase 3 components
 
 ### Phase 4: Deal Storage + Deal Agent
@@ -209,7 +209,7 @@ Phases execute in numeric order: 3 → 4 → 5 → 6 → 7 → 8 → 9
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation - Tracing Infrastructure & Storage | v1.0 | 3/3 | Complete | 2026-02-02 |
 | 2. Operations - Admin Commands (MERGED) | v1.0 | -/- | Merged into Phase 9 | - |
-| 3. Agent Infrastructure | v2.0 | 0/TBD | Not started | - |
+| 3. Agent Infrastructure | v2.0 | 1/2 | In progress | - |
 | 4. Deal Storage + Deal Agent | v2.0 | 0/TBD | Not started | - |
 | 5. Orchestrator + Natural Language Handler | v2.0 | 0/TBD | Not started | - |
 | 6. Coach + Strategy Agents | v2.0 | 0/TBD | Not started | - |
@@ -218,4 +218,4 @@ Phases execute in numeric order: 3 → 4 → 5 → 6 → 7 → 8 → 9
 | 9. Admin & Observability | v2.0 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-24 — v2.0 roadmap created*
+*Last updated: 2026-02-25 — 03-01 complete (agent framework)*

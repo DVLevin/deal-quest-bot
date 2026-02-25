@@ -10,24 +10,24 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 3 of 9 (Agent Infrastructure)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-25 — Phase 3 context gathered, plan-phase initialized (needs research+plan+verify)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-25 — Completed 03-01 (agent framework: agents.yaml, config.py, complete_with_tools, ToolUseAgent)
 
-Progress: [░░░░░░░░░░] 0% (v2.0 plans: 0/TBD)
+Progress: [█░░░░░░░░░] 10% (v2.0 plans: 1/TBD)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (all from v1.0)
-- v2.0 plans completed: 0
+- Total plans completed: 4 (3 from v1.0, 1 from v2.0)
+- v2.0 plans completed: 1
 
 **By Milestone:**
 
 | Milestone | Phases | Plans | Status |
 |-----------|--------|-------|--------|
 | v1.0 Observability | 1 shipped | 3/3 | Complete |
-| v2.0 AI Sales Partner | 7 planned (3-9) | 0/TBD | Ready to plan |
+| v2.0 AI Sales Partner | 7 planned (3-9) | 1/TBD | In progress |
 
 *Updated after each plan completion*
 
@@ -44,6 +44,10 @@ Key decisions for v2.0:
 - [v2.0] Confirmation-first for all CRM writes — inline keyboards before any deal mutation
 - [v2.0] apscheduler>=3.10,<4.0 — only new dependency; v4 is pre-release alpha, must not be used
 - [v2.0] Orchestrator gets no knowledge base — routing prompt target <2000 tokens; specialists get domain knowledge
+- [03-01] ToolUseAgent is a separate hierarchy from v1.0 BaseAgent — both coexist, no inheritance link
+- [03-01] ClaudeProvider.complete_with_tools() raises NotImplementedError — tool support deferred to future phase
+- [03-01] Tool schemas built dynamically from AgentConfig.tools at loop entry — config-driven tool sets
+- [03-01] Agent defaults merged at load time (not runtime) — single validated AgentConfig per agent
 
 ### Pending Todos
 
@@ -59,6 +63,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: v2.0 roadmap created — ready for /gsd:plan-phase 3
+Last session: 2026-02-25
+Stopped at: Completed 03-01-PLAN.md — agent framework (agents.yaml, config.py, complete_with_tools, ToolUseAgent)
 Resume file: None

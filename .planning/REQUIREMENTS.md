@@ -113,7 +113,7 @@
 | TRACE-06 | Phase 1 (v1.0) | Complete |
 | NLR-01 | Phase 5 | Pending |
 | NLR-02 | Phase 5 | Pending |
-| NLR-03 | Phase 3 | Pending |
+| NLR-03 | Phase 3 | Complete (03-01) |
 | NLR-04 | Phase 5 | Pending |
 | NLR-05 | Phase 5 | Pending |
 | DEAL-01 | Phase 4 | Pending |
