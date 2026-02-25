@@ -1,0 +1,48 @@
+defaults:
+  model: moonshotai/kimi-k2.5
+  max_iterations: 10
+  timeout_seconds: 60
+  temperature: 0.7
+  fallback_behavior: return_error
+
+agents:
+  deal_agent:
+    description: "Manages deals: create, query, update stage, log notes, portfolio view"
+    prompt_file: prompts/deal_agent.md
+    max_iterations: 8
+    timeout_seconds: 45
+    context_sources:
+      - conversation_history
+      - memory
+    tools: []  # Defined in Phase 4
+
+  coach_agent:
+    description: "Sales coaching: objection handling practice, topic training, skill assessment"
+    prompt_file: prompts/coach_agent.md
+    max_iterations: 5
+    context_sources:
+      - conversation_history
+      - memory
+      - knowledge
+    tools: []  # Defined in Phase 6
+
+  strategy_agent:
+    description: "Strategy: call prep, competitive intel, re-engagement drafts, deal risk assessment"
+    prompt_file: prompts/strategy_agent.md
+    max_iterations: 6
+    context_sources:
+      - conversation_history
+      - memory
+      - knowledge
+    tools: []  # Defined in Phase 6
+
+  orchestrator:
+    description: "Routes user messages to the correct specialist agent"
+    prompt_file: prompts/orchestrator.md
+    model: moonshotai/kimi-k2.5
+    max_iterations: 3
+    timeout_seconds: 30
+    temperature: 0.3
+    context_sources:
+      - conversation_history
+    tools: []  # Defined in Phase 5
