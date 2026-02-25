@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -47,6 +48,23 @@ def _extract_json(text: str) -> dict[str, Any]:
     return {"raw_response": text}
 
 
+@dataclass
+class TextResponse:
+    """Returned by complete_with_tools() when the LLM replies with text."""
+
+    content: str
+
+
+@dataclass
+class ToolCallResponse:
+    """Returned by complete_with_tools() when the LLM requests a tool call."""
+
+    tool_call_id: str
+    tool_name: str
+    tool_args: dict[str, Any]  # already JSON-parsed from the arguments string
+    raw_message: dict[str, Any]  # full assistant message dict for appending to history
+
+
 class LLMProvider(ABC):
     """Abstract LLM provider."""
 
@@ -55,6 +73,20 @@ class LLMProvider(ABC):
         self, system_prompt: str, user_message: str, *, image_b64: str | None = None,
     ) -> dict[str, Any]:
         """Send a completion request and return parsed JSON."""
+        ...
+
+    @abstractmethod
+    async def complete_with_tools(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> TextResponse | ToolCallResponse:
+        """Send a tool-use completion request, returning text or a tool call."""
         ...
 
     @abstractmethod
@@ -132,6 +164,19 @@ class ClaudeProvider(LLMProvider):
             return resp.status_code == 200
         except Exception:
             return False
+
+    async def complete_with_tools(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> TextResponse | ToolCallResponse:
+        """Tool calling is not yet supported for the Claude provider."""
+        raise NotImplementedError("Tool calling not yet supported for Claude provider")
 
     async def close(self) -> None:
         if not self._client.is_closed:
@@ -219,6 +264,74 @@ class OpenRouterProvider(LLMProvider):
             return resp.status_code == 200
         except Exception:
             return False
+
+    @traced_span("llm:openrouter:tools")
+    async def complete_with_tools(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, Any]],  # full conversation history (user/assistant/tool messages)
+        tools: list[dict[str, Any]],     # OpenAI-format tool definitions
+        *,
+        model: str | None = None,        # override model per-call (for per-agent model config)
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> TextResponse | ToolCallResponse:
+        """Send a tool-use request and return TextResponse or ToolCallResponse.
+
+        Prepends the system prompt as a system message and includes tool definitions
+        in every request — OpenRouter requires tools array for the full conversation.
+        """
+        import asyncio
+
+        effective_model = model if model is not None else self.model
+        all_messages = [{"role": "system", "content": system_prompt}] + messages
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                resp = await self._client.post(
+                    "/chat/completions",
+                    json={
+                        "model": effective_model,
+                        "messages": all_messages,
+                        "tools": tools,
+                        "tool_choice": "auto",
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                choice = data["choices"][0]
+                message = choice["message"]
+                finish_reason = choice.get("finish_reason", "")
+
+                # Tool call response
+                if finish_reason == "tool_calls" and message.get("tool_calls"):
+                    tc = message["tool_calls"][0]
+                    return ToolCallResponse(
+                        tool_call_id=tc["id"],
+                        tool_name=tc["function"]["name"],
+                        tool_args=json.loads(tc["function"]["arguments"]),
+                        raw_message=message,
+                    )
+
+                # Text response
+                return TextResponse(content=message.get("content", ""))
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in (429, 500, 502, 503) and attempt < MAX_RETRIES - 1:
+                    await asyncio.sleep(RETRY_DELAYS[attempt])
+                    continue
+                logger.error("OpenRouter tools API error: %s", e)
+                raise
+            except Exception as e:
+                if attempt < MAX_RETRIES - 1:
+                    await asyncio.sleep(RETRY_DELAYS[attempt])
+                    continue
+                logger.error("OpenRouter tools completion error: %s", e)
+                raise
+
+        return TextResponse(content="I'm having trouble processing that right now. Please try again.")
 
     async def close(self) -> None:
         if not self._client.is_closed:
