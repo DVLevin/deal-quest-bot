@@ -10,6 +10,7 @@ from bot.storage.insforge_client import InsForgeClient
 from bot.storage.models import (
     AttemptModel,
     CasebookModel,
+    ConversationTurnModel,
     GeneratedScenarioModel,
     LeadActivityModel,
     LeadRegistryModel,
@@ -633,3 +634,39 @@ class TraceRepo:
         if rows and isinstance(rows, list):
             return [PipelineSpanModel(**r) for r in rows]
         return []
+
+
+class ConversationHistoryRepo:
+    """Repository for conversation history persistence."""
+
+    def __init__(self, client: InsForgeClient) -> None:
+        self.client = client
+        self.table = "conversation_history"
+
+    async def get_recent(self, telegram_id: int, limit: int = 20) -> list[ConversationTurnModel]:
+        """Get the most recent N turns for a user, ordered oldest-first."""
+        rows = await self.client.query(
+            self.table,
+            filters={"telegram_id": telegram_id},
+            order="timestamp.desc",
+            limit=limit,
+        )
+        if rows and isinstance(rows, list):
+            # Reverse to get chronological order (oldest first)
+            return [ConversationTurnModel(**r) for r in reversed(rows)]
+        return []
+
+    async def save_turns(self, telegram_id: int, turns: list[ConversationTurnModel]) -> None:
+        """Replace all stored turns for a user with the current window.
+
+        Strategy: delete existing rows, insert current window.
+        This is simpler and safer than diffing — the window is small (20 turns max).
+        """
+        try:
+            await self.client.delete(self.table, {"telegram_id": telegram_id})
+            for turn in turns:
+                data = turn.model_dump(exclude_none=True, exclude={"id", "created_at"})
+                data["telegram_id"] = telegram_id
+                await self.client.create(self.table, data)
+        except Exception as e:
+            logger.error("Failed to save conversation history for user %s: %s", telegram_id, e)

@@ -178,3 +178,14 @@ class PipelineSpanModel(BaseModel):
     input_data: dict[str, Any] | None = None
     output_data: dict[str, Any] | None = None
     created_at: str | None = None
+
+
+class ConversationTurnModel(BaseModel):
+    id: int | None = None
+    telegram_id: int
+    role: str  # "user" | "assistant" | "tool"
+    content: str = ""
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_call_id: str | None = None
+    timestamp: str | None = None
+    created_at: str | None = None
